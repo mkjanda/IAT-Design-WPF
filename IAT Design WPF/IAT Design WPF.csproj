@@ -1,0 +1,111 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>IAT_Design_WPF</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Templates\drawings\item_drawing.xslt" />
+    <None Remove="Templates\drawings\title_drawing.xml" />
+    <None Remove="Templates\drawings\title_drawing.xslt" />
+    <None Remove="Templates\drawings\wrapped_drawings.xslt" />
+    <None Remove="Templates\drawings\_rels\drawing_rels.xslt" />
+    <None Remove="Templates\drawings\_rels\drawing_rels_addendum.xslt" />
+    <None Remove="Templates\drawings\_rels\slide_drawing_rels.xslt" />
+    <None Remove="Templates\drawings\_rels\title_drawing.xml.rels" />
+    <None Remove="Templates\drawings\_rels\title_drawing.xml.rels.xslt" />
+    <None Remove="Templates\drawings\_rels\title_page_rels.xslt" />
+    <None Remove="Templates\printerSettings\printerSettings1.bin" />
+    <None Remove="Templates\SharedStringAddendum.xslt" />
+    <None Remove="Templates\sharedStrings.xml" />
+    <None Remove="Templates\sharedStrings.xslt" />
+    <None Remove="Templates\styles.xml" />
+    <None Remove="Templates\theme\theme1.xml" />
+    <None Remove="Templates\workbook.xml.xslt" />
+    <None Remove="Templates\worksheets\ItemAnalWorksheet.xslt" />
+    <None Remove="Templates\worksheets\LatencyWorksheet.xslt" />
+    <None Remove="Templates\worksheets\rels\ItemAnalWorksheetRels.xslt" />
+    <None Remove="Templates\worksheets\rels\TitleWorksheet.xml.rels" />
+    <None Remove="Templates\worksheets\rels\WorksheetRels.xslt" />
+    <None Remove="Templates\worksheets\SummaryWorksheet.xslt" />
+    <None Remove="Templates\worksheets\TitleWorksheet.xml" />
+    <None Remove="Templates\worksheets\wrapped_ItemAnalysisWorksheets.xslt" />
+    <None Remove="Templates\_rels\workbook.xml.rels.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\drawings\_rels\title_page_rels.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\drawings\item_drawing.xslt" />
+    <EmbeddedResource Include="Templates\drawings\title_drawing.xml" />
+    <EmbeddedResource Include="Templates\drawings\title_drawing.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\drawings\wrapped_drawings.xslt" />
+    <EmbeddedResource Include="Templates\drawings\_rels\drawing_rels.xslt" />
+    <EmbeddedResource Include="Templates\drawings\_rels\drawing_rels_addendum.xslt" />
+    <EmbeddedResource Include="Templates\drawings\_rels\slide_drawing_rels.xslt" />
+    <EmbeddedResource Include="Templates\drawings\_rels\title_drawing.xml.rels" />
+    <EmbeddedResource Include="Templates\drawings\_rels\title_drawing.xml.rels.xslt" />
+    <EmbeddedResource Include="Templates\printerSettings\printerSettings1.bin" />
+    <EmbeddedResource Include="Templates\theme\theme1.xml" />
+    <EmbeddedResource Include="Templates\worksheets\rels\WorksheetRels.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\worksheets\rels\TitleWorksheet.xml.rels" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\worksheets\rels\ItemAnalWorksheetRels.xslt" />
+    <EmbeddedResource Include="Templates\worksheets\wrapped_ItemAnalysisWorksheets.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\worksheets\ItemAnalWorksheet.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\SharedStringAddendum.xslt" />
+    <EmbeddedResource Include="Templates\sharedStrings.xml" />
+    <EmbeddedResource Include="Templates\sharedStrings.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\styles.xml" />
+    <EmbeddedResource Include="Templates\workbook.xml.xslt" />
+    <EmbeddedResource Include="Templates\worksheets\LatencyWorksheet.xslt" />
+    <EmbeddedResource Include="Templates\worksheets\SummaryWorksheet.xslt" />
+    <EmbeddedResource Include="Templates\worksheets\TitleWorksheet.xml" />
+    <EmbeddedResource Include="Templates\_rels\workbook.xml.rels.xslt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
+    <PackageReference Include="Velopack" Version="0.0.1298" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj" />
+    <ProjectReference Include="..\IAT.VIewModels\IAT.ViewModels.csproj" />
+    <ProjectReference Include="..\IAT.Views\IAT.Views.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="Extensions\" />
+    <Folder Include="Utilities\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+
+</Project>

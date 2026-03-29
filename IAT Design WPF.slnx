@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="IAT Design WPF/IAT Design WPF.csproj" />
+  <Project Path="IAT.Core/IAT.Core.csproj" />
+  <Project Path="IAT.VIewModels/IAT.ViewModels.csproj" />
+  <Project Path="IAT.Views/IAT.Views.csproj" />
+</Solution>
