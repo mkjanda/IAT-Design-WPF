@@ -5,12 +5,13 @@ using System.Text;
 
 namespace IAT.Core.Models
 {
-    internal interface IStimulus : IDisposable, IThumbnailPreviewable, IPackagePart
+    public interface IStimulus : IDisposable, IThumbnailPreviewable, IPackagePart
     {
         String Description { get; }
         IImage IImage { get; }
         DIType Type { get; }
         IUri IUri { get; }
         void ScheduleInvalidation();
+        bool IsInitialized { get; }
     }
 }

@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
     <PackageReference Include="SaxonHE12s9apiExtensions" Version="12.9.10" />
     <PackageReference Include="System.IO.Packaging" Version="10.0.5" />
@@ -24,7 +25,11 @@
 
   <ItemGroup>
     <Folder Include="Commands\" />
+    <Folder Include="Models\Generated\" />
     <Folder Include="Models\Serializable\" />
   </ItemGroup>
 
+    <Target Name="GenerateXsdClasses" BeforeTargets="BeforeBuild">
+		<Exec Command="xscgen --namespace &quot;Models.Generated&quot; --output &quot;$(projectDir)&quot; &quot;Models\Schemas\Models.xsd&quot; --separateFiles" />
+	</Target>	
 </Project>

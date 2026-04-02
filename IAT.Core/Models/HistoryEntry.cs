@@ -1,12 +1,34 @@
 ﻿using System.Xml.Linq;
 using System.Xml.Schema;
 using System.Xml.Serialization;
-using IAT.Core.Services;
+using IAT.Core.Models.Enumerations;
 
 namespace IAT.Core.Models
 {
-    public class HistoryEntry
+    /// <summary>
+    /// Represents a single entry in the application's history, containing information about the time of the record,
+    /// product key, error counts, and save file version.
+    /// </summary>
+    /// <remarks>Use this class to store and retrieve metadata related to a specific operation or session,
+    /// such as when it occurred, the associated product key, and error statistics. This type is typically used for
+    /// serialization or logging purposes.</remarks>
+    public class HistoryEntry : IPackagePart
     {
+        /// <summary>
+        /// Gets or sets the URI associated with this instance.
+        /// </summary>
+        public Uri Uri { get; set; }
+
+        /// <summary>
+        /// Gets the MIME type associated with the history entry in XML format.
+        /// </summary>
+        public String MimeType => "text/xml+" + typeof(HistoryEntry).ToString();
+
+        /// <summary>
+        /// Gets the type of the package part represented by this instance.
+        /// </summary>
+        public PartType PackagePartType => PartType.HistoryEntry;
+
         /// <summary>
         /// Gets or sets the date and time when the record was opened.
         /// </summary>
@@ -18,51 +40,31 @@ namespace IAT.Core.Models
         /// information for the application, which may be relevant for licensing or activation purposes. 
         /// </summary>
         [XmlElement(ElementName = "ProductKey", Form = XmlSchemaForm.Unqualified)]
-        public String ProductKey { get; set; } = "N/A";
+        public required String ProductKey { get; set; };
 
         /// <summary>
         /// Gets or sets the number of errors encountered during the operation.
         /// </summary>
         [XmlElement(ElementName = "ErrorCount", Form = XmlSchemaForm.Unqualified)]
-        public int ErrorCount { get; set; } = -1;
+        public required int ErrorCount { get; set; };
 
         /// <summary>
         /// Gets or sets the number of errors that have been reported.
         /// </summary>
         [XmlElement(ElementName = "ErrorsReported", Form = XmlSchemaForm.Unqualified)]
-        public int ErrorsReported { get; set; } = -1;
+        public required int ErrorsReported { get; set; };
 
         /// <summary>
         /// Gets or sets the version identifier for the save file format.
         /// </summary>
         [XmlElement(ElementName = "SaveFileVersion", Form = XmlSchemaForm.Unqualified)]
-        public String Version { get; set; } = null;
+        public required String Version { get; set; };
 
-        [XmlIgnore]
-        private readonly ILocalStorageService _localStorage;
-        public HistoryEntry(ILocalStorageService localStorage)
+
+        public HistoryEntry()
         {
-            Version = localStorage[localStorage.Field.Version];
-            ProductKey = localStorage[localStorage.Field.ProductKey];
-            ErrorCount = ErrorReporter.Errors;
-            ErrorsReported = ErrorReporter.ErrorsReported;
-            _localStorage = localStorage;
         }
 
-        public HistoryEntry(XElement root, ILocalStorageService localStorage)
-        {
-            _localStorage = localStorage;
-            if (root.Element("Timestamp") != null)
-                TimeOpened = root.Element("Timestamp").Value;
-            if (root.Element("Version") != null)
-                Version = root.Element("Version").Value;
-            if (root.Element("ErrorCount") != null)
-                ErrorCount = Convert.ToInt32(root.Element("ErrorCount").Value);
-            if (root.Element("ErrorsReported") != null)
-                ErrorsReported = Convert.ToInt32(root.Element("ErrorsReported").Value);
-            if (root.Element("ProductKey") != null)
-                ProductKey = root.Element("ProductKey").Value;
-        }
 
         public void AddToXml(XElement parent)
         {

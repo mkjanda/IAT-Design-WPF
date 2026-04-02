@@ -78,7 +78,7 @@ namespace IAT.Core.Models
             {
                 if (rImageId != null)
                 {
-                    CIAT.SaveFile.DeleteRelationship(URI, rImageId);
+                    CIAT.SaveFile.DeleteRelationship(Uri, rImageId);
                     IImage?.Dispose();
                 }
                 _IImage = value;
@@ -94,7 +94,7 @@ namespace IAT.Core.Models
                 IImage.Changed += new Action<Images.ImageEvent, Images.IImageMedia, object>(OnImageEvent);
             }
         }
-        public virtual Uri URI { get; set; }
+        public virtual Uri Uri { get; set; }
         public virtual bool IsObservable { get { return false; } }
         public Type BaseType { get { return typeof(DIBase); } }
         public long Expiration { get; set; }
@@ -133,7 +133,7 @@ namespace IAT.Core.Models
         public DIBase(Uri URI)
         {
             InvalidationState = InvalidationStates.InvalidationReady;
-            this.URI = URI;
+            this.Uri = URI;
             IUri = new UriContainer(URI);
             GetBoundingSize = DIType.FromType(this.GetType()).GetBoundingSize;
             Load(URI);
@@ -153,8 +153,8 @@ namespace IAT.Core.Models
                 CompositeInvalidationEvents.Add(InvalidationEvent);
             else
                 ComponentInvalidationEvents.Add(InvalidationEvent);
-            URI = CIAT.SaveFile.CreatePart(BaseType, GetType(), MimeType, ".xml");
-            IUri = new UriContainer(URI);
+            Uri = CIAT.SaveFile.CreatePart(BaseType, GetType(), MimeType, ".xml");
+            IUri = new UriContainer(Uri);
             GetBoundingSize = DIType.FromType(this.GetType()).GetBoundingSize;
             IImage = new Images.ImageManager.Image(Images.ImageFormat.Png, Type);
             rImageId = CIAT.SaveFile.GetRelationship(CIAT.SaveFile.ImageMetaDataDocument.URI, IImage.URI);
@@ -169,8 +169,8 @@ namespace IAT.Core.Models
                 CompositeInvalidationEvents.Add(InvalidationEvent);
             else
                 ComponentInvalidationEvents.Add(InvalidationEvent);
-            URI = CIAT.SaveFile.CreatePart(BaseType, GetType(), MimeType, ".xml");
-            IUri = new UriContainer(URI);
+            Uri = CIAT.SaveFile.CreatePart(BaseType, GetType(), MimeType, ".xml");
+            IUri = new UriContainer(Uri);
             GetBoundingSize = DIType.FromType(this.GetType()).GetBoundingSize;
             this.IImage = imgObj.Clone() as Images.IImage;
             CIAT.SaveFile.Register(this);
@@ -220,14 +220,14 @@ namespace IAT.Core.Models
                         if (Interlocked.Equals(InvalidationState, InvalidationStates.CacheInvalidationQueued))
                             return;
                         Interlocked.Exchange(ref InvalidationState, InvalidationStates.CacheInvalidationQueued);
-                        var owners = CIAT.SaveFile.GetRelationshipsByType(URI, BaseType, typeof(DIBase), "owned-by").ToList();
+                        var owners = CIAT.SaveFile.GetRelationshipsByType(Uri, BaseType, typeof(DIBase), "owned-by").ToList();
                         foreach (Uri diUri in owners.Select(pr => pr.TargetUri))
                         {
                             var owner = CIAT.SaveFile.GetDI(diUri);
                             if (owner != null)
                                 owner.ScheduleInvalidation();
                             else if (owner == null)
-                                CIAT.SaveFile.DeleteRelationship(URI, owner.URI);
+                                CIAT.SaveFile.DeleteRelationship(Uri, owner.URI);
                         }
                         return;
                     }
@@ -291,7 +291,7 @@ namespace IAT.Core.Models
         public abstract void Save();
         public void Save(Uri uri)
         {
-            this.URI = uri;
+            this.Uri = uri;
             Save();
             CIAT.SaveFile.Register(this);
         }
@@ -342,7 +342,7 @@ namespace IAT.Core.Models
         {
             lock (lockObject)
             {
-                Uri oldUri = URI;
+                Uri oldUri = Uri;
                 CIAT.SaveFile.Replace(this, target);
                 Save();
                 target.Replaced = true;
@@ -361,7 +361,7 @@ namespace IAT.Core.Models
             {
                 try
                 {
-                    var prs = CIAT.SaveFile.GetRelationshipsByType(URI, BaseType, typeof(DIBase), "owned-by");
+                    var prs = CIAT.SaveFile.GetRelationshipsByType(Uri, BaseType, typeof(DIBase), "owned-by");
                     foreach (PackageRelationship pr in prs)
                     {
                         DIBase di = CIAT.SaveFile.GetDI(pr.TargetUri);
@@ -398,14 +398,14 @@ namespace IAT.Core.Models
 
         public void AddOwner(Uri ownerUri)
         {
-            foreach (PackageRelationship pr in CIAT.SaveFile.GetRelationshipsByType(URI, BaseType, typeof(DIBase), "owned-by").ToList())
+            foreach (PackageRelationship pr in CIAT.SaveFile.GetRelationshipsByType(Uri, BaseType, typeof(DIBase), "owned-by").ToList())
                 if (pr.TargetUri.Equals(ownerUri))
                     return;
-            foreach (PackageRelationship pr in CIAT.SaveFile.GetRelationshipsByType(URI, BaseType, typeof(DIBase), "owns").ToList())
+            foreach (PackageRelationship pr in CIAT.SaveFile.GetRelationshipsByType(Uri, BaseType, typeof(DIBase), "owns").ToList())
                 if (pr.TargetUri.Equals(ownerUri))
                     return;
-            CIAT.SaveFile.CreateRelationship(BaseType, typeof(DIBase), URI, ownerUri, "owned-by");
-            CIAT.SaveFile.CreateRelationship(typeof(DIBase), BaseType, ownerUri, URI, "owns");
+            CIAT.SaveFile.CreateRelationship(BaseType, typeof(DIBase), Uri, ownerUri, "owned-by");
+            CIAT.SaveFile.CreateRelationship(typeof(DIBase), BaseType, ownerUri, Uri, "owns");
         }
 
         public void CopyOwners(Uri srcUri, Uri destUri)
@@ -422,16 +422,16 @@ namespace IAT.Core.Models
         {
             if (!CIAT.SaveFile.PartExists(ownerUri))
                 return;
-            CIAT.SaveFile.DeleteRelationship(ownerUri, URI);
-            CIAT.SaveFile.DeleteRelationship(URI, ownerUri);
+            CIAT.SaveFile.DeleteRelationship(ownerUri, Uri);
+            CIAT.SaveFile.DeleteRelationship(Uri, ownerUri);
         }
 
         public void ReleaseSubject(Uri subjectUri)
         {
             if (!CIAT.SaveFile.PartExists(subjectUri))
                 return;
-            CIAT.SaveFile.DeleteRelationship(URI, subjectUri);
-            CIAT.SaveFile.DeleteRelationship(subjectUri, URI);
+            CIAT.SaveFile.DeleteRelationship(Uri, subjectUri);
+            CIAT.SaveFile.DeleteRelationship(subjectUri, Uri);
         }
 
         public abstract object Clone();
@@ -444,13 +444,13 @@ namespace IAT.Core.Models
                     return;
                 if (!Replaced)
                 {
-                    List<Uri> owns = CIAT.SaveFile.GetRelationshipsByType(URI, BaseType, typeof(DIBase), "owns").Select(pr => pr.TargetUri).ToList();
+                    List<Uri> owns = CIAT.SaveFile.GetRelationshipsByType(Uri, BaseType, typeof(DIBase), "owns").Select(pr => pr.TargetUri).ToList();
                     foreach (Uri u in owns)
-                        ReleaseSubject(URI);
-                    List<Uri> owners = CIAT.SaveFile.GetRelationshipsByType(URI, BaseType, typeof(DIBase), "owned-by").Select(pr => pr.TargetUri).ToList();
+                        ReleaseSubject(Uri);
+                    List<Uri> owners = CIAT.SaveFile.GetRelationshipsByType(Uri, BaseType, typeof(DIBase), "owned-by").Select(pr => pr.TargetUri).ToList();
                     foreach (Uri u in owners)
                         ReleaseOwner(u);
-                    CIAT.SaveFile.DeletePart(this.URI);
+                    CIAT.SaveFile.DeletePart(this.Uri);
                 }
             }
             if (Type != DIType.Null)
@@ -459,7 +459,7 @@ namespace IAT.Core.Models
                     this.IImage.Dispose();
             }
             IsDisposed = true;
-            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Delete, URI);
+            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Delete, Uri);
         }
 
         private static DIBase diNull = null;

@@ -1,11 +1,12 @@
-﻿using java.awt;
-using sun.java2d.pipe;
-using sun.security.x509;
+﻿using IAT.Core.Models.Enumerations;
+using IAT.Core.Services.Validation;
+using net.sf.saxon.functions;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using System.Xml.Linq;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 
 namespace IAT.Core.Models
@@ -20,269 +21,155 @@ namespace IAT.Core.Models
     /// structure and can be added, removed, or reordered within the test. Thread safety is not guaranteed; external
     /// synchronization is required for concurrent access.</remarks>
     [XmlRoot("Block")]
-    public class Block
+    public class Block : IPackagePart, IContentsItem, IPreviewable, IValidatedItem
     {
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the object.
+        /// </summary>
+        [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+
+        /// <summary>
+        /// Gets or sets the Uniform Resource Identifier (URI) associated with this instance.
+        /// </summary>
+        [XmlIgnore]
+        public Uri? Uri { get; set; } = null;
+
+        /// <summary>
+        /// Gets the part type associated with the package.
+        /// </summary>
+        [XmlIgnore]
+        public PartType PackagePartType => PartType.Block;
+
+
+        /// <summary>
+        /// Gets the MIME type associated with the current block instance.  
+        /// </summary>
+        [XmlIgnore]
+        public String MimeType => "text/xml+" + typeof(Block).ToString();
+
+
         /// <summary>
         /// Gets or sets the number of trials to perform in the operation.
         /// </summary>
-        [XmlElement("NumTrials")] 
-        required public int NumTrials{ get; set; } = 0;
+        [XmlElement("NumPresentations", Form = XmlSchemaForm.Unqualified)]
+        required public int NumPresentations { get; set; } = 0;
 
         /// <summary>
-        /// Gets or sets the alternated width value used for layout or rendering purposes.
+        /// Gets or sets the alternation group associated with the element.
         /// </summary>
-        /// <remarks>A value of -1 typically indicates that no alternated width is specified. The meaning
-        /// and usage of this property may depend on the context in which it is used.</remarks>
-        [XmlElement("AlternatedWidth")] 
-        required public int AlternatedWith { get; set; } = -1;
+        /// <remarks>The alternation group defines a set of mutually exclusive options for the element. If set to null, no
+        /// alternation group is applied.</remarks>
+        [XmlElement("AlternationGroupGuid", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        required public Guid? AlternationGroupId { get; set; } = null;
+
 
         /// <summary>
-        /// Gets or sets the number of the block in the sequence.
+        /// Gets or sets the alternation group associated with this element.
         /// </summary>
-        [XmlElement("BlockNumber")] 
-        required public int BlockNumber { get; set; }
+        [XmlIgnore]
+        public AlternationGroup? AlternationGroup { get; set; } = null;
 
-        /// <summary>
-        /// Gets the number of stimul contained in the collection.
-        /// </summary>
-        [XmlElement("NumItems")] 
-        public int NumItems {
-            get {
-                return Stimuli.Count;
-            }
-        }
 
         /// <summary>
         /// Gets or sets the URI where instructions for completing the process can be accessed.
         /// </summary>
-        [XmlElement("InstructionsDisplayUri", IsNullable = true)]
-        public Uri InstructionsDisplayUri { get; set; }
+        [XmlElement("InstructionsId", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        public Guid? InstructionsId { get; set; }
 
         /// <summary>
         /// Gets or sets the URI used to display the left-side response in a comparison or review scenario.
         /// </summary>
-        [XmlElement("LeftResponseDisplayUri", IsNullable = true)] 
-        public Uri LeftResponseDisplayUri { get; set; }
+        [XmlElement("LeftResponseDisplayUri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        public Guid? LeftResponseId { get; set; }
 
         /// <summary>
         /// Gets or sets the URI used to display the right-side response in the user interface.
         /// </summary>
-        [XmlElement("RightResponseDisplayUri", IsNullable = true)] 
-        public Uri RightResponseDisplayUri { get; set; }
+        [XmlElement("RightResponseDisplayUri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        public Guid? RightResponseId { get; set; }
 
         /// <summary>
-        /// Gets or sets the collection of stimuli presentations associated with this instance.
+        /// Gets the collection of unique identifiers for the associated trials.
         /// </summary>
-        /// <remarks>Each item in the collection represents a single stimulus to be presented. The order
-        /// of items in the list determines the sequence in which stimuli are processed or displayed.</remarks>
-        [XmlArray("StimuliUris")]
-        [XmlArrayItem("StimulsUri")]
-        public List<Stimulus> Stimuli { get; set; } = new();
-
-
-        [XmlElement("AlterationGroup", IsNullable = true)]
-        protected AlternationGroup AltGroup = null;
-        private List<Tuple<string, Uri>> ItemTuples = new();
-        protected int _IndexInContents = -1;
-        public delegate int BlockIndexRetriever(Block block);
-        public BlockIndexRetriever GetIndex;
-        public Uri InstructionsUri { get; private set; }
-        public Uri URI { get; set; }
-        public readonly Enumerations.PartType partType = Enumerations.PartType.Block;
-        public readonly String MimeType => "text/xml";
-        public readonly bool IsHeaderItem => true;
-        public readonly bool IsSurvey => false;
-
-        public CIATKey Key
-        {
-            get
-            {
-                
-                return CIAT.SaveFile.GetRelationshipsByType(this.URI, BaseType, typeof(CIATKey)).Select(pr => CIAT.SaveFile.GetIATKey(pr.TargetUri)).FirstOrDefault();
-            }
-            set
-            {
-                try
-                {
-                    CIATKey oldKey = Key;
-                    if (oldKey != null)
-                        if (oldKey.URI.Equals(value.URI))
-                            return;
-                    if (value == null)
-                        return;
-                    if (oldKey != null)
-                    {
-                        CIAT.SaveFile.DeleteRelationship(this.URI, oldKey.URI);
-                        CIAT.SaveFile.DeleteRelationship(oldKey.URI, this.URI);
-                        CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Detached, oldKey.URI, URI);
-                    }
-                    CIATKey newKey = value;
-                    CIAT.SaveFile.CreateRelationship(BaseType, value.BaseType, this.URI, value.URI);
-                    CIAT.SaveFile.CreateRelationship(value.BaseType, BaseType, value.URI, this.URI);
-                    CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Attached, value.URI, URI);
-                    DIPreview preview = CIAT.SaveFile.GetDI(PreviewUri) as DIPreview;
-                    bool suspended = preview.LayoutSuspended;
-                    preview.SuspendLayout();
-                    preview.RemoveComponent(LayoutItem.LeftResponseKey, false);
-                    preview.RemoveComponent(LayoutItem.RightResponseKey, false);
-                    foreach (CIATItem i in ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)))
-                    {
-                        i.GetPreview(URI).RemoveComponent(LayoutItem.LeftResponseKey, false);
-                        i.GetPreview(URI).RemoveComponent(LayoutItem.RightResponseKey, false);
-                    }
-                    if (!suspended)
-                        preview.ResumeLayout(true);
-                    preview.AddComponent(newKey.LeftValue.IUri, LayoutItem.LeftResponseKey);
-                    preview.AddComponent(newKey.RightValue.IUri, LayoutItem.RightResponseKey);
-                    foreach (CIATItem i in ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)))
-                    {
-                        DIPreview itemPreview = i.GetPreview(URI);
-                        suspended = itemPreview.LayoutSuspended;
-                        i.GetPreview(URI).AddComponent(newKey.LeftValue.IUri, LayoutItem.LeftResponseKey);
-                        i.GetPreview(URI).AddComponent(newKey.RightValue.IUri, LayoutItem.RightResponseKey);
-                        if (!suspended)
-                            itemPreview.ResumeLayout(false);
-                    }
-                }
-                catch (Exception ex) { }
-            }
-        }
-
-        public int NumItems
-        {
-            get
-            {
-                return ItemTuples.Count;
-            }
-        }
-
-        public bool IsDynamicallyKeyed { get; set; } = false;
-
-        public CIATBlock AlternateBlock
-        {
-            get
-            {
-                if (!HasAlternateItem)
-                    return null;
-                if (AlternationGroup.GroupMembers[0] == this)
-                    return (CIATBlock)AlternationGroup.GroupMembers[1];
-                else
-                    return (CIATBlock)AlternationGroup.GroupMembers[0];
-            }
-        }
-
-        public int NumPresentations
-        {
-            get
-            {
-                if (CIAT.SaveFile.IAT.RandomizationType == ConfigFile.ERandomizationType.SetNumberOfPresentations)
-                {
-                    if (_NumPresentations == -1)
-                        _NumPresentations = ItemTuples.Count;
-                    return _NumPresentations;
-                }
-                else
-                    return ItemTuples.Count;
-            }
-            set
-            {
-                _NumPresentations = value;
-            }
-        }
-
-
-        public CIATItem this[int ndx]
-        {
-            get
-            {
-
-                if ((ndx < 0) || (ndx >= ItemTuples.Count))
-                    return null;
-                return ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)).ToList()[ndx];
-            }
-        }
-
-        public bool Contains(CIATItem i)
-        {
-            try
-            {
-                ItemTuples.Where(tup => tup.Item2.Equals(i.URI)).First();
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-
-        }
-
-        private void GeneratePreviewOverlay(Bitmap bmp)
-        {
-            Graphics g = Graphics.FromImage(bmp);
-            Brush br = new SolidBrush(CIAT.SaveFile.Layout.BackColor);
-            g.FillRectangle(br, 0, 0, CIAT.SaveFile.Layout.InteriorSize.Width, CIAT.SaveFile.Layout.InteriorSize.Height);
-            br.Dispose();
-            br = new SolidBrush(CIAT.SaveFile.Layout.BorderColor);
-            Font f = new Font(System.Drawing.SystemFonts.DefaultFont.FontFamily, 18F);
-            String str;
-            if (ItemTuples.Count == 0)
-                str = "No Stimuli";
-            else if (ItemTuples.Count == 1)
-                str = "1 Stimulus";
-            else
-                str = String.Format("{0} Stimuli", ItemTuples.Count);
-            Size szStr = TextRenderer.MeasureText(str, f);
-            float ar = CIAT.SaveFile.Layout.InteriorSize.Width / CIAT.SaveFile.Layout.InteriorSize.Height;
-            PointF ptDraw = new PointF((CIAT.SaveFile.Layout.InteriorSize.Width - szStr.Width) / 2, (CIAT.SaveFile.Layout.InteriorSize.Height - szStr.Height) / 2 - (2 * szStr.Height) + (ar > 1 ? (szStr.Height / ar) : (-ar * szStr.Height)));
-            g.DrawString(str, f, br, ptDraw);
-            br.Dispose();
-            g.Dispose();
-            f.Dispose();
-            bmp.MakeTransparent(CIAT.SaveFile.Layout.BackColor);
-        }
+        [XmlArray("TrialIds", Form = XmlSchemaForm.Unqualified)]
+        [XmlArrayItem("TrialId", Form = XmlSchemaForm.Unqualified)]
+        public required List<Guid> TrialIds { get; init; } = new();
 
         /// <summary>
-        /// The default constructor
+        /// Gets the collection of trials associated with this instance.
         /// </summary>
-        public CIATBlock(CIAT iat)
-        {
-            this.URI = CIAT.SaveFile.Register(this);
-            rIatId = CIAT.SaveFile.CreateRelationship(typeof(CIAT), typeof(CIATBlock), iat.URI, this.URI);
-            Key = null;
-            InstructionsUri = new DIIatBlockInstructions().URI;
-            CIAT.SaveFile.CreateRelationship(BaseType, typeof(DIBase), this.URI, InstructionsUri);
-            _NumPresentations = -1;
-            GetRandomizationType = new RandomizationTypeResolver(iat.GetRandomizationType);
-            IAT = iat;
-            DIPreview preview = new DIPreview();
-            BlockPreviewLambda = new DILambdaGenerated(GeneratePreviewOverlay);
-            preview.AddComponent(BlockPreviewLambda.IUri);
-            preview.AddComponent(CIAT.SaveFile.GetDI(InstructionsUri).IUri, LayoutItem.BlockInstructions);
-            BlockPreviewLambda.ScheduleInvalidation();
-            PreviewUri = preview.URI;
-            CIAT.SaveFile.CreateRelationship(BaseType, preview.BaseType, this.URI, PreviewUri);
-            Name = String.Format("IAT Block #{0}", CIAT.SaveFile.IAT.Blocks.Count + 1);
-            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Create, URI);
-        }
+        /// <remarks>The returned list is initialized to an empty collection and is required to be set
+        /// during object initialization. The property is read-only after initialization.</remarks>
+        [XmlIgnore]
+        public required List<Trial> Trials { get; init; } = new();
 
-        public CIATBlock(CIAT iat, Uri uri)
-        {
-            IAT = iat;
-            this.URI = uri;
-            rIatId = CIAT.SaveFile.GetRelationshipsByType(iat.URI, typeof(CIAT), BaseType).Where(pr => pr.TargetUri.Equals(uri)).Select(pr => pr.Id).First();
-            CIAT.SaveFile.Register(this);
-            Load();
-            BlockPreviewLambda = new DILambdaGenerated(GeneratePreviewOverlay);
-            DIPreview preview = CIAT.SaveFile.GetDI(PreviewUri) as DIPreview;
-            preview.AddComponent(BlockPreviewLambda.IUri);
-        }
+        /// <summary>
+        /// Indicates whether the item is a header item.
+        /// </summary>
+        public static bool IsHeaderItem => true;
 
-        public void ClearThumbnailDisplay()
-        {
-            foreach (Images.IImage i in ItemTuples.Select(tup => CIAT.SaveFile.GetDI(tup.Item2).IImage))
-                i.Thumbnail.ClearChanged();
-        }
+        /// <summary>
+        /// Gets a value indicating whether the current context represents a survey.
+        /// </summary>
+        public static bool IsSurvey => false;
 
+
+        /// <summary>
+        /// Gets or sets the URI that identifies the cryptographic key.
+        /// </summary>
+        [XmlElement("KeyId", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        public Guid KeyId { get; set; } = Guid.Empty;
+
+        /// <summary>
+        /// Gets or sets the key associated with this instance.
+        /// </summary>
+        [XmlIgnore]
+        public Key? Key { get; set; } = null;
+
+        /// <summary>
+        /// Gets the block number associated with this instance.
+        /// </summary>
+        [XmlElement("BlockNumber", Form = XmlSchemaForm.Unqualified)]
+        public required int BlockNumber { get; init; } = 0;
+
+
+
+
+        /*
+                private void GeneratePreviewOverlay(Bitmap bmp)
+                {
+                    Graphics g = Graphics.FromImage(bmp);
+                    Brush br = new SolidBrush(CIAT.SaveFile.Layout.BackColor);
+                    g.FillRectangle(br, 0, 0, CIAT.SaveFile.Layout.InteriorSize.Width, CIAT.SaveFile.Layout.InteriorSize.Height);
+                    br.Dispose();
+                    br = new SolidBrush(CIAT.SaveFile.Layout.BorderColor);
+                    Font f = new Font(System.Drawing.SystemFonts.DefaultFont.FontFamily, 18F);
+                    String str;
+                    if (ItemTuples.Count == 0)
+                        str = "No Stimuli";
+                    else if (ItemTuples.Count == 1)
+                        str = "1 Stimulus";
+                    else
+                        str = String.Format("{0} Stimuli", ItemTuples.Count);
+                    Size szStr = TextRenderer.MeasureText(str, f);
+                    float ar = CIAT.SaveFile.Layout.InteriorSize.Width / CIAT.SaveFile.Layout.InteriorSize.Height;
+                    PointF ptDraw = new PointF((CIAT.SaveFile.Layout.InteriorSize.Width - szStr.Width) / 2, (CIAT.SaveFile.Layout.InteriorSize.Height - szStr.Height) / 2 - (2 * szStr.Height) + (ar > 1 ? (szStr.Height / ar) : (-ar * szStr.Height)));
+                    g.DrawString(str, f, br, ptDraw);
+                    br.Dispose();
+                    g.Dispose();
+                    f.Dispose();
+                    bmp.MakeTransparent(CIAT.SaveFile.Layout.BackColor);
+                }
+        */
+
+        /// <summary>
+        /// Initializes a new instance of the Block class.
+        /// </summary>
+        public Block() { }
+        /*
         public List<Tuple<IUri, LayoutItem>> GetPreviewComponents()
         {
             var components = new List<Tuple<IUri, LayoutItem>>();
@@ -294,135 +181,45 @@ namespace IAT.Core.Models
             components.Add(new Tuple<IUri, LayoutItem>(CIAT.SaveFile.GetDI(InstructionsUri).IUri, LayoutItem.BlockInstructions));
             return components;
         }
+        */
 
-        public void Validate()
-        {
-            if (Key == null)
-                throw new CValidationException(Properties.Resources.sNoKeyAssignedToBlockException);
-            for (int ctr = 0; ctr < ItemTuples.Count; ctr++)
-                CIAT.SaveFile.GetIATItem(ItemTuples[ctr].Item2).Validate(ctr, this);
-        }
+        /// <summary>
+        /// Gets the item type that represents an IAT block content item.
+        /// </summary>
+        public static ContentsItemType ContentsItemType => ContentsItemType.IATBlock;
 
-        public void ValidateItem(Dictionary<IValidatedItem, CValidationException> ErrorDictionary)
-        {
-            CLocationDescriptor loc = new CItemLocationDescriptor(this, null);
-            if (ItemTuples.Count == 0)
-                ErrorDictionary[this] = new CValidationException(EValidationException.BlockHasNoItems, loc);
-            else if (Key == null)
-                ErrorDictionary[this] = new CValidationException(EValidationException.BlockResponseKeyUndefined, loc);
-            foreach (CIATItem i in ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)))
-                i.ValidateItem(ErrorDictionary);
-        }
-
-        public void Save()
-        {
-            XDocument xDoc = new XDocument();
-            String rInstructionsId = CIAT.SaveFile.GetRelationshipsByType(this.URI, BaseType, typeof(DIBase)).Where(rel => rel.TargetUri.Equals(InstructionsUri)).Select(rel => rel.Id).First();
-            String rPreviewId = CIAT.SaveFile.GetRelationshipsByType(this.URI, BaseType, typeof(DIBase)).Where(rel => rel.TargetUri.Equals(PreviewUri)).Select(rel => rel.Id).First();
-            xDoc.Add(new XElement("IATBlock", new XAttribute("Name", Name), new XAttribute("IndexInContents", IndexInContents)));
-            xDoc.Root.Add(new XElement("rInstructionsId", rInstructionsId));
-            xDoc.Root.Add(new XElement("rPreviewId", rPreviewId));
-            xDoc.Root.Add(new XElement("IsDynamicallyKeyed", IsDynamicallyKeyed.ToString()));
-            foreach (String rId in ItemTuples.Select(tup => tup.Item1))
-                xDoc.Root.Add(new XElement("rItemId", rId));
-            Stream s = CIAT.SaveFile.GetWriteStream(this);
-            xDoc.Save(s);
-            s.Dispose();
-            CIAT.SaveFile.ReleaseWriteStreamLock();
-        }
-
-        public void Load()
-        {
-            Stream s = CIAT.SaveFile.GetReadStream(this);
-            XDocument xDoc = XDocument.Load(s);
-            s.Dispose();
-            CIAT.SaveFile.ReleaseReadStreamLock();
-            Name = xDoc.Root.Attribute("Name").Value;
-            _IndexInContents = Convert.ToInt32(xDoc.Root.Attribute("IndexInContents").Value);
-            InstructionsUri = CIAT.SaveFile.GetRelationship(this, xDoc.Root.Element("rInstructionsId").Value).TargetUri;
-            PreviewUri = CIAT.SaveFile.GetRelationship(this, xDoc.Root.Element("rPreviewId").Value).TargetUri;
-            IsDynamicallyKeyed = Convert.ToBoolean(xDoc.Root.Element("IsDynamicallyKeyed").Value);
-            ItemTuples.Clear();
-            foreach (XElement elem in xDoc.Root.Elements("rItemId"))
-            {
-                String rId = elem.Value;
-                Uri u = CIAT.SaveFile.GetRelationship(this, rId).TargetUri;
-                ItemTuples.Add(new Tuple<String, Uri>(rId, u));
-            }
-        }
-
-        public ContentsItemType Type
-        {
-            get
-            {
-                return ContentsItemType.IATBlock;
-            }
-        }
-
+        /// <summary>
+        /// Gets a value indicating whether an alternate item is associated with this instance.
+        /// </summary>
         public bool HasAlternateItem
         {
             get
             {
-                return (AltGroup != null);
+                return (AlternationGroup != null);
             }
         }
 
-        public AlternationGroup AlternationGroup
-        {
-            get
-            {
-                return AltGroup;
-            }
-            set
-            {
-                if ((AltGroup != null) && (value != null))
-                    if (!AltGroup.URI.Equals(value.URI))
-                    {
-                        MessageBox.Show("Dispose of the alternation group and instantiate a new one.");
-                        return;
-                    }
-                AltGroup = value;
-            }
-        }
+        /// <summary>
+        /// Gets the name associated with the current instance.
+        /// </summary>
+        [XmlElement("Name", Form = XmlSchemaForm.Unqualified)]
+        public required string Name { get; set; } = String.Empty;
 
-        public String Name { get; private set; }
 
-        public int IndexInContainer
-        {
-            get
-            {
-                return IAT.Blocks.IndexOf(this);
-            }
-        }
+        /// <summary>
+        /// Validates the current object and adds any validation errors to the specified dictionary.
+        /// </summary>
+        /// <remarks>Use this method to collect validation errors for the current object and its related
+        /// items. Existing entries in the dictionary may be updated or new entries added, depending on the validation
+        /// results.</remarks>
+        /// <param name="ErrorDictionary">A dictionary to which validation errors are added. The key is the item being validated, and the value is the
+        /// associated validation error. Cannot be null.</param>
+        public void Validate(Dictionary<IValidatedItem, ValidationError> ErrorDictionary) => this.Validate(ErrorDictionary);
 
-        public void DeleteFromIAT()
-        {
-            IAT.DeleteIATBlock(this);
-        }
-
-        public void AddToIAT(int InsertionNdx)
-        {
-            int containerNdx = 0;
-            for (int ctr = 0; ctr < InsertionNdx; ctr++)
-                if (IAT.Contents[ctr].Type == Type)
-                    containerNdx++;
-            Name = "IAT Block #" + (containerNdx + 1).ToString();
-            IAT.InsertIATBlock(this, InsertionNdx);
-        }
-
-        public int IndexInContents
-        {
-            get
-            {
-                if (IAT.Contents.Contains(this))
-                    return IAT.Contents.IndexOf(this);
-                return _IndexInContents;
-            }
-        }
 
         public void AddItem(CIATItem i, KeyedDirection kd)
         {
-            String rId = CIAT.SaveFile.CreateRelationship(BaseType, i.BaseType, this.URI, i.URI);
+            String rId = CIAT.SaveFile.CreateRelationship(BaseType, i.BaseType, this.Uri, i.URI);
             ItemTuples.Add(new Tuple<String, Uri>(rId, i.URI));
             i.AddParentBlock(this, kd);
             if (!CIAT.SaveFile.IAT.Is7Block)
@@ -474,11 +271,11 @@ namespace IAT.Core.Models
 
         public void InsertItem(int ndx, CIATItem item)
         {
-            String rId = CIAT.SaveFile.CreateRelationship(BaseType, item.BaseType, this.URI, item.URI);
+            String rId = CIAT.SaveFile.CreateRelationship(BaseType, item.BaseType, this.Uri, item.URI);
             ItemTuples.Insert(ndx, new Tuple<String, Uri>(rId, item.URI));
             KeyedDirection kd = IsDynamicallyKeyed ? KeyedDirection.DynamicNone : KeyedDirection.None;
             item.AddParentBlock(this, kd);
-            CIAT.SaveFile.CreateRelationship(BaseType, item.BaseType, URI, item.URI);
+            CIAT.SaveFile.CreateRelationship(BaseType, item.BaseType, Uri, item.URI);
             int blockNum = CIAT.SaveFile.IAT.Blocks.IndexOf(this) + 1;
             CIATBlock b = null;
             if ((blockNum == 1) || (blockNum == 2))
@@ -519,7 +316,7 @@ namespace IAT.Core.Models
             if (tup != null)
             {
                 ItemTuples.Remove(tup);
-                CIAT.SaveFile.DeleteRelationship(this.URI, tup.Item1);
+                CIAT.SaveFile.DeleteRelationship(this.Uri, tup.Item1);
             }
         }
 
@@ -538,7 +335,7 @@ namespace IAT.Core.Models
             previewPanel.Tag = this;
             DIPreview dip = CIAT.SaveFile.GetDI(PreviewUri) as DIPreview;
             dip.ResumeLayout(true);
-            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Display, URI);
+            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Display, Uri);
             dip.PreviewPanel = previewPanel;
         }
 
@@ -568,7 +365,7 @@ namespace IAT.Core.Models
             {
                 List<IPreviewableItem> result = new List<IPreviewableItem>();
                 foreach (CIATItem item in ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)))
-                    result.Add(new CIATItemPreview(this.URI, item.URI));
+                    result.Add(new CIATItemPreview(this.Uri, item.URI));
                 return result;
             }
         }
@@ -585,21 +382,21 @@ namespace IAT.Core.Models
         {
             List<CIATItem> items = ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)).ToList();
             foreach (CIATItem i in items)
-                i.SuspendPreviewLayout(URI);
+                i.SuspendPreviewLayout(Uri);
         }
 
         public void Dispose()
         {
             if (IsDisposed)
                 return;
-            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Delete, URI);
+            CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Delete, Uri);
             if (CIAT.SaveFile.GetDI(PreviewUri).PreviewPanel != null)
                 EndPreview(CIAT.SaveFile.GetDI(PreviewUri).PreviewPanel);
             if (Key != null)
             {
                 Uri keyUri = Key.URI;
-                CIAT.SaveFile.DeleteRelationship(Key.URI, URI);
-                CIAT.SaveFile.DeleteRelationship(URI, Key.URI);
+                CIAT.SaveFile.DeleteRelationship(Key.URI, Uri);
+                CIAT.SaveFile.DeleteRelationship(Uri, Key.URI);
             }
             CIAT.SaveFile.GetDI(PreviewUri).Dispose();
             BlockPreviewLambda.Dispose();
@@ -612,7 +409,7 @@ namespace IAT.Core.Models
             CIAT.SaveFile.GetDI(InstructionsUri).Dispose();
             if (AlternationGroup != null)
                 AlternationGroup.Remove(this);
-            CIAT.SaveFile.DeletePart(this.URI);
+            CIAT.SaveFile.DeletePart(this.Uri);
             IsDisposed = true;
         }
 
@@ -632,7 +429,7 @@ namespace IAT.Core.Models
             dip.AddComponent(Key.RightValue.IUri, LayoutItem.RightResponseKey);
             if (!suspended)
                 dip.ResumeLayout(true);
-            foreach (DIPreview p in ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2).GetPreview(URI)))
+            foreach (DIPreview p in ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2).GetPreview(Uri)))
             {
                 suspended = p.LayoutSuspended;
                 p.SuspendLayout();
@@ -663,7 +460,5 @@ namespace IAT.Core.Models
             }
         }
     }
-
-
 }
-}
+

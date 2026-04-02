@@ -63,7 +63,7 @@ namespace IAT.Core.Services
             public DateTime TimeOpened { get; private set; } = DateTime.UtcNow;
             public ConcurrentDictionary<String, List<int>> UriCounters { get; private set; } = new ConcurrentDictionary<String, List<int>>();
             public List<HistoryEntry> History { get; private set; } = new List<HistoryEntry>();
-            public Uri URI { get; set; }
+            public Uri Uri { get; set; }
             public Type BaseType { get { return typeof(SaveFileMetaData); } }
             public String MimeType { get { return "text/xml+" + typeof(SaveFileMetaData).ToString(); } }
             public String IATRelId { get; set; } = String.Empty;
@@ -71,17 +71,17 @@ namespace IAT.Core.Services
             public CVersion Version { get; private set; } = new CVersion();
             public SaveFileMetaData(SaveFile saveFile)
             {
-                URI = PackUriHelper.CreatePartUri(new Uri(typeof(SaveFileMetaData).ToString() + "/" + typeof(SaveFileMetaData).ToString() + "1.xml", UriKind.Relative));
-                saveFile.SavePackage.CreatePart(URI, MimeType, CompressionOption.Normal);
+                Uri = PackUriHelper.CreatePartUri(new Uri(typeof(SaveFileMetaData).ToString() + "/" + typeof(SaveFileMetaData).ToString() + "1.xml", UriKind.Relative));
+                saveFile.SavePackage.CreatePart(Uri, MimeType, CompressionOption.Normal);
                 UriCounters[typeof(SaveFileMetaData).ToString()] = new List<int>(new int[] { 1 });
-                saveFile.CreatePackageLevelRelationship(URI, typeof(SaveFileMetaData));
+                saveFile.CreatePackageLevelRelationship(Uri, typeof(SaveFileMetaData));
                 SaveFile = saveFile;
             }
 
             public SaveFileMetaData(SaveFile saveFile, Uri u)
             {
                 SaveFile = saveFile;
-                this.URI = u;
+                this.Uri = u;
                 UriCounters[typeof(SaveFileMetaData).ToString()] = new List<int>(new int[] { 1 });
                 Load(SaveFile.SavePackage);
             }
@@ -608,12 +608,12 @@ namespace IAT.Core.Services
 
         private PackagePart GetPart(IPackagePart p)
         {
-            if (p.URI != null)
+            if (p.Uri != null)
             {
                 ioLock.EnterUpgradeableReadLock();
                 try
                 {
-                    return SavePackage.GetPart(p.URI);
+                    return SavePackage.GetPart(p.Uri);
                 }
                 catch (Exception ex)
                 {
@@ -669,7 +669,7 @@ namespace IAT.Core.Services
             ioLock.EnterUpgradeableReadLock();
             try
             {
-                return SavePackage.GetPart(p.URI).GetRelationship(rId);
+                return SavePackage.GetPart(p.Uri).GetRelationship(rId);
             }
             finally
             {
@@ -683,8 +683,8 @@ namespace IAT.Core.Services
             ioLock.EnterUpgradeableReadLock();
             try
             {
-                PackagePart p = SavePackage.GetPart(src.URI);
-                return p.GetRelationships().Where(pr => pr.TargetUri.Equals(target.URI)).Select(pr => pr.Id).First();
+                PackagePart p = SavePackage.GetPart(src.Uri);
+                return p.GetRelationships().Where(pr => pr.TargetUri.Equals(target.Uri)).Select(pr => pr.Id).First();
             }
             catch (Exception)
             {
@@ -727,7 +727,7 @@ namespace IAT.Core.Services
             ioLock.EnterUpgradeableReadLock();
             try
             {
-                PackagePart p = SavePackage.GetPart(src.URI);
+                PackagePart p = SavePackage.GetPart(src.Uri);
                 return p.GetRelationships().Where(pr => pr.TargetUri.Equals(targetUri)).Select(pr => pr.Id).FirstOrDefault();
             }
             catch (Exception ex)
@@ -969,7 +969,7 @@ namespace IAT.Core.Services
 
         public Uri Register(DIBase di)
         {
-            Uri u = di.URI;
+            Uri u = di.Uri;
             if (u == null)
                 u = CreatePart(di.BaseType, di.GetType(), di.MimeType, ".xml");
             if (!DIs.TryAdd(u, di))
@@ -992,12 +992,12 @@ namespace IAT.Core.Services
                 {
                     GetPart(oldDI).DeleteRelationship(rel.Id);
                 }
-                if (!DIs.TryRemove(oldDI.URI, out DIBase dummy))
+                if (!DIs.TryRemove(oldDI.Uri, out DIBase dummy))
                     throw new ArgumentException("Attempt to replace a display item not in the dictionary.");
-                DeletePart(oldDI.URI);
-                newDI.URI = oldDI.URI;
+                DeletePart(oldDI.Uri);
+                newDI.Uri = oldDI.Uri;
                 CreatePart(typeof(DIBase), newDI.GetType(), newDI.MimeType, ".xml");
-                DIs.TryAdd(newDI.URI, newDI);
+                DIs.TryAdd(newDI.Uri, newDI);
             }
             finally
             {
@@ -1255,7 +1255,7 @@ namespace IAT.Core.Services
                 }
                 var dualKeyUris = keys.Where(k => k.KeyType != IATKeyType.DualKey).Select(k => k.LeftValueUri).ToList();
                 dualKeyUris.AddRange(keys.Where(k => k.KeyType != IATKeyType.DualKey).Select(k => k.LeftValueUri).ToList());
-                foreach (var di in dis.Where(di => !simpleKeyValueUris.Contains(di.URI) && !dualKeyUris.Contains(di.URI)).ToList())
+                foreach (var di in dis.Where(di => !simpleKeyValueUris.Contains(di.Uri) && !dualKeyUris.Contains(di.Uri)).ToList())
                 {
                     if (di.IsGenerated)
                         di.ResumeLayout(false);

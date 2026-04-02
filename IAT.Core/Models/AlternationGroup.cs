@@ -1,4 +1,6 @@
-﻿using sun.awt.geom;
+﻿using IAT.Core.Models.Enumerations;
+using IAT.Core.Services;
+using sun.awt.geom;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -7,53 +9,88 @@ using System.Xml.Serialization;
 
 namespace IAT.Core.Models
 {
-    [XmlRoot("AlternationGroup")]
-    public class AlternationGroup : IPackagePart
+    public partial class AlternationGroup : IPackagePart
     {
+        /// <summary>
+        /// Gets the URI associated with this instance.
+        /// </summary>
+        [XmlElement("URI", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public required Uri Uri { get; set; }
 
-        public Uri URI { get; set; }
-        public String MimeType { get { return "text/xml+" + typeof(AlternationGroup).ToString(); } }
-        public Type BaseType { get { return typeof(AlternationGroup); } }
-        private static readonly List<int> GroupIds = new List<int>();
-        public int GroupID { get; private set; } = 0;
-        public readonly List<IContentsItem> GroupMembers = new List<IContentsItem>();
-        private List<String> rGroupMemberIds = new List<string>();
 
-        private static IEnumerable<AlternationGroup> AlternationGroups
-        {
-            get
-            {
-                return CIAT.SaveFile.GetRelationshipsByType(CIAT.SaveFile.IAT.URI, typeof(CIAT), typeof(AlternationGroup)).Select(pr => CIAT.SaveFile.GetAlternationGroup(pr.TargetUri));
-            }
-        }
+        /// <summary>
+        /// Gets the unique identifier for the group.
+        /// </summary>
+        [XmlElement("GroupID", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public required int GroupID { get; init; }
 
+        /// <summary>
+        /// Gets the list of group identifiers.
+        /// </summary>
+        public static List<int> GroupIds { get; } = new();
+
+
+        /// <summary>
+        /// Gets the type of the package item represented by this instance.
+        /// </summary>
+        [XmlIgnore]
+        public PartType PackagePartType => PartType.AlternationGroup;
+
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the entity.
+        /// </summary>
+        [XmlElement("Id", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public Guid Id { get; set; } = new();
+
+        /// <summary>
+        /// Represents the collection of items that are members of the group.
+        /// </summary>
+        /// <remarks>This list is read-only and can be used to access or enumerate the group members.
+        /// Modifications to the collection itself are not supported.</remarks>
+        [XmlIgnore]
+        public required List<IContentsItem> GroupMembers { get; init; } = new();
+  
+
+        /// <summary>
+        /// Removes the specified contents item from the group.
+        /// </summary>
+        /// <remarks>After removal, the item's association with this group is cleared. If the item is not
+        /// a member of the group, no action is taken.</remarks>
+        /// <param name="ici">The contents item to remove from the group. Cannot be null.</param>
         public void Remove(IContentsItem ici)
         {
-            CIAT.SaveFile.DeleteRelationship(this.URI, ici.URI);
+            GroupMembers.Remove(ici);
+            ici.AlternationGroup = null;
         }
 
+
+        /// <summary>
+        /// Initializes a new instance of the AlternationGroup class with the specified group members.
+        /// </summary>
+        /// <remarks>Each item in the group will have its AlternationGroup property set to this instance.
+        /// The group is assigned a unique identifier among all alternation groups.</remarks>
+        /// <param name="groupMembers">An array of items to include as members of the alternation group. Cannot be null.</param>
         public AlternationGroup(IContentsItem[] groupMembers)
         {
-            URI = CIAT.SaveFile.CreatePart(BaseType, GetType(), MimeType, ".xml");
-            CIAT.SaveFile.Register(this);
-            CIAT.SaveFile.CreateRelationship(typeof(CIAT), BaseType, CIAT.SaveFile.IAT.URI, URI);
             GroupID = 0;
             while (GroupIds.Contains(GroupID))
                 GroupID++;
             GroupIds.Add(GroupID);
             GroupMembers.AddRange(groupMembers);
             foreach (IContentsItem i in GroupMembers)
-            {
                 i.AlternationGroup = this;
-                rGroupMemberIds.Add(CIAT.SaveFile.CreateRelationship(BaseType, i.BaseType, this.URI, i.URI));
-            }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the AlternationGroup class with the specified contents items as group members.
+        /// </summary>
+        /// <remarks>Both items are assigned to the same alternation group and added as group members.
+        /// Each group is assigned a unique identifier.</remarks>
+        /// <param name="item1">The first contents item to include in the alternation group. Cannot be null.</param>
+        /// <param name="item2">The second contents item to include in the alternation group. Cannot be null.</param>
         public AlternationGroup(IContentsItem item1, IContentsItem item2)
         {
-            URI = CIAT.SaveFile.CreatePart(BaseType, GetType(), MimeType, ".xml");
-            CIAT.SaveFile.Register(this);
-            CIAT.SaveFile.CreateRelationship(typeof(CIAT), BaseType, CIAT.SaveFile.IAT.URI, URI);
             GroupID = 0;
             while (GroupIds.Contains(GroupID))
                 GroupID++;
@@ -62,145 +99,22 @@ namespace IAT.Core.Models
             item2.AlternationGroup = this;
             GroupMembers.Add(item1);
             GroupMembers.Add(item2);
-            rGroupMemberIds.Add(CIAT.SaveFile.CreateRelationship(BaseType, item1.BaseType, URI, item1.URI));
-            rGroupMemberIds.Add(CIAT.SaveFile.CreateRelationship(BaseType, item2.BaseType, URI, item2.URI));
         }
 
-        public AlternationGroup(Uri u)
-        {
-            URI = u;
-            CIAT.SaveFile.Register(this);
-            Load();
-        }
 
-        public bool Contains(IContentsItem i)
-        {
-            return GroupMembers.Contains(i);
-        }
-
+        /// <summary>
+        /// Releases all resources used by the current instance and removes the group from the collection of active
+        /// groups.
+        /// </summary>
+        /// <remarks>Call this method when the group is no longer needed to ensure that all associated
+        /// resources are properly released. After calling this method, the group and its members should not be
+        /// used.</remarks>
         public void Dispose()
         {
             foreach (IContentsItem i in GroupMembers)
                 i.AlternationGroup = null;
-            CIAT.SaveFile.DeleteRelationship(CIAT.SaveFile.IAT.URI, this.URI);
             GroupIds.Remove(GroupID);
         }
-
-        public int AlternationPriority
-        {
-            get
-            {
-                if ((GroupMembers[0].Type != ContentsItemType.BeforeSurvey) && (GroupMembers[0].Type != ContentsItemType.AfterSurvey))
-                    return -1;
-                return AlternationGroups.Where((group) => (group.GroupID < GroupID)).Where((group) => (group.AlternationPriority != -1)).Count();
-            }
-        }
-
-        public bool IsValid()
-        {
-            return true;
-        }
-
-        public void Save()
-        {
-            XDocument xDoc = new XDocument();
-            xDoc.Add(new XElement("AlternationGroup", new XAttribute("GroupID", GroupID.ToString())));
-            foreach (String rId in rGroupMemberIds)
-                xDoc.Root.Add(new XElement("rMemberId", rId));
-            Stream s = CIAT.SaveFile.GetWriteStream(this);
-            xDoc.Save(s);
-            s.Dispose();
-            CIAT.SaveFile.ReleaseWriteStreamLock();
-        }
-
-        public void Load()
-        {
-            XDocument xDoc = null;
-            Stream s = Stream.Synchronized(CIAT.SaveFile.GetReadStream(this));
-            try
-            {
-                xDoc = XDocument.Load(s);
-                s.Dispose();
-            }
-            finally
-            {
-                CIAT.SaveFile.ReleaseReadStreamLock();
-            }
-            GroupID = Convert.ToInt32(xDoc.Root.Attribute("GroupID").Value);
-            GroupIds.Add(GroupID);
-            foreach (XElement elem in xDoc.Root.Elements("rMemberId"))
-            {
-                rGroupMemberIds.Add(elem.Value);
-                Uri targetUri = CIAT.SaveFile.GetRelationship(this, elem.Value).TargetUri;
-                String sType = CIAT.SaveFile.GetTypeName(targetUri);
-                IContentsItem item = null;
-                if (sType == typeof(CIATBlock).ToString())
-                    item = CIAT.SaveFile.GetIATBlock(targetUri);
-                else if (sType == typeof(CInstructionBlock).ToString())
-                    item = CIAT.SaveFile.GetInstructionBlock(targetUri);
-                else if (sType == typeof(CSurvey).ToString())
-                    item = CIAT.SaveFile.GetSurvey(targetUri);
-                else
-                    throw new Exception("Unrecognized alternation group member type.");
-                item.AlternationGroup = this;
-                GroupMembers.Add(item);
-            }
-        }
-        /*
-                static public void WriteToXml(XmlTextWriter writer)
-                {
-                    writer.WriteStartElement("AlternationGroups");
-                    writer.WriteAttributeString("NumAlternationGroups", AlternationGroups.Keys.Count.ToString());
-                    writer.WriteElementString("PrefixSelfAlternatingSurveys", PrefixSelfAlternatingSurveys.ToString());
-                    foreach (AlternationGroup g in AlternationGroups.Values)
-                    {
-                        writer.WriteStartElement("AlternationGroup");
-                        writer.WriteElementString("GroupID", g.GroupID.ToString());
-                        writer.WriteStartElement("GroupMembers");
-                        writer.WriteAttributeString("NumGroupMembers", g.GroupMembers.Count.ToString());
-                        foreach (IContentsItem i in g.GroupMembers)
-                            writer.WriteElementString("GroupMember", i.Name);
-                        writer.WriteEndElement();
-                        writer.WriteEndElement();
-                    }
-                    writer.WriteEndElement();
-                }
-
-                public static void CreateFromXml(XmlNode node, CIAT iat)
-                {
-                    int nGroups = Convert.ToInt32(node.Attributes["NumAlternationGroups"].Value);
-                    PrefixSelfAlternatingSurveys = Convert.ToBoolean(node.ChildNodes[0].InnerText);
-                    List<IContentsItem> items = new List<IContentsItem>();
-                    for (int ctr1 = 0; ctr1 < nGroups; ctr1++)
-                    {
-                        int nID = Convert.ToInt32(node.ChildNodes[ctr1 + 1].ChildNodes[0].InnerText);
-                        int nMembers = Convert.ToInt32(node.ChildNodes[ctr1 + 1].ChildNodes[1].Attributes["NumGroupMembers"].Value);
-                        for (int ctr2 = 0; ctr2 < nMembers; ctr2++)
-                        {
-                            String name = node.ChildNodes[ctr1 + 1].ChildNodes[1].ChildNodes[ctr2].InnerText;
-                            foreach (IContentsItem ci in iat.Contents)
-                            {
-                                if (ci.Name == name)
-                                {
-                                    items.Add(ci);
-                                    break;
-                                }
-                            }
-                        }
-                        AlternationGroup g = new AlternationGroup(items.ToArray());
-                        g._GroupID = nID;
-                        items.Clear();
-                    }
-                }
-
-                static public ICollection<AlternationGroup> Groups
-                {
-                    get
-                    {
-                        return AlternationGroups.Values;
-                    }
-                }
-                */
     }
 }
 

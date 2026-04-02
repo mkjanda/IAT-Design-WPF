@@ -4,28 +4,51 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
+using System.Xml.Schema;
 
 namespace IAT.Core.Models
 {
     [XmlRoot("Stimulus")]
-    public class Trial
+    public class Trial : IValidatedItem
     {
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the entity.
+        /// </summary>
+        [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
+        public Guid Id { get; set; } = Guid.Empty;
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the associated stimulus.
+        /// </summary>
+        [XmlElement("StimulusId", Form = XmlSchemaForm.Unqualified)]  
+        public Guid StimulusId { get; set; } = Guid.Empty;
+
+        [XmlIgnore]
+        public IStimulus Stimulus { get; set; }
+
+        /// <summary>
+        /// Gets or sets the item number associated with this instance.
+        /// </summary>
+        [XmlElement("TrialNumber", Form = XmlSchemaForm.Unqualified)]
+        public int TrialNumber { get; set; }
+
         /// <summary>
         /// Gets or sets the direction associated with the key input.
         /// </summary>
-        [XmlElement("KeyedDirection")]
+        [XmlElement("KeyedDirection", Form = XmlSchemaForm.Unqualified)]
         public required KeyedDirection KeyedDirection { get; set; } = KeyedDirection.None;
 
         /// <summary>
         /// Gets or sets the block number associated with the current entity.
         /// </summary>
-        [XmlElement("BlockNum")]
-        public int BlockNum { get; set; }
+        [XmlElement("BlockNumber", Form = XmlSchemaForm.Unqualified)]
+        public int BlockNumber { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier of the block from which the entity originated.
         /// </summary>
-        [XmlElement("OriginatingBlock")]
+        [XmlElement("OriginatingBlock", Form = XmlSchemaForm.Unqualified)]
         public int OriginatingBlock { get; set; }
 
         /// <summary>
@@ -34,11 +57,7 @@ namespace IAT.Core.Models
         [XmlIgnore]
         public Uri StimulusUri { get; set; }
 
-        /// <summary>
-        /// Gets the string representation of the stimulus URI.
-        /// </summary>
-        [XmlElement("StimulusUri")]
-        public string StimulusUriString => StimulusUri.ToString() ??  String.Empty;
+        public void Validate()
 
 
         public void AddParentBlock(Block parentBlock, KeyedDirection keyedDir)
@@ -52,15 +71,15 @@ namespace IAT.Core.Models
             previewComponents.AddRange(parentBlock.GetPreviewComponents());
             DIPreview preview = new DIPreview(previewComponents);
             preview.SuspendLayout();
-            ParentBlockUris[parentBlock.URI] = new Tuple<KeyedDirection, Uri>(keyedDir, preview.URI);
-            CIAT.SaveFile.CreateRelationship(BaseType, typeof(CIATBlock), this.URI, parentBlock.URI);
+            ParentBlockUris[parentBlock.Uri] = new Tuple<KeyedDirection, Uri>(keyedDir, preview.URI);
+            CIAT.SaveFile.CreateRelationship(BaseType, typeof(CIATBlock), this.URI, parentBlock.Uri);
             CIAT.SaveFile.CreateRelationship(BaseType, preview.BaseType, this.URI, preview.URI);
         }
 
         public void DetachParentBlock(CIATBlock block)
         {
             DIBase preview = CIAT.SaveFile.GetDI(ParentBlockUris[block.URI].Item2);
-            CIAT.SaveFile.DeleteRelationship(this.URI, preview.URI);
+            CIAT.SaveFile.DeleteRelationship(this.URI, preview.Uri);
             CIAT.SaveFile.DeleteRelationship(this.URI, block.URI);
             preview.Dispose();
             ParentBlockUris.Remove(block.URI);
@@ -71,7 +90,7 @@ namespace IAT.Core.Models
         public CIATItem()
         {
             this.URI = CIAT.SaveFile.Register(this);
-            _StimulusUri = DIBase.DINull.URI;
+            _StimulusUri = DIBase.DINull.Uri;
             CIAT.SaveFile.ActivityLog.LogEvent(ActivityLog.EventType.Create, URI);
         }
 

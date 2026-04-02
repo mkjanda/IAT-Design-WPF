@@ -1,14 +1,18 @@
-﻿using System.Windows;
+﻿using FluentValidation;
+using System.Windows;
 using Velopack;
 using Microsoft.Extensions.DependencyInjection;
+using IAT.Core.Models;
 using IAT.Core.Services;
+using IAT.Core.Services.Validation;
 using IAT.ViewModels;
+using System.CodeDom;
 
 namespace IAT_Design_WPF
 {
     public partial class App : Application
     {
-        public static IServiceProvider Services { get; private set; } = null!;
+        public static IServiceProvider Services { get; private set; }
 
         protected override async void OnStartup(StartupEventArgs e)
         {
@@ -36,7 +40,9 @@ namespace IAT_Design_WPF
             // Register your services here as we build them
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
-            services.AddTransient<TestDesignerViewModel>();       
+            services.AddScoped<IValidator<Test>, TestValidator>();
+            services.AddTransient<TestDesignerViewModel>();
+            services.AddTransient<ValidationService>();
 
             Services = services.BuildServiceProvider();
 
