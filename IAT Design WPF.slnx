@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="CHANGELOG.md" />
+  </Folder>
   <Project Path="IAT Design WPF/IAT Design WPF.csproj" />
   <Project Path="IAT.Core/IAT.Core.csproj" />
   <Project Path="IAT.VIewModels/IAT.ViewModels.csproj" />

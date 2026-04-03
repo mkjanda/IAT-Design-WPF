@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using IAT.Core.Models;
 using com.sun.crypto.provider;
-namespace IAT.Core.Services.Validation
+using IAT.Core.Models.Serializable;
+namespace IAT.Core.Validation
 {
 
     /// <summary>

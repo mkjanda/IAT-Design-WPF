@@ -1,13 +1,8 @@
 ﻿using FluentValidation;
-using IAT.Core.Models;
 using IAT.Core.Models.Enumerations;
-using net.sf.saxon.om;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Text;
+using IAT.Core.Models.Serializable;
 
-namespace IAT.Core.Services.Validation
+namespace IAT.Core.Validation
 {
     /// <summary>
     /// Provides static methods and properties for validating items and tracking validation errors within the
@@ -27,12 +22,15 @@ namespace IAT.Core.Services.Validation
         public TrialValidator()
         {
             RuleFor(x => x.KeyedDirection).NotEqual(KeyedDirection.None).
-                WithMessage(trial => $"Item #{trial.TrialNumber} in IAT block #{trial.BlockNumber} has not been assigned a keyed direction.").WithState(x => x.Id);
+                WithMessage(trial => $"Item #{trial.TrialNumber} in IAT block #{trial.BlockNumber} has not been assigned a keyed direction.").
+                WithState(x => x.Id);
 
             RuleFor(x => x.StimulusId).NotEqual(Guid.Empty).
-                WithMessage(trial => $"Item #{trial.TrialNumber} in IAT block #{trial.BlockNumber} has not been assigned a stimulus.").WithState(x => x.Id);
+                WithMessage(trial => $"Item #{trial.TrialNumber} in IAT block #{trial.BlockNumber} has not been assigned a stimulus.").
+                WithState(x => x.Id);
 
-            RuleFor(x => x.Stimulus.IsInitialized).NotEqual(false).WithMessage(trial => $"The image stimulus for item #{trial.TrialNumber} in IAT block #{trial.BlockNumber} has not been properly defined.").
+            RuleFor(x => x.Stimulus.IsInitialized).NotEqual(false).
+                WithMessage(x => $"The image stimulus for item #{x.TrialNumber} in IAT block #{x.BlockNumber} has not been properly defined.").
                 WithState(x => x.Id);
         }
     }

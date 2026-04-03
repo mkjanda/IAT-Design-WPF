@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace IAT.Core.Services.Validation
+namespace IAT.Core.Validation
 {
     /// <summary>
     /// Defines a contract for an item that can be validated and can report validation errors.

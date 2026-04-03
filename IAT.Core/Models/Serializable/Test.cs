@@ -2,17 +2,25 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
+using System.Xml.Schema;
 using IAT.Core.Models.Enumerations;
+using System.ComponentModel.DataAnnotations;
 
-namespace IAT.Core.Models
+namespace IAT.Core.Models.Serializable
 {
     public class Test : IDisposable, IPackagePart
     {
         /// <summary>
         /// Gets or sets the Uniform Resource Identifier (URI) associated with this instance.
         /// </summary>
-        [XmlElement("Uri")]
-        public Uri URI { get; set; }
+        [XmlElement("Uri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        public Uri? Uri{ get; set; }
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the entity.
+        /// </summary>
+        [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
+        public Guid Id { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Represents the part type for the package, set to IAT.
@@ -23,13 +31,13 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the type of token the test taker is identified byrepresented by this instance.
         /// </summary>
-        [XmlElement("TokenType")]
+        [XmlElement("TokenType", Form = XmlSchemaForm.Unqualified)]
         public TokenType TokenType { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the token used for authentication or identification purposes.
         /// </summary>
-        [XmlElement("TokenName")]
+        [XmlElement("TokenName", Form = XmlSchemaForm.Unqualified)]
         public String TokenName { get; set; }
 
 
@@ -48,10 +56,10 @@ namespace IAT.Core.Models
         /// <remarks>Modifying this property updates the set of alternation groups maintained by the
         /// instance. Adding an identifier creates a new alternation group if it does not already exist. Removing an
         /// identifier deletes the corresponding alternation group and its associated resources.</remarks>
-        [XmlArray("AlternationGroupIds")]
-        [XmlArrayItem("AlternationGroupId")]
-        public List<int> AlternationGroupIds
-        {
+        [XmlArray("AlternationGroupIds", Form = XmlSchemaForm.Unqualified)]
+        [XmlArrayItem("AlternationGroupId", Form = XmlSchemaForm.Unqualified)]
+        public List<Guid> AlternationGroupIds { get; } = [];
+/*        {
             get
             {
                 return AlternationGroups.Keys.ToList();
@@ -77,7 +85,7 @@ namespace IAT.Core.Models
                 }
             }
         }
-
+*/
         private CUniqueResponse _UniqueResponse = null;
         public ContentsList Contents { get; private set; } = new ContentsList();
         public String Name { get; set; }

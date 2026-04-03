@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace IAT.Core.Services.Validation
+namespace IAT.Core.Validation
 {
     /// <summary>
     /// Specifies the possible causes of a validation exception encountered during configuration or runtime validation. 

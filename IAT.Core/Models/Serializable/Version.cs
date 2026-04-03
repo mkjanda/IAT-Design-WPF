@@ -3,9 +3,15 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 ;
 
-namespace IAT.Core.Models
+namespace IAT.Core.Models.Serializable
 {
-    internal class Version
+    /// <summary>
+    /// Represents a software version number consisting of release, major, minor, and trivial components.
+    /// </summary>
+    /// <remarks>The Version class provides functionality to parse, compare, and represent version numbers in
+    /// the format 'Release.Major.Minor.Trivial'. Instances of this class are immutable after construction. Use the
+    /// Compare or CompareTo methods to determine the ordering of two version instances.</remarks>
+    public sealed class Version
     {
         private int Release, Major, Minor, Trivial;
 

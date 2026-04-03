@@ -1,15 +1,9 @@
 ﻿using IAT.Core.Models.Enumerations;
-using IAT.Core.Services.Validation;
-using net.sf.saxon.functions;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
-using System.Xml.Linq;
+using IAT.Core.Validation;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace IAT.Core.Models
+namespace IAT.Core.Models.Serializable
 {
     /// <summary>
     /// Represents a block of items within an IAT (Implicit Association Test), containing presentations, instructions,
@@ -20,8 +14,7 @@ namespace IAT.Core.Models
     /// provides methods for validation, serialization, and previewing. Blocks are typically managed as part of an IAT's
     /// structure and can be added, removed, or reordered within the test. Thread safety is not guaranteed; external
     /// synchronization is required for concurrent access.</remarks>
-    [XmlRoot("Block")]
-    public class Block : IPackagePart, IContentsItem, IPreviewable, IValidatedItem
+    public class Block : IPackagePart, IValidatedItem
     {
 
         /// <summary>
@@ -62,8 +55,8 @@ namespace IAT.Core.Models
         /// </summary>
         /// <remarks>The alternation group defines a set of mutually exclusive options for the element. If set to null, no
         /// alternation group is applied.</remarks>
-        [XmlElement("AlternationGroupGuid", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        required public Guid? AlternationGroupId { get; set; } = null;
+        [XmlElement("AlternationGroupGuid", Form = XmlSchemaForm.Unqualified)]
+        required public Guid AlternationGroupId { get; set; } = Guid.Empty;
 
 
         /// <summary>
@@ -76,27 +69,27 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the URI where instructions for completing the process can be accessed.
         /// </summary>
-        [XmlElement("InstructionsId", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Guid? InstructionsId { get; set; }
+        [XmlElement("InstructionsId", Form = XmlSchemaForm.Unqualified)]
+        public required Guid InstructionsId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI used to display the left-side response in a comparison or review scenario.
         /// </summary>
-        [XmlElement("LeftResponseDisplayUri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Guid? LeftResponseId { get; set; }
+        [XmlElement("LeftResponseDisplayUri", Form = XmlSchemaForm.Unqualified)]
+        public required Guid LeftResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI used to display the right-side response in the user interface.
         /// </summary>
-        [XmlElement("RightResponseDisplayUri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Guid? RightResponseId { get; set; }
+        [XmlElement("RightResponseDisplayUri", Form = XmlSchemaForm.Unqualified)]
+        public required Guid RightResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets the collection of unique identifiers for the associated trials.
         /// </summary>
         [XmlArray("TrialIds", Form = XmlSchemaForm.Unqualified)]
         [XmlArrayItem("TrialId", Form = XmlSchemaForm.Unqualified)]
-        public required List<Guid> TrialIds { get; init; } = new();
+        public required List<Guid> TrialIds { get; init; } = [];
 
         /// <summary>
         /// Gets the collection of trials associated with this instance.
@@ -104,7 +97,7 @@ namespace IAT.Core.Models
         /// <remarks>The returned list is initialized to an empty collection and is required to be set
         /// during object initialization. The property is read-only after initialization.</remarks>
         [XmlIgnore]
-        public required List<Trial> Trials { get; init; } = new();
+        public required List<Trial> Trials { get; init; } = [];
 
         /// <summary>
         /// Indicates whether the item is a header item.
@@ -217,117 +210,8 @@ namespace IAT.Core.Models
         public void Validate(Dictionary<IValidatedItem, ValidationError> ErrorDictionary) => this.Validate(ErrorDictionary);
 
 
-        public void AddItem(CIATItem i, KeyedDirection kd)
-        {
-            String rId = CIAT.SaveFile.CreateRelationship(BaseType, i.BaseType, this.Uri, i.URI);
-            ItemTuples.Add(new Tuple<String, Uri>(rId, i.URI));
-            i.AddParentBlock(this, kd);
-            if (!CIAT.SaveFile.IAT.Is7Block)
-                return;
-            int blockNum = CIAT.SaveFile.IAT.Blocks.IndexOf(this) + 1;
-            CIATBlock b = null;
-            if ((blockNum == 1) || (blockNum == 2))
-            {
-                b = CIAT.SaveFile.IAT.Blocks[2];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[2], kd);
-                b = CIAT.SaveFile.IAT.Blocks[3];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[3], kd);
-            }
-            if (blockNum == 1)
-            {
-                b = CIAT.SaveFile.IAT.Blocks[5];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[5], kd);
-                b = CIAT.SaveFile.IAT.Blocks[6];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[6], kd);
-            }
-            else if (blockNum == 2)
-            {
-                b = CIAT.SaveFile.IAT.Blocks[4];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[4], kd.Opposite);
-                b = CIAT.SaveFile.IAT.Blocks[5];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[5], kd.Opposite);
-                b = CIAT.SaveFile.IAT.Blocks[6];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, i.BaseType, b.URI, i.URI), i.URI));
-                i.AddParentBlock(CIAT.SaveFile.IAT.Blocks[6], kd.Opposite);
-            }
-        }
 
-        public void MoveItem(int startNdx, int endNdx)
-        {
-            Tuple<String, Uri> tup = ItemTuples[startNdx];
-            ItemTuples.RemoveAt(startNdx);
-            if (startNdx < endNdx)
-                ItemTuples.Insert(endNdx, tup);
-            else
-                ItemTuples.Insert(endNdx, tup);
-        }
-
-
-        public void InsertItem(int ndx, CIATItem item)
-        {
-            String rId = CIAT.SaveFile.CreateRelationship(BaseType, item.BaseType, this.Uri, item.URI);
-            ItemTuples.Insert(ndx, new Tuple<String, Uri>(rId, item.URI));
-            KeyedDirection kd = IsDynamicallyKeyed ? KeyedDirection.DynamicNone : KeyedDirection.None;
-            item.AddParentBlock(this, kd);
-            CIAT.SaveFile.CreateRelationship(BaseType, item.BaseType, Uri, item.URI);
-            int blockNum = CIAT.SaveFile.IAT.Blocks.IndexOf(this) + 1;
-            CIATBlock b = null;
-            if ((blockNum == 1) || (blockNum == 2))
-            {
-                b = CIAT.SaveFile.IAT.Blocks[2];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[2], kd);
-                b = CIAT.SaveFile.IAT.Blocks[3];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[3], kd);
-            }
-            if (blockNum == 1)
-            {
-                b = CIAT.SaveFile.IAT.Blocks[5];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[5], kd);
-                b = CIAT.SaveFile.IAT.Blocks[6];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[6], kd);
-            }
-            else if (blockNum == 2)
-            {
-                b = CIAT.SaveFile.IAT.Blocks[4];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[4], kd.Opposite);
-                b = CIAT.SaveFile.IAT.Blocks[5];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[5], kd.Opposite);
-                b = CIAT.SaveFile.IAT.Blocks[6];
-                b.ItemTuples.Add(new Tuple<String, Uri>(CIAT.SaveFile.CreateRelationship(b.BaseType, item.BaseType, b.URI, item.URI), item.URI));
-                item.AddParentBlock(CIAT.SaveFile.IAT.Blocks[6], kd.Opposite);
-            }
-        }
-
-        public void RemoveItem(CIATItem i)
-        {
-            Tuple<String, Uri> tup = ItemTuples.Where(t => t.Item2.Equals(i.URI)).FirstOrDefault();
-            if (tup != null)
-            {
-                ItemTuples.Remove(tup);
-                CIAT.SaveFile.DeleteRelationship(this.Uri, tup.Item1);
-            }
-        }
-
-        public int GetItemIndex(CIATItem item)
-        {
-            return ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)).ToList().IndexOf(item);
-        }
-
-
-        Action<Images.ImageChangedEventArgs> UpdateBlockPreview = null;
-
+/*
         public void Preview(IImageDisplay previewPanel)
         {
             if (previewPanel.Tag != null)
@@ -441,24 +325,8 @@ namespace IAT.Core.Models
                     p.ResumeLayout(true);
             }
         }
+*/
 
-        public List<CFontFile.FontItem> UtilizedStimuliFonts
-        {
-            get
-            {
-                List<CFontFile.FontItem> fontItems = new List<CFontFile.FontItem>();
-                var textStimuli = ItemTuples.Select(tup => CIAT.SaveFile.GetIATItem(tup.Item2)).Select((i, n) => new { ndx = n + 1, stimulus = i.Stimulus }).Where(stim => stim.stimulus != null).Where(stim => stim.stimulus.Type == DIType.StimulusText);
-                var stimuliFonts = from ff in textStimuli.Select(nStim => nStim.stimulus as DIStimulusText).Select(tdi => tdi.PhraseFontFamily).Distinct()
-                                   select new { familyName = ff, indicies = textStimuli.Where(nStim => (nStim.stimulus as DIStimulusText).PhraseFontFamily == ff).Select(ts => ts.ndx) };
-                foreach (var stimFont in stimuliFonts)
-                {
-                    var tdis = textStimuli.Where(tdi => stimFont.indicies.Contains(tdi.ndx)).Select(tdi => tdi.stimulus).Cast<DIStimulusText>();
-                    CFontFile.FontItem fItem = new CFontFile.FontItem(stimFont.familyName, " is used for stimuli in IAT Blocks #" + ((IndexInContainer + 1 == 1) ? "1, 3, 4, 6, and 7." : "2, 3, 4, 5, 6, and 7."), null, tdis);
-                    fontItems.Add(fItem);
-                }
-                return fontItems;
-            }
-        }
     }
 }
 

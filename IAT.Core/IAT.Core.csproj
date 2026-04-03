@@ -26,7 +26,6 @@
   <ItemGroup>
     <Folder Include="Commands\" />
     <Folder Include="Models\Generated\" />
-    <Folder Include="Models\Serializable\" />
   </ItemGroup>
 
     <Target Name="GenerateXsdClasses" BeforeTargets="BeforeBuild">

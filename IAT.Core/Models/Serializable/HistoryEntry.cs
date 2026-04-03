@@ -3,7 +3,7 @@ using System.Xml.Schema;
 using System.Xml.Serialization;
 using IAT.Core.Models.Enumerations;
 
-namespace IAT.Core.Models
+namespace IAT.Core.Models.Serializable
 {
     /// <summary>
     /// Represents a single entry in the application's history, containing information about the time of the record,

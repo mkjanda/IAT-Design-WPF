@@ -1,10 +1,9 @@
-﻿using com.sun.xml.@internal.messaging.saaj.soap;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
-using IAT.Core.Models;
+using IAT.Core.Models.Serializable;
 
 namespace IAT.Core.Services
 {
@@ -21,6 +20,12 @@ namespace IAT.Core.Services
         public enum EConfirmResult { failed, emailMismatch, noSuchClient, success };
         private EConfirmResult Result = EConfirmResult.failed;
         public TransactionRequest FinalTransaction { get; private set; }
+
+
+        public EMailConfirmationService(LocalStorageService localStorageService)
+        {
+            _localStorageService = localStorageService;
+        }
 
         private void ReportError(String caption, CReportableException rex)
         {
@@ -62,7 +67,7 @@ namespace IAT.Core.Services
             }
             StartMessageReceiver();
             TransactionRequest trans = new TransactionRequest();
-            trans.Transaction = TransactionRequest.ETransaction.RequestConnection;
+            trans.Transaction = TransactionRequest.Transaction.RequestConnection;
             Envelope env = new Envelope(trans);
             env.SendMessage(EMailUtilityWebSocket, AbortToken);
             int nTrigger = WaitHandle.WaitAny(new WaitHandle[] { OpComplete, OpFailed });
@@ -151,7 +156,7 @@ namespace IAT.Core.Services
             }
             StartMessageReceiver();
             TransactionRequest trans = new TransactionRequest();
-            trans.Transaction = TransactionRequest.ETransaction.RequestConnection;
+            trans.Transaction = TransactionRequest.Transaction.RequestConnection;
             Envelope env = new Envelope(trans);
             env.SendMessage(EMailUtilityWebSocket, AbortToken);
             WaitHandle.WaitAny(new WaitHandle[] { OpComplete, OpFailed });
@@ -163,32 +168,32 @@ namespace IAT.Core.Services
             TransactionRequest inTrans = (TransactionRequest)transaction;
             switch (inTrans.Transaction)
             {
-                case TransactionRequest.ETransaction.RequestTransmission:
+                case TransactionRequest.Transaction.RequestTransmission:
                     TransactionRequest outTrans = new TransactionRequest();
-                    outTrans.Transaction = TransactionRequest.ETransaction.RequestEMailVerification;
+                    outTrans.Transaction = TransactionRequest.Transaction.RequestEMailVerification;
                     outTrans.StringValues["email"] = LocalStorage.Activation[LocalStorage.Field.UserEmail];
                     Envelope env = new Envelope(outTrans);
                     env.SendMessage(EMailUtilityWebSocket, AbortToken);
                     break;
 
-                case TransactionRequest.ETransaction.TransactionSuccess:
+                case TransactionRequest.Transaction.TransactionSuccess:
                     ActivationKey = inTrans.ActivationKey;
                     LocalStorage.Activation[LocalStorage.Field.ActivationKey] = ActivationKey;
                     Result = EConfirmResult.success;
                     OpComplete.Set();
                     break;
 
-                case TransactionRequest.ETransaction.TransactionFail:
+                case TransactionRequest.Transaction.TransactionFail:
                     Result = EConfirmResult.failed;
                     OpFailed.Set();
                     break;
 
-                case TransactionRequest.ETransaction.NoSuchClient:
+                case TransactionRequest.Transaction.NoSuchClient:
                     Result = EConfirmResult.noSuchClient;
                     OpFailed.Set();
                     break;
 
-                case TransactionRequest.ETransaction.EmailVerificationMismatch:
+                case TransactionRequest.Transaction.EmailVerificationMismatch:
                     Result = EConfirmResult.emailMismatch;
                     OpFailed.Set();
                     break;
@@ -204,25 +209,25 @@ namespace IAT.Core.Services
             TransactionRequest inTrans = (TransactionRequest)transaction;
             switch (inTrans.Transaction)
             {
-                case TransactionRequest.ETransaction.RequestTransmission:
+                case TransactionRequest.Transaction.RequestTransmission:
                     TransactionRequest outTrans = new TransactionRequest();
-                    outTrans.Transaction = TransactionRequest.ETransaction.RequestNewVerificationEMail;
+                    outTrans.Transaction = TransactionRequest.Transaction.RequestNewVerificationEMail;
                     outTrans.StringValues["email"] = LocalStorage.Activation[LocalStorage.Field.UserEmail];
                     Envelope env = new Envelope(outTrans);
                     env.SendMessage(EMailUtilityWebSocket, AbortToken);
                     break;
 
-                case TransactionRequest.ETransaction.TransactionSuccess:
+                case TransactionRequest.Transaction.TransactionSuccess:
                     FinalTransaction = inTrans;
                     OpComplete.Set();
                     break;
 
-                case TransactionRequest.ETransaction.TransactionFail:
+                case TransactionRequest.Transaction.TransactionFail:
                     FinalTransaction = inTrans;
                     OpComplete.Set();
                     break;
 
-                case TransactionRequest.ETransaction.EMailAlreadyVerified:
+                case TransactionRequest.Transaction.EMailAlreadyVerified:
                     FinalTransaction = inTrans;
                     OpComplete.Set();
                     break;

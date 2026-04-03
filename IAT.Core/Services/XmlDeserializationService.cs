@@ -1,10 +1,11 @@
-﻿using IAT.Core.Models;
-using net.sf.saxon.ma.map;
+﻿using net.sf.saxon.ma.map;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
+using IAT.Core.Models.Serializable;
+using IAT.Core.Models;
 
 namespace IAT.Core.Services
 {
@@ -12,8 +13,17 @@ namespace IAT.Core.Services
     {
         private static readonly Dictionary<string, Type> _elementToType = new(StringComparer.OrdinalIgnoreCase)
         {
+            { typeof(ActivationRequest).Name, typeof(ActivationRequest) },
+            { typeof(ActivationResponse).Name, typeof(ActivationResponse) },
+            { typeof(AlternationGroup).Name, typeof(AlternationGroup)  },
+            { typeof(Block).Name, typeof(Block) },
+            { typeof(HistoryEntry).Name, typeof(HistoryEntry) },
+            { typeof(Key).Name, typeof(Key)  },
+            { typeof(SaveFileMetaData).Name, typeof(SaveFileMetaData) },
+            { typeof(Test).Name, typeof(Test)  },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
-            { typeof(IATBlock).Name, typeof(IATBlock) }
+            { typeof(Trial).Name, typeof(Trial) },
+            { typeof(Models.Serializable.Version).Name, typeof(Models.Serializable.Version) }
         };
 
         /// <summary>
@@ -58,7 +68,7 @@ namespace IAT.Core.Services
             if (!_elementToType.TryGetValue(RootName, out var targetType))
                 throw new InvalidOperationException($"No mapping found for XML element '{RootName}'. Unable to determine type for deserialization.");
             var serializer = new XmlSerializer(targetType);
-            return serializer.Deserialize(xmlReader) ?? throw new InvalidOperationException($"Deserialization of XML element '{elementName}' resulted in a null object.");
+            return serializer.Deserialize(xmlReader) ?? throw new InvalidOperationException($"Deserialization of XML element '{RootName}' resulted in a null object.");
         }
     }
 }

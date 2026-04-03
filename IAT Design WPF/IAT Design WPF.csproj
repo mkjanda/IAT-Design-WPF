@@ -107,7 +107,6 @@
     <Folder Include="Models\" />
     <Folder Include="Extensions\" />
     <Folder Include="Utilities\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 
 </Project>

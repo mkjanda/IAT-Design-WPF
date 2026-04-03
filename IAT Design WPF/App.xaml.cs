@@ -2,11 +2,12 @@
 using System.Windows;
 using Velopack;
 using Microsoft.Extensions.DependencyInjection;
-using IAT.Core.Models;
 using IAT.Core.Services;
-using IAT.Core.Services.Validation;
 using IAT.ViewModels;
 using System.CodeDom;
+using IAT.Core.Models.Serializable;
+using IAT.Core.Validation;
+using IAT_Design_WPF.Services;
 
 namespace IAT_Design_WPF
 {
@@ -40,9 +41,11 @@ namespace IAT_Design_WPF
             // Register your services here as we build them
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
+            services.AddSingleton<IStringResourceService, StringResourceService>();
             services.AddScoped<IValidator<Test>, TestValidator>();
-            services.AddTransient<TestDesignerViewModel>();
+            services.AddSingleton<IUserNotificationService, UserNotificationService>(); 
             services.AddTransient<ValidationService>();
+            services.AddTransient<WebSocketService>();
 
             Services = services.BuildServiceProvider();
 

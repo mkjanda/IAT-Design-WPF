@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using IAT.Core.Models;
+using IAT.Core.Models.Serializable;
 
-namespace IAT.Core.Services.Validation
+namespace IAT.Core.Validation
 {
     public class TestValidator : AbstractValidator<Test>
     {

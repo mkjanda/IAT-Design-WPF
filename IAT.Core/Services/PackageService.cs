@@ -1,6 +1,7 @@
 ﻿using com.sun.org.apache.xml.@internal.utils;
 using IAT.Core.Models;
 using IAT.Core.Models.Enumerations;
+using IAT.Core.Models.Serializable;
 using javax.annotation;
 using sun.awt.geom;
 using System.Collections.Concurrent;

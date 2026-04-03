@@ -12,7 +12,7 @@ namespace IAT.Core.Models
     /// <remarks>Implementations of this interface represent individual parts within a package structure, such
     /// as files or resources. The interface extends IDisposable, indicating that implementations may hold unmanaged
     /// resources that should be released when no longer needed.</remarks>
-    public interface IPackagePart : IDisposable
+    public interface IPackagePart 
     {
         /// <summary>
         /// Gets or sets the URI that uniquely identifies this package part within the package.

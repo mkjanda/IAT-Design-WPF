@@ -7,9 +7,10 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Xml.Serialization
 
+
 using static System.Net.Mime.MediaTypeNames;
 
-namespace IAT.Core.Models
+namespace IAT.Core.Models.Serializable
 {
     [XmlRoot("Envelope")]
     public class Envelope

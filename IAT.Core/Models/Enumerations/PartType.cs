@@ -1,5 +1,6 @@
 ﻿using System;
-using IAT.Core.Models;
+using IAT.Core.Models.Serializable;
+
 namespace IAT.Core.Models.Enumerations
 {
     /// <summary>
@@ -11,11 +12,12 @@ namespace IAT.Core.Models.Enumerations
         /// <summary>
         /// Represents the block type used for IAT (Implicit Association Test) blocks.
         /// </summary>
+        public static readonly PartType Block = new _Block();
 
         /// <summary>
         /// Represents a block type for instructions within the document structure.
         /// </summary>
-        public static readonly PartType Block = new _Block();
+        public static readonly PartType Instructinons = new _Instructions();
 
         /// <summary>
         /// Represents the part type for a history entry in the system.
@@ -71,6 +73,11 @@ namespace IAT.Core.Models.Enumerations
         public static readonly PartType SaveFileMetaData = new _SaveFileMetaData();
 
         /// <summary>
+        /// Gets the part type that represents a key component.
+        /// </summary>
+        public static readonly PartType Key = new _Key();
+
+        /// <summary>
         /// Returns the corresponding BlockType value for the specified block type name.
         /// </summary>
         /// <remarks>The method recognizes several common block type names, including "block", "iatblock",
@@ -88,6 +95,7 @@ namespace IAT.Core.Models.Enumerations
             name.Equals("stimulustext", StringComparison.OrdinalIgnoreCase) ? StimulusText :
             name.Equals("savefilemetadata", StringComparison.OrdinalIgnoreCase) ? SaveFileMetaData :
             name.Equals("iat", StringComparison.OrdinalIgnoreCase) ? IAT :
+            name.Equals("key", StringComparison.OrdinalIgnoreCase) ? Key :
             throw new ArgumentException($"Unknown block type: {name}");
 
         /// <summary>
@@ -106,6 +114,7 @@ namespace IAT.Core.Models.Enumerations
             type == typeof(StimulusText) ? StimulusText :
             type == typeof(SaveFileMetaData) ? SaveFileMetaData :
             type == typeof(Test) ? IAT :
+            type == typeof(Key) ? Key :
             throw new ArgumentException($"Unknown block type: {type}");
 
 
@@ -135,7 +144,7 @@ namespace IAT.Core.Models.Enumerations
         /// <remarks>A block groups a sequence of trials that share common settings or instructions.
         /// Blocks are typically used to organize the structure of an IAT, allowing for the definition of different
         /// phases or conditions within the test.</remarks>
-        public sealed record _Block() : PartType("Block", "Block of trials", typeof(Block), typeof(Block))
+        public sealed record _Block() : PartType("Block", "Block of trials", typeof(Block), typeof(Block), "textt/xml+" + typeof(Block).ToString())
         {
         }
 
@@ -145,7 +154,7 @@ namespace IAT.Core.Models.Enumerations
         /// <remarks>Use this type to define or identify sections of instructional content within a larger
         /// workflow or application. This part type is associated with the InstructionBlock class and is intended for
         /// scenarios where a sequence of instructions needs to be presented as a distinct block.</remarks>
-        public sealed record _Instructions() : PartType("Instructions", "Block of instruction screens", typeof(InstructionBlock), typeof(InstructionBlock), "text/xml+" + typeof(InstructionBlock).ToString())
+        public sealed record _Instructions() : PartType("Instructions", "Block of instruction screens", typeof(Instructions), typeof(Instructions), "text/xml+" + typeof(Instructions).ToString())
         {
         }
 
@@ -204,6 +213,16 @@ namespace IAT.Core.Models.Enumerations
         /// structure. It is typically used in scenarios where content is composed of multiple parts, and a stimulus is
         /// a distinct, addressable element. This record is sealed and not intended for inheritance.</remarks>
         public sealed record _Stimulus() : PartType("Stimulus", "A stimulus item (word or image)", typeof(Stimulus), typeof(Stimulus), "text/xml+" + typeof(Stimulus).ToString())
+        {
+        }
+
+        /// <summary>
+        /// Represents a response key type used within an IAT block.
+        /// </summary>
+        /// <remarks>This type is used to identify and describe response keys in the context of IAT
+        /// (Implicit Association Test) blocks. It provides metadata for serialization and type identification. This
+        /// record is sealed and intended for use where a distinct key type is required for response handling.</remarks>
+        public sealed record _Key() : PartType("Key", "A response key for an IAT block", typeof(Key), typeof(Key), "text/xml+" + typeof(Key).ToString())
         {
         }
     }

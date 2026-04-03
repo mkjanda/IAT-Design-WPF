@@ -5,6 +5,13 @@ using System.Text;
 
 namespace IAT.Core.Models.Enumerations
 {
+    /// <summary>
+    /// Represents a field definition used to identify and describe data elements within the data source.
+    /// </summary>
+    /// <param name="name">The name of the field. This value is used to match and retrieve the corresponding field definition. The
+    /// comparison is case-insensitive.</param>
+    /// <param name="value">A value indicating whether the field content is encrypted. Set to <see langword="true"/> if the field requires
+    /// encryption; otherwise, <see langword="false"/>.</param>
     public abstract record Field(string name, bool value)
     {
         /// <summary>
@@ -57,7 +64,6 @@ namespace IAT.Core.Models.Enumerations
                 "useremail" => UserEmail,
                 "iatactivationkey" => ActivationKey,
                 "clientname" => UserName,
-                "version_1_1_confirmed" => Version_1_1_confirmed,
                 _ => throw new ArgumentException($"Unknown field name: {name}")
             };
         }

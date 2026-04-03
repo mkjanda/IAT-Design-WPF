@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace IAT.Core.Services.Validation
+namespace IAT.Core.Validation
 {
     public class ValidationError 
     {

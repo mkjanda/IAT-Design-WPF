@@ -6,7 +6,7 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 
-namespace IAT.Core.Models
+namespace IAT.Core.Models.Serializable
 {
     [XmlRoot("Stimulus")]
     public class Trial : IValidatedItem

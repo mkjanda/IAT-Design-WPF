@@ -1,6 +1,7 @@
 ﻿using com.sun.org.apache.xml.@internal.utils;
 using IAT.Core.Models;
 using IAT.Core.Models.Enumerations;
+using IAT.Core.Models.Serializable;
 using javax.annotation;
 using sun.awt.geom;
 using System;
@@ -136,8 +137,8 @@ namespace IAT.Core.Services
             private readonly object layoutLock = new object();
             private readonly object saveLock = new object();
             private readonly ReaderWriterLockSlim ioLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-            public Models.Version Version = new Models.Version(Properties.Resources.sVersion);
-        public List<Models.HistoryEntry> History { get { return MetaData.History; } }
+            public Models.Serializable.Version Version = new Models.Version(Properties.Resources.sVersion);
+        public List<HistoryEntry> History { get { return MetaData.History; } }
             private MemoryStream PackageStream;
             public SaveFile(String fileName, bool compressed, bool hidden)
             {

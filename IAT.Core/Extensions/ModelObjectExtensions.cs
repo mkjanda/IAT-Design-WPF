@@ -1,12 +1,19 @@
 ﻿using IAT.Core.Models;
-using sun.tools.tree;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using IAT.Core.Services.Validation;
+using IAT.Core.Models.Enumerations;
+using IAT.Core.Models.Serializable;
+using sun.awt.image;
+using System.Security.Cryptography;
 
 namespace IAT.Core.Extensions
 {
+    /// <summary>
+    /// Provides extension methods for working with alternation groups, blocks, trials, and related model objects.
+    /// </summary>
+    /// <remarks>This static class contains utility methods that extend core model types such as
+    /// AlternationGroup, Block, and Trial. The methods facilitate common operations including membership checks,
+    /// retrieval of alternates, block and trial management, and keyed direction evaluation. These extensions are
+    /// intended to simplify and standardize interactions with model objects in scenarios involving alternation and
+    /// trial management.</remarks>
     public static class ModelObjectExtensions
     {
         /// <summary>
@@ -50,7 +57,7 @@ namespace IAT.Core.Extensions
         /// <returns>The number of items in the block.</returns>
         public static int NumberOfItems(this Block block)
         {
-            return block.TrialUrs.Count;
+            return block.Trials.Count;
         }
 
         /// <summary>
@@ -84,7 +91,7 @@ namespace IAT.Core.Extensions
         {
             if (block.AlternationGroup == null)
                 return null;
-            if (block.AlternationGroup.GroupMembers.Count == 2) 
+            if (block.AlternationGroup.GroupMembers.Count == 2)
             {
                 foreach (var member in block.AlternationGroup.GroupMembers)
                 {
@@ -105,52 +112,116 @@ namespace IAT.Core.Extensions
         /// <returns>true if the block contains the specified trial; otherwise, false.</returns>
         public static bool Contains(this Block block, Trial trial) => block.TrialIds.Contains(trial.Id);
 
+        /// <summary>
+        /// Determines the effective keyed direction for the specified trial, based on the originating block and the
+        /// current block context.
+        /// </summary>
+        /// <param name="trial">The trial for which to determine the keyed direction. Must not be null.</param>
+        /// <param name="block">The current block context used to evaluate the keyed direction. Must not be null.</param>
+        /// <returns>A KeyedDirection value representing the direction to use for the trial in the context of the specified
+        /// block.</returns>
+        public static KeyedDirection GetKeyedDirection(this Trial trial, Block block)
+        {
+            if (trial.OriginatingBlock == 1)
+                return trial.KeyedDirection;
+            if ((trial.OriginatingBlock == 2) && (block.BlockNumber >= 2) && (block.BlockNumber <= 4))
+                return trial.KeyedDirection;
+            return trial.KeyedDirection.Opposite;
+        }
+
 
         /// <summary>
-        /// Validates the specified block and adds any validation errors to the provided dictionary.
+        /// Adds the specified trial to the block if it is not already present.
         /// </summary>
-        /// <param name="block">The block to validate. Must not be null.</param>
-        /// <param name="errors">A dictionary to which any validation errors found will be added. The key is the validated item, and the
-        /// value is the corresponding validation error.</param>
-        /// <exception cref="InvalidOperationException">Thrown if the block does not contain at least one trial.</exception>
-        public static void Validate(this Block block, Dictionary<IValidatedItem, ValidationError> errors)
+        /// <remarks>If the trial or its identifier already exists in the block, this method does not add
+        /// duplicates.</remarks>
+        /// <param name="block">The block to which the trial will be added. Cannot be null.</param>
+        /// <param name="trial">The trial to add to the block. Cannot be null.</param>
+        public static void AddTrial(this Block block, Trial trial)
         {
-            if (block.TrialIds.Count == 0)
-                errors.Add(block, new ValidationError()
-                {
-                    Error = Error.BlockHasNoItems,
-                    Container = block.BlockNumber,
-                    Item = -1
-                });
-            if (block.Key is null)
-                errors.Add(block, new ValidationError()
-                {
-                    Error = Error.BlockResponseKeyUndefined,
-                    Container = block.BlockNumber,
-                    Item = -1
-                });
-            foreach (var trial in block.Trials)
-                trial.Validate(errors);
-            throw new InvalidOperationException("A block must contain at least one trial.");
+            if (block.Trials.Count >= 0)
+            {
+                if (!block.Trials.Contains(trial))
+                    block.Trials.Add(trial);
+                if (!block.TrialIds.Contains(trial.Id)) 
+                    block.TrialIds.Add(trial.Id);
+            }
         }
 
-        public static void Validate(this Trial trial, Dictionary<IValidatedItem, ValidationError> errors)
+        /// <summary>
+        /// Removes the specified trial from the block and updates the associated trial identifiers.
+        /// </summary>
+        /// <remarks>If the specified trial does not exist in the block, no action is taken.</remarks>
+        /// <param name="block">The block from which the trial will be removed. Cannot be null.</param>
+        /// <param name="trial">The trial to remove from the block. Cannot be null.</param>
+        public static void RemoveTrial(this Block block, Trial trial)
         {
-            if (trial.StimulusId == Guid.Empty)
-                errors.Add(trial, new ValidationError()
-                {
-                    Error = Error.ItemStimulusUndefined,
-                    Container = trial.OriginatingBlock,
-                    Item = trial.TrialNumber
-                });
-             if (trial.Key is null)
-                errors.Add(trial, new ValidationError()
-                {
-                    Error = Error.TrialResponseKeyUndefined,
-                    Container = trial.BlockNumber,
-                    Item = trial.ItemIndex
-                });
+            block.Trials.Remove(trial);
+            block.TrialIds.Remove(trial.Id);
         }
+
+        /// <summary>
+        /// Removes the trial with the specified identifier from the block.
+        /// </summary>
+        /// <remarks>If the specified trial is not found in the block, no action is taken.</remarks>
+        /// <param name="block">The block from which to remove the trial. Cannot be null.</param>
+        /// <param name="trialId">The unique identifier of the trial to remove.</param>
+        public static void RemoveTrial(this Block block, Guid trialId)
+        {
+            var trialToRemove = block.Trials.Find(t => t.Id == trialId);
+            if (trialToRemove != null)
+            {
+                block.Trials.Remove(trialToRemove);
+                block.TrialIds.Remove(trialId);
+            }
+        }
+
+        /// <summary>
+        /// Returns the zero-based index of the trial with the specified identifier within the block's collection of
+        /// trials.
+        /// </summary>
+        /// <param name="block">The block containing the collection of trials to search.</param>
+        /// <param name="trialId">The unique identifier of the trial to locate.</param>
+        /// <returns>The zero-based index of the trial if found; otherwise, -1.</returns>
+        public static int GetTrialIndex(this Block block, Guid trialId)
+        {
+            return block.Trials.FindIndex(t => t.Id == trialId);
+        }
+
+        /// <summary>
+        /// Verifies that the decrypted ciphertext from the handshake matches the specified plain text using the
+        /// provided RSA key.
+        /// </summary>
+        /// <remarks>This method performs a fixed-time comparison to help prevent timing attacks. The
+        /// comparison is case-sensitive and uses UTF-8 encoding for the plain text.</remarks>
+        /// <param name="handshake">The handshake containing the base64-encoded ciphertext to verify. The CipherText property must not be null
+        /// or empty.</param>
+        /// <param name="rsa">The RSA key used to decrypt the ciphertext. Must be initialized with the appropriate private key.</param>
+        /// <param name="PlainText">The plain text string to compare against the decrypted ciphertext. Encoded as UTF-8 for comparison.</param>
+        /// <returns>true if the decrypted ciphertext matches the specified plain text; otherwise, false.</returns>
+        public static bool Verify(this Handshake handshake)
+        {
+            var cipherBytes = Convert.FromBase64String(handshake.CipherText ?? string.Empty);
+            var plainBytes = Convert.FromBase64String(handshake.PlainText ?? string.Empty);
+            var decryptedBytes = Handshake.RSA.Decrypt(cipherBytes, RSAEncryptionPadding.Pkcs1);
+            return CryptographicOperations.FixedTimeEquals(decryptedBytes, plainBytes);
+        }
+
+        /// <summary>
+        /// Initializes the specified handshake with new cryptographic parameters, including a random plaintext, its
+        /// encrypted ciphertext, and the public key information.
+        /// </summary>
+        /// <remarks>This method generates a new 32-byte random plaintext, encrypts it using the
+        /// handshake's RSA public key, and sets the handshake's modulus and public key properties. The method
+        /// overwrites any existing values in the handshake instance.</remarks>
+        /// <param name="handshake">The handshake object to populate with generated cryptographic values. Cannot be null.</param>
+        public static void Formulate(this Handshake handshake)
+        {
+            handshake.Modulus = Convert.ToBase64String(Handshake.RSA.ExportParameters(false).Modulus?.ToArray<byte>() ?? new byte[] { 1 });
+            handshake.PublicKey = Convert.ToBase64String(Handshake.RSA.ExportRSAPublicKey());
+            handshake.PlainText = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        }
+    }
 }
 
 
