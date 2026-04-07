@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using IAT.Core.Models.Serializable;
+using IAT.Core.Serializable;
 
 namespace IAT.Core.Validation
 {

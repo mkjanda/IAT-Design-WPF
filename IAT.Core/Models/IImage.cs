@@ -1,4 +1,4 @@
-﻿using IAT.Core.Models.Enumerations;
+﻿using IAT.Core.Enumerations;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

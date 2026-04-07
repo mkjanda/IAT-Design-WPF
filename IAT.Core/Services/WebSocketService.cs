@@ -1,14 +1,13 @@
-﻿using IAT.Core.Models.Serializable;
-using System;
+﻿using System;
 using System.Windows;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
-using IAT.Core.Models.Enumerations;
-using IAT_Design_WPF.Services;
 using System.Runtime.ExceptionServices;
 using System.Xml.Serialization;
 using IAT.Core.Extensions;
+using IAT.Core.Serializable;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services
 {

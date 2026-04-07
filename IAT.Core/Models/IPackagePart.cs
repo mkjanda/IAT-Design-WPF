@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using IAT.Core.Models.Enumerations;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Models
 {
@@ -17,7 +17,7 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the URI that uniquely identifies this package part within the package.
         /// </summary>
-        Uri? Uri { get; set; }
+        Uri? Uri { get; }
 
         /// <summary>
         /// Gets the type of the package part represented by this instance.

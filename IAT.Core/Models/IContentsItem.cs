@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IAT.Core.Serializable;
+using System;
 using System.Collections.Generic;
 using System.Text;
 

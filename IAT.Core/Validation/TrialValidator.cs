@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
-using IAT.Core.Models.Enumerations;
-using IAT.Core.Models.Serializable;
+using IAT.Core.Enumerations;
+using IAT.Core.Serializable;
 
 namespace IAT.Core.Validation
 {

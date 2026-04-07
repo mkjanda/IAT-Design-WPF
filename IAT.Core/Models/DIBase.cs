@@ -1,4 +1,5 @@
-﻿using IAT.Core.Models.Serializable;
+﻿using IAT.Core.Enumerations;
+using IAT.Core.Serializable;
 using java.awt;
 using java.util;
 using System;
@@ -12,61 +13,49 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
+using System.Xml.Schema;
 
 namespace IAT.Core.Models
 {
 
     public abstract class DIBase : IDisposable, IPackagePart, ICloneable
     {
-        protected class InvalidationStates
-        {
-            public static readonly InvalidationStates InvalidationReady = new InvalidationStates("InvalidationReady");
-            public static readonly InvalidationStates Invalidating = new InvalidationStates("Invalidating");
-            public static readonly InvalidationStates InvalidationQueued = new InvalidationStates("InvalidationQueued");
-            public static readonly InvalidationStates CacheInvalidationQueued = new InvalidationStates("CacheInvalidationQueued");
-            public static readonly InvalidationStates BlockedInvalidationQueued = new InvalidationStates("BlockedInvalidationQueued");
-            private InvalidationStates(String val)
-            {
-                Value = val;
-            }
-            private String Value { get; set; }
-            private static IEnumerable<InvalidationStates> States = new InvalidationStates[] {InvalidationReady, Invalidating, InvalidationQueued, CacheInvalidationQueued,
-                BlockedInvalidationQueued };
-            public override String ToString()
-            {
-                return Value;
-            }
-            public static InvalidationStates Parse(String val)
-            {
-                return States.Where(s => s.Value == val).FirstOrDefault();
-            }
-        }
+        /// <summary>
+        /// Gets or sets the URI associated with this instance.
+        /// </summary>
+        [XmlElement("Uri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
+        public Uri? Uri { get; set; } = null;
 
-        private String _rImageId = null;
-        public virtual String rImageId
-        {
-            get
-            {
-                if ((_rImageId == null) && (_IImage == null))
-                    return null;
-                if (_rImageId == null)
-                    _rImageId = CIAT.SaveFile.GetRelationship(MetaDataDoc, _IImage);
-                return _rImageId;
-            }
-            protected set
-            {
-                _rImageId = value;
-            }
-        }
+        /// <summary>
+        /// Gets the package part type associated with this instance.
+        /// </summary>
+        [XmlElement("PackagePartType", Form = XmlSchemaForm.Unqualified)]
+        public PartType PackagePartType => PartType.DIBase;
 
-        protected InvalidationStates InvalidationState = InvalidationStates.InvalidationReady;
+        /// <summary>
+        /// Gets or sets the unique identifier for the entity.
+        /// </summary>
+        [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [XmlElement("ImageId", Form = XmlSchemaForm.Unqualified)]
+        public required Guid ImageId { get; set; } = Guid.Empty;
+
+        /// <summary>
+        /// Gets or sets the current invalidation state for the object.
+        /// </summary>
+        [XmlIgnore]
+        protected InvalidationState State { get; set; } = InvalidationState.InvalidationReady;
+
+        [XmlIgnore]
         protected bool IsDisposed { get; set; } = false;
-        protected bool IsDisposing { get; set; } = false;
-        private bool Replaced { get; set; } = false;
-        protected bool Broken { get; set; } = false;
-        protected Func<Size> GetBoundingSize;
-        protected readonly object lockObject = new object();
-        private Images.IImage _IImage = null;
+
+        [XmlIgnore]
+        private IImage? Image
+        {
+
+        }
         protected ImageMetaDataDocument MetaDataDoc { get { return CIAT.SaveFile.ImageMetaDataDocument; } }
         public virtual Images.IImage IImage
         {
@@ -94,11 +83,8 @@ namespace IAT.Core.Models
                 IImage.Changed += new Action<Images.ImageEvent, Images.IImageMedia, object>(OnImageEvent);
             }
         }
-        public virtual Uri Uri { get; set; }
         public virtual bool IsObservable { get { return false; } }
-        public Type BaseType { get { return typeof(DIBase); } }
         public long Expiration { get; set; }
-        public virtual IImageDisplay PreviewPanel { get; set; } = null;
         public virtual bool IsComposite { get { return false; } }
         private bool WaitingOnInvalidation { get; set; } = false;
         public virtual IUri IUri { get; private set; }
@@ -323,18 +309,6 @@ namespace IAT.Core.Models
                 this.rImageId = rImageId;
                 this.IImage = CIAT.SaveFile.GetIImage(CIAT.SaveFile.ImageMetaDataDocument.Entries[rImageId].ImageUri);
                 this.IImage.Changed += new Action<Images.ImageEvent, Images.IImageMedia, object>(OnImageEvent);
-            }
-        }
-
-        public virtual void ClearImage()
-        {
-            lock (lockObject)
-            {
-                if (this.IImage != null)
-                {
-                    this.IImage.Dispose();
-                }
-                this.IImage = null;
             }
         }
 

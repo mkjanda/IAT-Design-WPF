@@ -4,11 +4,17 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
-using IAT.Core.Models.Serializable;
-using IAT.Core.Models;
+using IAT.Core.Serializable;
 
 namespace IAT.Core.Services
 {
+    /// <summary>
+    /// Provides functionality to deserialize XML data into objects of known types based on the XML element name.
+    /// </summary>
+    /// <remarks>This service determines the target object type for deserialization by mapping the root XML
+    /// element name to a registered .NET type. It supports deserialization from XML strings, streams, or XML readers.
+    /// The set of supported types is defined internally and may be extended as needed. If the XML element name does not
+    /// correspond to a registered type, deserialization will fail with an exception.</remarks>
     public class XmlDeserializationService : IXmlDeserializationService
     {
         private static readonly Dictionary<string, Type> _elementToType = new(StringComparer.OrdinalIgnoreCase)
@@ -23,7 +29,7 @@ namespace IAT.Core.Services
             { typeof(Test).Name, typeof(Test)  },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
             { typeof(Trial).Name, typeof(Trial) },
-            { typeof(Models.Serializable.Version).Name, typeof(Models.Serializable.Version) }
+            { typeof(Serializable.Version).Name, typeof(Serializable.Version) }
         };
 
         /// <summary>

@@ -5,9 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 using IAT.Core.Services;
 using IAT.ViewModels;
 using System.CodeDom;
-using IAT.Core.Models.Serializable;
 using IAT.Core.Validation;
 using IAT_Design_WPF.Services;
+using IAT.Core.Serializable;
 
 namespace IAT_Design_WPF
 {

@@ -1,7 +1,7 @@
-﻿using IAT.Core.Models;
-using IAT.Core.Models.Enumerations;
-using IAT.Core.Models.Serializable;
-using sun.awt.image;
+﻿using com.sun.org.apache.xml.@internal.resolver.helpers;
+using IAT.Core.Enumerations;
+using IAT.Core.Models;
+using IAT.Core.Serializable;
 using System.Security.Cryptography;
 
 namespace IAT.Core.Extensions
@@ -143,7 +143,7 @@ namespace IAT.Core.Extensions
             {
                 if (!block.Trials.Contains(trial))
                     block.Trials.Add(trial);
-                if (!block.TrialIds.Contains(trial.Id)) 
+                if (!block.TrialIds.Contains(trial.Id))
                     block.TrialIds.Add(trial.Id);
             }
         }
@@ -220,6 +220,66 @@ namespace IAT.Core.Extensions
             handshake.Modulus = Convert.ToBase64String(Handshake.RSA.ExportParameters(false).Modulus?.ToArray<byte>() ?? new byte[] { 1 });
             handshake.PublicKey = Convert.ToBase64String(Handshake.RSA.ExportRSAPublicKey());
             handshake.PlainText = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        }
+
+        /// <summary>
+        /// Subscribes an observer to receive notifications from the specified observable GUID source.
+        /// </summary>
+        /// <remarks>The observer will be added to the list of subscribers and will receive updates when
+        /// the observable GUID changes. This method does not prevent duplicate subscriptions of the same
+        /// observer.</remarks>
+        /// <param name="observableGuid">The observable GUID source to which the observer will be subscribed. Cannot be null.</param>
+        /// <param name="subscriber">The observer that will receive notifications. Cannot be null.</param>
+        public static void Subscribe(this ObservableValue observableGuid, IObserver<Guid> subscriber)
+        {
+            observableGuid.Observers.Add(subscriber);
+            subscriber.OnNext(observableGuid.Value);
+        }
+
+        /// <summary>
+        /// Removes the specified observer from the list of subscribers to the observable GUID sequence.
+        /// </summary>
+        /// <remarks>If the specified observer is not currently subscribed, this method has no
+        /// effect.</remarks>
+        /// <param name="observableGuid">The observable GUID instance from which the observer will be unsubscribed. Cannot be null.</param>
+        /// <param name="subscriber">The observer to remove from the subscription list. Cannot be null.</param>
+        public static void Unsubscribe(this ObservableValue observableGuid, IObserver<Guid> subscriber)
+        {
+            observableGuid.Observers.Remove(subscriber);
+        }
+
+        /// <summary>
+        /// Compares two version instances and determines their relative order based on release, major, minor, and
+        /// trivial components.
+        /// </summary>
+        /// <remarks>Comparison is performed in descending order, prioritizing the release component,
+        /// followed by major, minor, and trivial components. This method is useful for sorting or ordering version
+        /// objects from highest to lowest.</remarks>
+        /// <param name="v1">The first version to compare.</param>
+        /// <param name="v2">The second version to compare.</param>
+        /// <returns>A negative integer if v2 is greater than v1; zero if v1 and v2 are equal; a positive integer if v1 is
+        /// greater than v2.</returns>
+        static public int CompareTo(this Serializable.Version v1, Serializable.Version v2)
+        {
+            if (v1.Release != v2.Release)
+                return v2.Release - v1.Release;
+            if (v1.Major != v2.Major)
+                return v2.Major - v1.Major;
+            if (v1.Minor != v2.Minor)
+                return v2.Minor - v1.Minor;
+            if (v1.Trivial != v2.Trivial)
+                return v2.Trivial - v1.Trivial;
+            return 0;
+        }
+
+        /// <summary>
+        /// Converts the specified version to its string representation in the format 'Release.Major.Minor.Trivial'.
+        /// </summary>
+        /// <param name="version">The version to convert to a string. Cannot be null.</param>
+        /// <returns>A string that represents the version in 'Release.Major.Minor.Trivial' format.</returns>
+        public static string ToString(this Serializable.Version version)
+        {
+            return $"{version.Release}.{version.Major}.{version.Minor}.{version.Trivial}";
         }
     }
 }

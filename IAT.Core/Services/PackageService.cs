@@ -1,18 +1,15 @@
-﻿using com.sun.org.apache.xml.@internal.utils;
+﻿using IAT.Core.Enumerations;
 using IAT.Core.Models;
-using IAT.Core.Models.Enumerations;
-using IAT.Core.Models.Serializable;
-using javax.annotation;
-using sun.awt.geom;
+using IAT.Core.Serializable;
 using System.Collections.Concurrent;
 using System.IO.Packaging;
 using System.Threading;
 using System.Xml.Linq;
 using System.Xml.Schema;
+using System.Xml.Serialization;
 
 namespace IAT.Core.Services
 {
-    public class PackageService : IPackageService, IDisposable
     public class SaveFile : IDisposable
     {
         public class SaveFileMetaData : IPackagePart
@@ -62,12 +59,7 @@ namespace IAT.Core.Services
 
 
             public DateTime TimeOpened { get; private set; } = DateTime.UtcNow;
-            public ConcurrentDictionary<String, List<int>> UriCounters { get; private set; } = new ConcurrentDictionary<String, List<int>>();
             public List<HistoryEntry> History { get; private set; } = new List<HistoryEntry>();
-            public Uri Uri { get; set; }
-            public Type BaseType { get { return typeof(SaveFileMetaData); } }
-            public String MimeType { get { return "text/xml+" + typeof(SaveFileMetaData).ToString(); } }
-            public String IATRelId { get; set; } = String.Empty;
             private SaveFile SaveFile { get; set; } = null;
             public CVersion Version { get; private set; } = new CVersion();
             public SaveFileMetaData(SaveFile saveFile)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
-using IAT.Core.Models.Serializable;
+using IAT.Core.Serializable;
 
 namespace IAT.Core.Services
 {

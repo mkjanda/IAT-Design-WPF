@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace IAT_Design_WPF.Services
+namespace IAT.Core.Services
 {
     /// <summary>
     /// Provides methods for retrieving localized string resources by key.

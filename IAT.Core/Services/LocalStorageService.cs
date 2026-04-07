@@ -13,8 +13,8 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
-using IAT.Core.Models.Enumerations;
 using java.io;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services
 {

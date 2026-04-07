@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Text;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Models
 {
@@ -19,7 +19,5 @@ namespace IAT.Core.Models
         void ResumeChangeEvents();
         void LoadImage();
         void DisposeOfImage();
-
-
     }
 }

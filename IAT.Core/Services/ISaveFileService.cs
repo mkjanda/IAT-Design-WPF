@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using IAT.Core.Serializable;
 
 namespace IAT.Core.Services
 {
-    internal class ISaveFileService
+    public interface ISaveFileService
     {
+
+        public Serializable.Version CurrentVersion { get; }
     }
 }
