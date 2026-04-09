@@ -39,6 +39,13 @@ namespace IAT.Core.Models
         [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
         public Guid Id { get; set; } = Guid.NewGuid();
 
+        /// <summary>
+        /// The layout item associated with this display item, which defines its position and size within a layout. This property 
+        /// is abstract and must be implemented by derived classes to provide the specific layout information for the display item.
+        /// </summary>
+        public abstract LayoutItem LayoutItem { get; }
+
+
         [XmlElement("ImageId", Form = XmlSchemaForm.Unqualified)]
         public required Guid ImageId { get; set; } = Guid.Empty;
 
@@ -56,7 +63,7 @@ namespace IAT.Core.Models
         {
 
         }
-        protected ImageMetaDataDocument MetaDataDoc { get { return CIAT.SaveFile.ImageMetaDataDocument; } }
+        protected ImageDocument MetaDataDoc { get { return CIAT.SaveFile.ImageMetaDataDocument; } }
         public virtual Images.IImage IImage
         {
             get

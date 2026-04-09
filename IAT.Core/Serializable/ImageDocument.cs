@@ -7,6 +7,8 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using IAT.Core.Enumerations;
+using com.sun.xml.@internal.bind;
+using System.ComponentModel;
 
 namespace IAT.Core.Serializable
 {
@@ -18,24 +20,20 @@ namespace IAT.Core.Serializable
     /// and remove entries as part of a document packaging system. It implements the IPackagePart interface to integrate
     /// with package management workflows. Thread safety is not guaranteed; callers should ensure appropriate
     /// synchronization if accessed concurrently.</remarks>
-    public class ImageMetaDataDocument : IPackagePart
+    public class ImageDocument : IPackagePart
     {
         public Uri? Uri { get; set; } = PackUriHelper.CreatePartUri(new Uri("ImageMetaData.xml", UriKind.Relative));
-        public PartType PackagePartType => PartType.ImageMetaDataDocument;
+        public PartType PackagePartType => PartType.ImageDocument;
         public Guid Id { get; set; } = Guid.Empty;
 
         [XmlIgnore]
-        public required Dictionary<string, ImageMetaData> Entries { get; init; } = new();
+        public required Dictionary<Guid, DisplayItem> DisplayItems{ get; init; } = new();
 
+        [XmlArray("DisplayItemGuids", Form = XmlSchemaForm.Unqualified)]
+        [XmlArrayItem("Guid", Form = XmlSchemaForm.Unqualified, Type = typeof(Guid))]
+        private List<Guid> DisplayItemGuids = new();
 
-        struct 
-
-        [XmlArray("Entries")]
-        [XmlrrayItem("Emtry")]
-
-
-
-        public ImageMetaDataDocument()
+        public ImageDocument()
         {
         }
 
@@ -86,9 +84,9 @@ namespace IAT.Core.Serializable
                 s.Dispose();
                 CIAT.SaveFile.ReleaseReadStreamLock();
             }
-            foreach (var meta in xDoc.Root.Elements(typeof(ImageMetaDataDocument).Name))
+            foreach (var meta in xDoc.Root.Elements(typeof(ImageDocument).Name))
             {
-                var data = new ImageMetaData(this, meta);
+                var data = new DisplayItem(this, meta);
                 Entries[data.ImageRelId] = data;
             }
         }

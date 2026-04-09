@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
 using System.Xml.Schema;
+using System.IO.Packaging;
 
 namespace IAT.Core.Models
 {
@@ -20,7 +21,7 @@ namespace IAT.Core.Models
         /// Gets or sets the URI associated with this instance.
         /// </summary>
         [XmlElement("Uri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Uri? Uri { get; set; }
+        public Uri? Uri => PackUriHelper.CreatePartUri(new Uri($"{typeof(ValueObserver<T>).ToString()}/{Id}.xml", UriKind.Relative));
 
         /// <summary>
         /// Gets the part type associated with the package.

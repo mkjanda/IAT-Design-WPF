@@ -11,12 +11,13 @@ using System.Xml.Schema;
 
 namespace IAT.Core.Services
 {
-    internal class SaveFileService : ISaveFileService
+    public sealed class SaveFileService : ISaveFileService
     {
         private Package SavePackage { get; set; }
         private readonly CompressionOption Compression = CompressionOption.Normal;
-        private Test? _Test = null;
-        private Layout? _Layout = null;
+
+        public SaveFileService(ILayoutService layoutService) { }
+
         private FontPreferences? _FontPreferences = null;
         private ConcurrentDictionary<Guid, Key> Keys = new();
         private ConcurrentDictionary<Guid, Trial> Trials = new();
@@ -43,6 +44,16 @@ namespace IAT.Core.Services
         public Serializable.Version Version = new Models.Version(Properties.Resources.sVersion);
         public List<HistoryEntry> History { get { return MetaData.History; } }
         private MemoryStream PackageStream;
+
+
+
+
+
+
+
+
+
+
         public SaveFile(String fileName, bool compressed, bool hidden)
         {
             ImageManager = new Images.ImageManager();
@@ -326,9 +337,9 @@ namespace IAT.Core.Services
             }
         }
 
-        private ImageMetaDataDocument _ImageMetaDataDocument = null;
+        private ImageDocument _ImageMetaDataDocument = null;
         private readonly object metaDataDocLock = new object();
-        public ImageMetaDataDocument ImageMetaDataDocument
+        public ImageDocument ImageMetaDataDocument
         {
             get
             {
@@ -336,13 +347,13 @@ namespace IAT.Core.Services
                 {
                     if (_ImageMetaDataDocument != null)
                         return _ImageMetaDataDocument;
-                    var pr = GetPackageLevelRelationship(typeof(ImageMetaDataDocument));
+                    var pr = GetPackageLevelRelationship(typeof(ImageDocument));
                     if (pr != null)
                     {
                         _ImageMetaDataDocument = new ImageMetaDataDocument(pr.TargetUri);
                         return _ImageMetaDataDocument;
                     }
-                    _ImageMetaDataDocument = new ImageMetaDataDocument();
+                    _ImageMetaDataDocument = new ImageDocument();
                     return _ImageMetaDataDocument;
                 }
             }

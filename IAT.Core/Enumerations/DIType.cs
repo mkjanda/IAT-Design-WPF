@@ -12,10 +12,6 @@ namespace IAT.Core.Enumerations
     {
         public static DIType Null = new DIType(0, "Null")
         {
-            Create = new Func<Uri, DIBase>((uri) => { return new DINull(uri); }),
-            Type = typeof(DINull),
-            GetBoundingSize = new Func<Size>(() => new Size(1, 1)),
-            GetBoundingRectangle = new Func<Rectangle>(() => new Rectangle(0, 0, 1, 1)),
             InvalidationInterval = 0,
             HasPreviewPanel = false,
             IsGenerated = false,

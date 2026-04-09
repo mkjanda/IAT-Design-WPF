@@ -104,7 +104,7 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Represents the part type for an image metadata document in the package.
         /// </summary>
-        public static readonly PartType ImageMetaDataDocument = new _ImageMetaDataDocument();
+        public static readonly PartType ImageDocument = new _ImageDocument();
 
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace IAT.Core.Enumerations
         /// <remarks>This field can be used to identify or work with parts that contain metadata about
         /// images, such as EXIF or IPTC information, within a document or package structure. It is typically used in
         /// conjunction with APIs that manipulate or inspect document parts.</remarks>
-        public static readonly PartType ImageMetaData = new _ImageMetaData();
+        public static readonly PartType DisplayItem = new _DisplayItem();
 
 
         /// <summary>
@@ -143,28 +143,10 @@ namespace IAT.Core.Enumerations
             name.Equals("dibase", StringComparison.OrdinalIgnoreCase) ? DIBase :
             name.Equals("observablevalue", StringComparison.OrdinalIgnoreCase) ? ObservableValue :
             name.Equals("valueobserver", StringComparison.OrdinalIgnoreCase) ? ValueObserver :
-            name.Equals("imagemetadatadocument", StringComparison.OrdinalIgnoreCase) ? ImageMetaDataDocument :
+            name.Equals("displayitem", StringComparison.OrdinalIgnoreCase) ? DisplayItem :
             name.Equals("layout", StringComparison.OrdinalIgnoreCase) ? Layout :
             throw new ArgumentException($"Unknown block type: {name}");
 
-
-        public static PartType FromMimeType(string mimeType) =>
-            mimeType.Equals("text/xml+" + typeof(Block).ToString(), StringComparison.OrdinalIgnoreCase) ? Block :
-            mimeType.Equals("text/xml+" + typeof(Instructions).ToString(), StringComparison.OrdinalIgnoreCase) ? Instructions :
-            mimeType.Equals("text/xml+" + typeof(Trial).ToString(), StringComparison.OrdinalIgnoreCase) ? Trial :
-            mimeType.Equals("text/xml+" + typeof(AlternationGroup).ToString(), StringComparison.OrdinalIgnoreCase) ? AlternationGroup :
-            mimeType.Equals("text/xml+" + typeof(HistoryEntry).ToString(), StringComparison.OrdinalIgnoreCase) ? HistoryEntry :
-            mimeType.Equals("text/xml+" + typeof(DIStimulusImage).ToString(), StringComparison.OrdinalIgnoreCase) ? StimulusImage :
-            mimeType.Equals("text/xml+" + typeof(DIStimulusText).ToString(), StringComparison.OrdinalIgnoreCase) ? StimulusText :
-            mimeType.Equals("text/xml+" + typeof(SaveFileMetaData).ToString(), StringComparison.OrdinalIgnoreCase) ? SaveFileMetaData :
-            mimeType.Equals("text/xml+" + typeof(Test).ToString(), StringComparison.OrdinalIgnoreCase) ? IAT :
-            mimeType.Equals("text/xml+" + typeof(Key).ToString(), StringComparison.OrdinalIgnoreCase) ? Key :
-            mimeType.Equals("text/xml+" + typeof(DIBase).ToString(), StringComparison.OrdinalIgnoreCase) ? DIBase :
-            mimeType.Equals("text/xml+" + typeof(ObservableValue<>).ToString(), StringComparison.OrdinalIgnoreCase) ? ObservableValue :
-            mimeType.Equals("text/xml+" + typeof(ValueObserver<>).ToString(), StringComparison.OrdinalIgnoreCase) ? ValueObserver :
-            mimeType.Equals("text/xml+" + typeof(ImageMetaDataDocument).ToString(), StringComparison.OrdinalIgnoreCase) ? ImageMetaDataDocument :
-            mimeType.Equals("text/xml+" + typeof(Layout).ToString(), StringComparison.OrdinalIgnoreCase) ? Layout :
-            throw new ArgumentException($"Unknown MIME type: {mimeType}");
 
 
         /// <summary>
@@ -286,7 +268,7 @@ namespace IAT.Core.Enumerations
         /// <remarks>This type is used to define a part that monitors and responds to updates in a GUID.
         /// It is typically used in scenarios where tracking or reacting to GUID changes is required within a system.
         /// This record is sealed and cannot be inherited.</remarks>
-        private sealed record _ValueObserver() : PartType("GuidObserver", "A part that observes changes to a GUID", typeof(ValueObserver), typeof(ValueObserver), "text/xml+" + typeof(ValueObserver).ToString()) { }
+        private sealed record _ValueObserver() : PartType("GuidObserver", "A part that observes changes to a GUID", typeof(ValueObserver<>), typeof(ValueObserver<>), "text/xml+" + typeof(ValueObserver<>).ToString()) { }
 
         /// <summary>
         /// Represents the base type for DI (Display Item) parts within the system.
@@ -303,7 +285,7 @@ namespace IAT.Core.Enumerations
         /// within a packaging system. It specifies the content type, description, and associated .NET types for image
         /// metadata documents. This type is sealed and intended for use as a predefined part type in packaging
         /// scenarios.</remarks>
-        private sealed record _ImageMetaDataDocument() : PartType("ImageMetaDataDocument", "A document containing image metadata for packaging", typeof(ImageMetaDataDocument), typeof(ImageMetaDataDocument), "text/xml+" + typeof(ImageMetaDataDocument).ToString()) { }
+        private sealed record _ImageDocument() : PartType("ImageDocument", "A document containing image metadata for packaging", typeof(ImageDocument), typeof(ImageDocument), "text/xml+" + typeof(ImageDocument).ToString()) { }
 
         /// <summary>
         /// Represents a layout definition for display items within the system.
@@ -318,6 +300,6 @@ namespace IAT.Core.Enumerations
         /// </summary>
         /// <remarks>This type is intended for internal use to identify and describe image media parts. It
         /// is a sealed record and cannot be inherited.</remarks>
-        private sealed record _ImageMedia() : PartType("ImageMedia", "An image media part used in the system", typeof(IImageMedia), typeof(IImageMedia), "application/octet-stream+" + typeof(IImageMedia).ToString()) { }
+        private sealed record _DisplayItem() : PartType("ImageMedia", "An image media part used in the system", typeof(DisplayItem), typeof(DisplayItem), "application/octet-stream+" + typeof(IImageMedia).ToString()) { }
     }
 }

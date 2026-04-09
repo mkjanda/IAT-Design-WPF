@@ -1,184 +1,68 @@
 ﻿using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
+using IAT_Design_WPF.Services;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO.Packaging;
-using System.Threading;
+using System.Text;
 using System.Xml.Linq;
 using System.Xml.Schema;
-using System.Xml.Serialization;
 
 namespace IAT.Core.Services
 {
-    public class SaveFile : IDisposable
+    public sealed class SaveFileService : ISaveFileService
     {
-        public class SaveFileMetaData : IPackagePart
-        {
-            [Serializable]
-            public class HistoryEntry
-            {
-                [XmlElement(ElementName = "TimeOpened", Form = XmlSchemaForm.Unqualified)]
-                public String TimeOpened { get; set; } = DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToShortTimeString();
-                [XmlElement(ElementName = "ProductKey", Form = XmlSchemaForm.Unqualified)]
-                public String ProductKey { get; set; } = "N/A";
-                [XmlElement(ElementName = "ErrorCount", Form = XmlSchemaForm.Unqualified)]
-                public int ErrorCount { get; set; } = -1;
-                [XmlElement(ElementName = "ErrorsReported", Form = XmlSchemaForm.Unqualified)]
-                public int ErrorsReported { get; set; } = -1;
-                [XmlElement(ElementName = "SaveFileVersion", Form = XmlSchemaForm.Unqualified)]
-                public String Version { get; set; } = null;
-
-                public HistoryEntry()
-                {
-                    Version = LocalStorageService.Activation[LocalStorageService.Field.Version];
-                    ProductKey = LocalStorageService.Activation[LocalStorageService.Field.ProductKey];
-                    ErrorCount = ErrorReporter.Errors;
-                    ErrorsReported = ErrorReporter.ErrorsReported;
-                }
-
-                public HistoryEntry(XElement root)
-                {
-                    if (root.Element("Timestamp") != null)
-                        TimeOpened = root.Element("Timestamp").Value;
-                    if (root.Element("Version") != null)
-                        Version = root.Element("Version").Value;
-                    if (root.Element("ErrorCount") != null)
-                        ErrorCount = Convert.ToInt32(root.Element("ErrorCount").Value);
-                    if (root.Element("ErrorsReported") != null)
-                        ErrorsReported = Convert.ToInt32(root.Element("ErrorsReported").Value);
-                    if (root.Element("ProductKey") != null)
-                        ProductKey = root.Element("ProductKey").Value;
-                }
-
-                public void AddToXml(XElement parent)
-                {
-                    parent.Add(new XElement("HistoryEntry", new XElement("Timestamp", TimeOpened), new XElement("Version", Version), new XElement("ErrorCount", ErrorCount),
-                        new XElement("ErrorsReported", ErrorsReported.ToString()), new XElement("ProductKey", ProductKey)));
-                }
-            }
-
-
-            public DateTime TimeOpened { get; private set; } = DateTime.UtcNow;
-            public List<HistoryEntry> History { get; private set; } = new List<HistoryEntry>();
-            private SaveFile SaveFile { get; set; } = null;
-            public CVersion Version { get; private set; } = new CVersion();
-            public SaveFileMetaData(SaveFile saveFile)
-            {
-                Uri = PackUriHelper.CreatePartUri(new Uri(typeof(SaveFileMetaData).ToString() + "/" + typeof(SaveFileMetaData).ToString() + "1.xml", UriKind.Relative));
-                saveFile.SavePackage.CreatePart(Uri, MimeType, CompressionOption.Normal);
-                UriCounters[typeof(SaveFileMetaData).ToString()] = new List<int>(new int[] { 1 });
-                saveFile.CreatePackageLevelRelationship(Uri, typeof(SaveFileMetaData));
-                SaveFile = saveFile;
-            }
-
-            public SaveFileMetaData(SaveFile saveFile, Uri u)
-            {
-                SaveFile = saveFile;
-                this.Uri = u;
-                UriCounters[typeof(SaveFileMetaData).ToString()] = new List<int>(new int[] { 1 });
-                Load(SaveFile.SavePackage);
-            }
-
-
-            public void Save()
-            {
-                XDocument xDoc = new XDocument();
-                xDoc.Add(new XElement("MetaData"));
-                xDoc.Root.Add(new XElement("IATRelId", IATRelId));
-                new HistoryEntry().AddToXml(xDoc.Root);
-                foreach (HistoryEntry hist in History)
-                    hist.AddToXml(xDoc.Root);
-                XElement xElem = new XElement("UriCounters");
-                foreach (String t in UriCounters.Keys)
-                {
-                    XElement uriElem = new XElement("UriCounter", new XAttribute("Type", t.ToString()));
-                    foreach (int i in UriCounters[t])
-                        uriElem.Add(new XElement("ConsumedValue", i.ToString()));
-                    xElem.Add(uriElem);
-                }
-                xDoc.Root.Add(xElem);
-                Stream s = Stream.Synchronized(SaveFile.GetWriteStream(this));
-                try
-                {
-                    xDoc.Save(s);
-                }
-                finally
-                {
-                    s.Dispose();
-                    SaveFile.ReleaseWriteStreamLock();
-                }
-            }
-
-            public void Load(Package savePackage)
-            {
-                Stream s = Stream.Synchronized(SaveFile.GetReadStream(this));
-                XDocument xDoc = null;
-                try
-                {
-                    xDoc = XDocument.Load(s);
-                    s.Dispose();
-                }
-                finally
-                {
-                    SaveFile.ReleaseReadStreamLock();
-                }
-                IATRelId = xDoc.Root.Element("IATRelId").Value;
-                foreach (XElement elem in xDoc.Root.Elements("HistoryEntry"))
-                    History.Add(new HistoryEntry(elem));
-                Version = new CVersion(History.First().Version);
-                foreach (XElement elem in xDoc.Root.Element("UriCounters").Elements())
-                {
-                    UriCounters[elem.Attribute("Type").Value] = new List<int>();
-                    foreach (XElement consumedVal in elem.Elements("ConsumedValue"))
-                        UriCounters[elem.Attribute("Type").Value].Add(Convert.ToInt32(consumedVal.Value));
-                }
-            }
-
-            public void Dispose()
-            {
-                UriCounters.Clear();
-            }
-        }
-
-        public static Thread SaveThread { get; private set; } = null;
-        private SaveSplash SaveSplash { get; set; } = null;
-        public bool IsDisposed { get; private set; } = false;
-        public bool IsDisposing { get; private set; } = false;
-        private Package SavePackage;
+        private ILayoutService _layoutService;
         private readonly CompressionOption Compression = CompressionOption.Normal;
-        private CIAT _IAT = null;
-        private CIATLayout _Layout = null;
-        private FontPreferences _FontPreferences;
-        private ConcurrentDictionary<Uri, CIATKey> Keys = new ConcurrentDictionary<Uri, CIATKey>();
-        private ConcurrentDictionary<Uri, CIATItem> IATItems = new ConcurrentDictionary<Uri, CIATItem>();
-        private ConcurrentDictionary<Uri, CIATBlock> IATBlocks = new ConcurrentDictionary<Uri, CIATBlock>();
-        private ConcurrentDictionary<Uri, CInstructionScreen> InstructionScreens = new ConcurrentDictionary<Uri, CInstructionScreen>();
-        private ConcurrentDictionary<Uri, CInstructionBlock> InstructionBlocks = new ConcurrentDictionary<Uri, CInstructionBlock>();
-        private ConcurrentDictionary<Uri, CSurvey> Surveys = new ConcurrentDictionary<Uri, CSurvey>();
-        private ConcurrentDictionary<Uri, AlternationGroup> AlternationGroups = new ConcurrentDictionary<Uri, AlternationGroup>();
-        private ConcurrentDictionary<Uri, Images.IImage> IImages = new ConcurrentDictionary<Uri, Images.IImage>();
-        private ConcurrentDictionary<Uri, ObservableUri> ObservableUris = new ConcurrentDictionary<Uri, ObservableUri>();
-        private ConcurrentDictionary<Uri, CFontFile.FontItem> FontItems = new ConcurrentDictionary<Uri, CFontFile.FontItem>();
-        private ConcurrentDictionary<Uri, CSurveyItem> SurveyItems = new ConcurrentDictionary<Uri, CSurveyItem>();
+
+        private required Dictionary<Type, List<Guid>> TypeMap { get; init; } = new Dictionary<Type, List<Guid>>();
+        private required Dictionary<Guid, object> ObjectMap { get; init; } = new Dictionary<Guid, object>();
+
+        private Package SavePackage { get; set; }
+
+        public SaveFileService() {}
+
+
+
+
+        private FontPreferences? _FontPreferences = null;
+        private ConcurrentDictionary<Guid, Key> Keys = new();
+        private ConcurrentDictionary<Guid, Trial> Trials = new();
+        private ConcurrentDictionary<Guid, Block> Blocks = new();
+        private ConcurrentDictionary<Guid, InstructionScreen> InstructionScreen = new();
+        private ConcurrentDictionary<Guid, Instructions> Instructions = new();
+        private ConcurrentDictionary<Guid, Survey> Surveys = new();
+        private ConcurrentDictionary<Guid, AlternationGroup> AlternationGroups = new();
+        private ConcurrentDictionary<Guid, Images.IImage> IImages = new ConcurrentDictionary<Uri, Images.IImage>();
+        private ConcurrentDictionary<Guid, ObservableValue> ObservableUris = new();
+        private ConcurrentDictionary<Guid, SurveyItem> SurveyItems = new();
         private readonly ManualResetEvent DisposingEvent = new ManualResetEvent(true), ResizingLayoutEvent = new ManualResetEvent(true);
         private ConcurrentDictionary<Uri, DIBase> DIs = new ConcurrentDictionary<Uri, DIBase>();
-        public ActivityLog ActivityLog { get; private set; } = new ActivityLog();
-
         private int ReadLockCount = 0;
         private bool FrozenForSave { get; set; }
         private System.Threading.Timer CacheTimer = null;
         private const int AutoSaveInterval = 30000;
         private readonly object ReadLocked = new object(), WriteLocked = new object();
-        public readonly SaveFileMetaData MetaData;
-        private ManualResetEvent PackageStreamOpen = new ManualResetEvent(true);
+
         public Images.ImageManager ImageManager { get; private set; }
         private readonly object layoutLock = new object();
         private readonly object saveLock = new object();
-        public bool IsLoading { get; private set; } = false;
         private readonly ReaderWriterLockSlim ioLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-        public CVersion Version { get { return MetaData.Version; } }
-        public List<SaveFileMetaData.HistoryEntry> History { get { return MetaData.History; } }
+        public Serializable.Version Version = new Models.Version(Properties.Resources.sVersion);
+        public List<HistoryEntry> History { get { return MetaData.History; } }
         private MemoryStream PackageStream;
+
+
+
+
+
+
+
+
+
+
         public SaveFile(String fileName, bool compressed, bool hidden)
         {
             ImageManager = new Images.ImageManager();
@@ -187,94 +71,22 @@ namespace IAT.Core.Services
             DisposingEvent.WaitOne();
             FileInfo fi = new FileInfo(fileName);
             fi.Attributes &= ~FileAttributes.ReadOnly;
-            bool validSaveFile = false;
-            try
+            byte[] signedHash = new byte[512];
+            PackageStream = new MemoryStream();
+            byte[] bytes = new byte[8192];
+            int nBytesRead = 0;
+            using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.ReadWrite))
             {
-                byte[] signedHash = new byte[512];
-                /*
-                      using (Stream workingFS = File.Open(WorkingSaveFilename, FileMode.Create, FileAccess.ReadWrite))
-                              {
-                                  using (FileStream saveFS = File.Open(fileName, FileMode.Open, FileAccess.Read))
-                                  {
-                                      long nBytes = fi.Length - 512;
-                                      byte[] buff = new byte[65536];
-                                      long nBytesRead = 0;
-                                      while (nBytesRead < nBytes)
-                                      {
-                                          int bytes = saveFS.Read(buff, 0, (nBytes - nBytesRead < 65536) ? (int)(nBytes - nBytesRead) : 65536);
-                                          workingFS.Write(buff, 0, bytes);
-                                          nBytesRead += bytes;
-                                      }
-                                      saveFS.Read(signedHash, 0, 512);
-                                  }
-                              }*/
-
-                /*
-                PackageStream = new MemoryStream();
-                using (FileStream saveFS = File.Open(fileName, FileMode.Open, FileAccess.Read))
+                while (nBytesRead < fi.Length)
                 {
-                    long nBytes = fi.Length - 512;
-                    byte[] buff = new byte[65536];
-                    long nBytesRead = 0;
-                    while (nBytesRead < nBytes)
-                    {
-                        int bytes = saveFS.Read(buff, 0, (nBytes - nBytesRead < 65536) ? (int)(nBytes - nBytesRead) : 65536);
-                        PackageStream.Write(buff, 0, bytes);
-                        nBytesRead += bytes;
-                    }
-                    saveFS.Read(signedHash, 0, 512);
+                    int nBytes = fs.Read(bytes, 0, bytes.Length);
+                    PackageStream.Write(bytes, 0, nBytes);
+                    nBytesRead += nBytes;
                 }
-                SHA256 sha = SHA256.Create();
-                byte[] hash;*/
-                /*
-                using (Stream workingFS = File.Open(WorkingSaveFilename, FileMode.Open, FileAccess.Read))
-                    hash = sha.ComputeHash(workingFS);
-                */
-                /*
-                PackageStream.Seek(0, SeekOrigin.Begin);
-                hash = sha.ComputeHash(PackageStream);
-                RSACryptoServiceProvider rsaCrypt = new RSACryptoServiceProvider();
-                rsaCrypt.ImportCspBlob(Convert.FromBase64String(Properties.Resources.sig));
-                if (rsaCrypt.VerifyHash(hash, CryptoConfig.MapNameToOID("SHA256"), signedHash)) {
-                    validSaveFile = true;
-                    PackageStream.Seek(0, SeekOrigin.Begin);
-                    SavePackage = Package.Open(PackageStream, FileMode.Open, FileAccess.ReadWrite);
-                } else {
-                    PackageStream.Dispose();
-                    PackageStream = new MemoryStream();
- //                   File.Delete(WorkingSaveFilename);
-   //                 File.Copy(fileName, WorkingSaveFilename);
-                    SavePackage = Package.Open(PackageStream, FileMode.Open, FileAccess.ReadWrite);
-                }
-                if (!validSaveFile && (Version.CompareTo(new CVersion("1.1.1.29")) > 0) && (Version.CompareTo(new CVersion("1.1.1.43")) < 0))
-                    throw new InvalidSaveFileException();                
-                */
-                PackageStream = new MemoryStream();
-                byte[] bytes = new byte[8192];
-                int nBytesRead = 0;
-                using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.ReadWrite))
-                {
-                    while (nBytesRead < fi.Length)
-                    {
-                        int nBytes = fs.Read(bytes, 0, bytes.Length);
-                        PackageStream.Write(bytes, 0, nBytes);
-                        nBytesRead += nBytes;
-                    }
-                }
-                PackageStream.Seek(0, SeekOrigin.Begin);
-                SavePackage = Package.Open(PackageStream, FileMode.Open, FileAccess.ReadWrite);
             }
-            catch (Exception ex)
-            {
-                //                if (File.Exists(WorkingSaveFilename))
-                //                  File.Delete(WorkingSaveFilename);
-                //            File.Copy(fileName, WorkingSaveFilename);
-                //          SavePackage = Package.Open(WorkingSaveFilename, FileMode.Open, FileAccess.ReadWrite);
-                //        InvalidSaveFileReport.Report();
-            }
+            PackageStream.Seek(0, SeekOrigin.Begin);
+            SavePackage = Package.Open(PackageStream, FileMode.Open, FileAccess.ReadWrite);
             MetaData = new SaveFileMetaData(this, GetPackageLevelRelationship(typeof(SaveFileMetaData)).TargetUri);
-            if (CVersion.Compare(new CVersion("1.1.1.13"), Version) < 0)
-                RebuildSaveFileUris();
         }
 
 
@@ -386,7 +198,6 @@ namespace IAT.Core.Services
                     {
                         try
                         {
-                            IsLoading = true;
                             _IAT = new CIAT(GetPackageLevelRelationship(typeof(CIAT)).TargetUri);
                         }
                         catch (ArgumentException ex)
@@ -395,10 +206,6 @@ namespace IAT.Core.Services
                             foreach (Uri u in GetRelationshipsByType(_IAT.URI, typeof(CIAT), typeof(AlternationGroup)).Select(pr => pr.TargetUri))
                                 new AlternationGroup(u);
                             MetaData.IATRelId = CreatePackageLevelRelationship(_IAT.URI, typeof(CIAT));
-                        }
-                        finally
-                        {
-                            IsLoading = false;
                         }
                     }
                     return _IAT;
@@ -479,7 +286,8 @@ namespace IAT.Core.Services
                         CIAT.SaveFile.DeletePart(_Layout.URI);
                         _Layout = value;
                         CreatePackageLevelRelationship(value.URI, typeof(CIATLayout));
-                        Task.Run(() => {
+                        Task.Run(() =>
+                        {
                             Monitor.Enter(layoutLock);
                             Monitor.Exit(layoutLock);
                             ResizeToNewLayout();
@@ -1497,8 +1305,6 @@ namespace IAT.Core.Services
         {
             DisposingEvent.WaitOne();
             ResizingLayoutEvent.WaitOne(1000);
-            if (IsDisposed)
-                return false;
             CIAT iat = IAT;
             FrozenForSave = true;
             int ctr = 0;
@@ -1566,139 +1372,6 @@ namespace IAT.Core.Services
             }
         }
 
-        public void Dispose()
-        {
-            if (IsDisposing || IsDisposed)
-                return;
-            IsDisposing = true;
-            try
-            {
-                //                ActivityLog.LogEvent(ActivityLog.EventType.Delete, IAT.URI);
-                ImageManager.Dispose();
-                /*              lock (saveLock)
-                              {
-                                  foreach (var k in Keys.Values.Where(key => key is CIATDualKey))
-                                      k.Dispose();
-                                  foreach (var k in Keys.Values.Where(key => key is CIATReversedKey))
-                                      k.Dispose();
-                                  foreach (var k in Keys.Values.Where(key => key is CIATKey))
-                                      k.Dispose();
-                                  foreach (var b in IATBlocks.Values)
-                                      b.Dispose();
-                                  foreach (var item in IATItems.Values)
-                                      item.Dispose();
-                                  foreach (var ib in InstructionBlocks.Values)
-                                      ib.Dispose();
-                                  foreach (var s in Surveys.Values)
-                                      s.Dispose();
-                                  foreach (var i in IImages.Values)
-                                      i.Dispose();
-                                  foreach (var ou in ObservableUris.Values)
-                                      ou.Dispose();
-                              }
-                              DisposingEvent.Reset();*/
-            }
-            finally
-            {
-                IsDisposed = true;
-                SavePackage.Close();
-                try
-                {
-                    PackageStream.Dispose();
-                }
-                catch (Exception ex)
-                {
-                }
-            }
-            DisposingEvent.Set();
-        }
     }
-}
 
-{
-        private Package? _package;
-        private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
-        private readonly Dictionary<Uri, IATBlock> _blockCache = new();
-        private readonly Dictionary<Uri, IPackagePart> _partCache = new();
-
-        public async Task<CIAT> LoadPackageAsync(string packagePath)
-        {
-            
-            _lock.EnterWriteLock();
-            try
-            {
-                _package?.Close();
-                _package = Package.Open(packagePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-                var ciat = new CIAT(); // your root model
-                // load any root relationships here if needed
-                return ciat;
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        public IATBlock GetBlock(Uri uri)
-        {
-            _lock.EnterUpgradeableReadLock();
-            try
-            {
-                if (_blockCache.TryGetValue(uri, out var block))
-                    return block;
-
-                _lock.EnterWriteLock();
-                try
-                {
-                    if (!_package.PartExists(uri))
-                        throw new KeyNotFoundException($"Part not found: {uri}");
-
-                    block = new IATBlock(uri); // lightweight constructor – NO side effects
-                    _blockCache[uri] = block;
-                    return block;
-                }
-                finally
-                {
-                    _lock.ExitWriteLock();
-                }
-            }
-            finally
-            {
-                _lock.ExitUpgradeableReadLock();
-            }
-        }
-
-        public Stream GetReadStream(IPackagePart part)
-        {
-            _lock.EnterUpgradeableReadLock();
-            try
-            {
-                var packagePart = _package.GetPart(part.Uri);
-                return Stream.Synchronized(packagePart.GetStream(FileMode.Open, FileAccess.Read));
-            }
-            finally
-            {
-                _lock.ExitUpgradeableReadLock();
-            }
-        }
-
-        public void SaveChanges()
-        {
-            _lock.EnterWriteLock();
-            try
-            {
-                _package?.Flush();
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
-            }
-        }
-
-        public void Dispose()
-        {
-            _package?.Close();
-            _lock.Dispose();
-        }
-    }
 }

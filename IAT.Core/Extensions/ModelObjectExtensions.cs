@@ -1,8 +1,11 @@
-﻿using com.sun.org.apache.xml.@internal.resolver.helpers;
-using IAT.Core.Enumerations;
+﻿using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
+using sun.awt.image;
 using System.Security.Cryptography;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace IAT.Core.Extensions
 {
@@ -280,6 +283,17 @@ namespace IAT.Core.Extensions
         public static string ToString(this Serializable.Version version)
         {
             return $"{version.Release}.{version.Major}.{version.Minor}.{version.Trivial}";
+        }
+
+        public Rect CalculateBounds(BitmapSource src, Color backColor)
+        {
+            int stride = (src.PixelWidth * src.Format.BitsPerPixel + 7) / 8;
+            int size = stride * src.PixelHeight;
+            byte[] pixelData = new byte[size];
+            var backColorArgb = (UInt32)((backColor.A << 24) | (backColor.R << 16) | (backColor.G << 8) | backColor.B);
+
+            var pixels = new Array<Pixel>();
+            src.Copy
         }
     }
 }

@@ -1,16 +1,24 @@
-using IAT.Core.Enumerations;
+﻿using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
 using System;
 using System.Windows;
 
 namespace IAT_Design_WPF.Services
 {
+    /// <summary>
+    /// Provides services for managing and updating layout properties and observables for UI elements within a layout.
+    /// </summary>
+    /// <remarks>The LayoutService coordinates updates to layout rectangles and sizes by subscribing to layout
+    /// observables and applying changes when layout dimensions are modified. It is intended to be used in conjunction
+    /// with a Layout instance to ensure UI elements are positioned and sized correctly in response to changes. This
+    /// class is not thread-safe; all updates should be performed on the UI thread.</remarks>
     public class LayoutService
     {
         /// <summary>
-        /// Represents the layout configuration used by the containing class.
+        /// The layout object that this service manages, providing access to layout properties and observables for updating
         /// </summary>
         private readonly Layout _layout;
+
 
         /// <summary>
         /// Initializes a new instance of the LayoutService class using the specified layout.
@@ -46,7 +54,7 @@ namespace IAT_Design_WPF.Services
         /// <summary>
         /// Updates the layout rectangles based on the current interior size and other dimensions.
         /// </summary>
-        public void UpdateLayout()
+        private void UpdateLayout()
         {
             var size = _layout.InteriorRectObservable.Value.Size;
 
@@ -101,7 +109,9 @@ namespace IAT_Design_WPF.Services
         /// <summary>
         /// Sets the interior size of the layout area.
         /// </summary>
-        /// <param name="size">The new size to apply to the interior layout area.</param>
+        /// <remarks>Call this method to update the layout's interior dimensions. The layout will be
+        /// recalculated to reflect the new size.</remarks>
+        /// <param name="size">The new size to apply to the layout's interior area.</param>
         public void SetInteriorSize(Size size)
         {
             _layout.InteriorSize = size;
@@ -111,10 +121,9 @@ namespace IAT_Design_WPF.Services
         /// <summary>
         /// Sets the size of the key-value display area.
         /// </summary>
-        /// <remarks>Calling this method updates the layout to reflect the new key-value size. Use this
-        /// method to dynamically adjust the display area based on content or application requirements.</remarks>
-        /// <param name="size">The new size to apply to the key-value area. Specifies the width and height in device-independent units
-        /// (1/96th inch per unit).</param>
+        /// <remarks>Call this method to adjust the layout when the key-value area needs to be resized.
+        /// The layout is updated immediately after the size is set.</remarks>
+        /// <param name="size">The new size to apply to the key-value area.</param>
         public void SetKeyValueSize(Size size)
         {
             _layout.KeyValueSize = size;
@@ -122,11 +131,11 @@ namespace IAT_Design_WPF.Services
         }
 
         /// <summary>
-        /// Sets the size of the stimulus area for layout calculations.
+        /// Sets the size of the stimulus area for the layout.
         /// </summary>
-        /// <remarks>Calling this method updates the layout to reflect the new stimulus size. If the
-        /// specified size differs from the current value, the layout will be recalculated.</remarks>
-        /// <param name="size">The new size to apply to the stimulus area. Specifies the width and height in device-independent units.</param>
+        /// <remarks>Calling this method updates the layout to reflect the new stimulus size. The provided
+        /// size should be valid for the intended layout context.</remarks>
+        /// <param name="size">The new size to apply to the stimulus area.</param>
         public void SetStimulusSize(Size size)
         {
             _layout.StimulusSize = size;
@@ -146,11 +155,9 @@ namespace IAT_Design_WPF.Services
         }
 
         /// <summary>
-        /// Sets the error display area to the specified size.
+        /// Sets the error size for the layout and updates the layout accordingly.
         /// </summary>
-        /// <remarks>Call this method to adjust the dimensions of the error region, such as when the
-        /// layout or content changes require a different error display size.</remarks>
-        /// <param name="size">The new size for the error display area.</param>
+        /// <param name="size">The new error size to apply to the layout.</param>
         public void SetErrorSize(Size size)
         {
             _layout.ErrorSize = size;
@@ -160,8 +167,8 @@ namespace IAT_Design_WPF.Services
         /// <summary>
         /// Sets the size of the continue instructions area in the layout.
         /// </summary>
-        /// <remarks>Call this method to update the display area allocated for continue instructions. The
-        /// layout will be refreshed to reflect the new size.</remarks>
+        /// <remarks>Call this method to update the layout when the size of the continue instructions area
+        /// needs to change. The layout is refreshed immediately after the size is set.</remarks>
         /// <param name="size">The new size to apply to the continue instructions area.</param>
         public void SetContinueInstructionsSize(Size size)
         {

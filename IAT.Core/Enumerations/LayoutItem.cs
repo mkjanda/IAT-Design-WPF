@@ -1,5 +1,7 @@
 ﻿using IAT.Core.Models;
 using System.Windows;
+using System.Windows.Media;
+using System.Net.Mime;
 
 namespace IAT.Core.Enumerations
 {
@@ -13,8 +15,11 @@ namespace IAT.Core.Enumerations
     /// elements.</param>
     /// <param name="Description">A brief description of the layout item, providing context or purpose for its use within the layout.</param>
     /// <param name="RectangleObserver">An observer that tracks the rectangle representing the item's position and size within the layout.</param>
-    public abstract record LayoutItem(String Name, String Description, ValueObserver<Rect> RectangleObserver)
+    public abstract record LayoutItem(String Name, String Description, ValueObserver<Rect> RectangleObserver, string ImageType)
     {
+        /// <summary>
+        /// Gets the bounding rectangle of the observed element in device-independent pixels.
+        /// </summary>
         public Rect BoundingRectangle => RectangleObserver.Value;
 
         /// <summary>
@@ -137,46 +142,46 @@ namespace IAT.Core.Enumerations
         /// <remarks>This type can be used as a sentinel or default value when no layout item is
         /// applicable. It is typically used to signify that no layout should be applied or that no value is
         /// present.</remarks>
-        private sealed record _None() : LayoutItem("None", "No layout item.", new ValueObserver<Rect>()) { }
+        private sealed record _None() : LayoutItem("None", "No layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Bmp) { }
 
         /// <summary>
         /// Represents a layout item for lambda expressions within the layout system.
         /// </summary>
         /// <remarks>This type is used internally to identify and manage layout elements that correspond
         /// to lambda expressions. It is not intended for direct use in application code.</remarks>
-        private sealed record _Lambda() : LayoutItem("Lambda", "Lambda layout item.", new ValueObserver<Rect>()) { }
+        private sealed record _Lambda() : LayoutItem("Lambda", "Lambda layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { }
 
         /// <summary>
         /// Represents a layout item for a stimulus within the layout system.
         /// </summary>
         /// <remarks>This type is used internally to define a stimulus element in the layout. It is not
         /// intended to be used directly in application code.</remarks>
-        private sealed record _Stimulus() : LayoutItem("Stimulus", "Stimulus layout item.", new ValueObserver<Rect>())  { }
+        private sealed record _Stimulus() : LayoutItem("Stimulus", "Stimulus layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Jpeg)  { }
 
         /// <summary>
         /// Represents a layout item for the left response key, providing metadata and value observation for the
         /// associated rectangle.
         /// </summary>
-        private sealed record _LeftResponseKey() : LayoutItem("LeftResponseKey", "Left response key layout item.", new ValueObserver<Rect>()) { }
+        private sealed record _LeftResponseKey() : LayoutItem("LeftResponseKey", "Left response key layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { }
 
         /// <summary>
         /// Represents a layout item for the right response key.
         /// </summary>
-        private sealed record _RightResponseKey() : LayoutItem("RightResponseKey", "Right response key layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _RightResponseKey() : LayoutItem("RightResponseKey", "Right response key layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item for block instructions within the user interface.
         /// </summary>
         /// <remarks>This type is intended for internal use to define the structure and behavior of block
         /// instruction layout elements. It is not intended to be used directly in application code.</remarks>
-        private sealed record _BlockInstructions() : LayoutItem("BlockInstructions", "Block instructions layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _BlockInstructions() : LayoutItem("BlockInstructions", "Block instructions layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png`) { };
 
         /// <summary>
         /// Represents a layout item used to indicate an error state within the layout system.
         /// </summary>
         /// <remarks>This type is intended for internal use to mark areas where an error has occurred
         /// during layout processing. It is not intended for direct use in application code.</remarks>
-        private sealed record _ErrorMark() : LayoutItem("ErrorMark", "Error mark layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _ErrorMark() : LayoutItem("ErrorMark", "Error mark layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item for displaying continue instructions within the user interface.
@@ -184,7 +189,7 @@ namespace IAT.Core.Enumerations
         /// <remarks>This record is intended for use in UI layouts where a standardized continue
         /// instructions element is required. It derives from LayoutItem and is not intended to be instantiated directly
         /// by consumers.</remarks>
-        private sealed record _ContinueInstructions() : LayoutItem("ContinueInstructions", "Continue instructions layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _ContinueInstructions() : LayoutItem("ContinueInstructions", "Continue instructions layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item for displaying a text instruction screen within the user interface.
@@ -192,7 +197,7 @@ namespace IAT.Core.Enumerations
         /// <remarks>This record is intended for use in UI layouts where a dedicated screen for text-based
         /// instructions is required. It provides a predefined configuration for such screens and is typically used as
         /// part of a larger layout composition.</remarks>
-        private sealed record _TextInstructionScreen() : LayoutItem("TextInstructionScreen", "Text instruction screen layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _TextInstructionScreen() : LayoutItem("TextInstructionScreen", "Text instruction screen layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item for a keyed instruction screen.
@@ -201,17 +206,17 @@ namespace IAT.Core.Enumerations
         /// instruction screen. It is intended for scenarios where a unique screen layout is required to display
         /// instructions associated with a particular key or context. This type is sealed and not intended for
         /// inheritance.</remarks>
-        private sealed record _KeyedInstructionScreen() : LayoutItem("KeyedInstructionScreen", "Keyed instruction screen layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _KeyedInstructionScreen() : LayoutItem("KeyedInstructionScreen", "Keyed instruction screen layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item used for mock item instructions in the UI.
         /// </summary>
-        private sealed record _MockItemInstructions() : LayoutItem("MockItemInstructions", "Mock item instructions layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _MockItemInstructions() : LayoutItem("MockItemInstructions", "Mock item instructions layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png ) { };
 
         /// <summary>
         /// Represents a layout item for outlining the left response key.
         /// </summary>
-        private sealed record _LeftResponseKeyOutline() : LayoutItem("LeftResponseKeyOutline", "Left response key outline layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _LeftResponseKeyOutline() : LayoutItem("LeftResponseKeyOutline", "Left response key outline layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item for outlining the right response key.
@@ -219,13 +224,13 @@ namespace IAT.Core.Enumerations
         /// <remarks>This record is used to define the layout and observation behavior for the right
         /// response key outline within the UI. It is intended for use in scenarios where the right response key's
         /// visual outline needs to be tracked or rendered.</remarks>
-        private sealed record _RightResponseKeyOutline() : LayoutItem("RightResponseKeyOutline", "Right response key outline layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _RightResponseKeyOutline() : LayoutItem("RightResponseKeyOutline", "Right response key outline layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item that occupies the entire window area.
         /// </summary>
         /// <remarks>Use this type to define a layout that spans the full available window space. This
         /// layout is typically used when no other layout constraints are required.</remarks>
-        private sealed record _FullWindow() : LayoutItem("FullWindow", "Full window layout item.", new ValueObserver<Rect>()) { };
+        private sealed record _FullWindow() : LayoutItem("FullWindow", "Full window layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Jpeg) { };
     }
 }

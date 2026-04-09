@@ -8,6 +8,6 @@ namespace IAT.Core.Services
     public interface ISaveFileService
     {
 
-        public Serializable.Version CurrentVersion { get; }
+        public Serializable.Version Version { get; }
     }
 }

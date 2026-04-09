@@ -51,7 +51,7 @@ namespace IAT.Core.Serializable
         /// required.
         /// </summary>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> NoneObservable = new ObservableValue<Rect>(Rect.Empty);
+        public readonly ObservableValue<Rect> NoneObservable = new ObservableValue<Rect>(Rect.Empty);
 
         /// <summary>
         /// Represents an observable value that tracks the current interior rectangle.
@@ -59,7 +59,7 @@ namespace IAT.Core.Serializable
         /// <remarks>This field is used to monitor changes to the interior rectangle's dimensions and
         /// position. It is not serialized during XML serialization due to the XmlIgnore attribute.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> InteriorRectObservable = new ObservableValue<Rect>(new Rect(0, 0, _InteriorSize.Width, _InteriorSize.Height));
+        public readonly ObservableValue<Rect> InteriorRectObservable = new ObservableValue<Rect>(new Rect(0, 0, _InteriorSize.Width, _InteriorSize.Height));
 
         /// <summary>
         /// Represents an observable value containing the rectangle used for displaying block instructions.
@@ -68,7 +68,7 @@ namespace IAT.Core.Serializable
         /// interior and instructions dimensions. Changes to this value can be observed to update UI elements
         /// accordingly.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> BlockInstructionsRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> BlockInstructionsRectObservable = new ObservableValue<Rect>(
             new Rect()
             {
                 X = (_InteriorSize.Width - _InstructionsSize.Width) / 2,
@@ -83,7 +83,7 @@ namespace IAT.Core.Serializable
         /// <remarks>This field is intended for internal use to monitor changes to the stimulus rectangle.
         /// The value is not serialized due to the XmlIgnore attribute.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> StimulusRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> StimulusRectObservable = new ObservableValue<Rect>(
             new Rect()
             {
                 X = _InteriorSize.Width - _StimulusSize.Width / 2,
@@ -98,7 +98,7 @@ namespace IAT.Core.Serializable
         /// <remarks>This field is intended for internal use to monitor changes to the position and size
         /// of the left key-value rectangle. It is ignored during XML serialization.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> LeftKeyValueRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> LeftKeyValueRectObservable = new ObservableValue<Rect>(
             new Rect() {
                 X = 0, Y = 0, Width = _KeyValueSize.Width, Height = _KeyValueSize.Height
             });
@@ -110,7 +110,7 @@ namespace IAT.Core.Serializable
         /// <remarks>The rectangle is initialized based on the default interior and key value sizes.
         /// Changes to this value can be observed to update UI elements or respond to layout changes.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> RightKeyValueRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> RightKeyValueRectObservable = new ObservableValue<Rect>(
             new Rect()
             {
                 X = _InteriorSize.Width - _KeyValueSize.Width,
@@ -126,7 +126,7 @@ namespace IAT.Core.Serializable
         /// area, using default size values. This field is intended for internal use to track changes to the error
         /// display region.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> ErrorRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> ErrorRectObservable = new ObservableValue<Rect>(
             new Rect()
             {
                 X = (_InteriorSize.Width - _ErrorSize.Width) / 2,
@@ -141,7 +141,7 @@ namespace IAT.Core.Serializable
         /// <remarks>This field is intended for internal use to monitor changes to the continue
         /// instructions area. It is ignored during XML serialization.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> ContinueInstructionsRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> ContinueInstructionsRectObservable = new ObservableValue<Rect>(
             new Rect()
             {
                 X = 0,
@@ -154,7 +154,7 @@ namespace IAT.Core.Serializable
         /// Represents an observable value that tracks the bounding rectangle for the instruction text area on an instruction screen.
         /// </summary>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> TextInstructionScreenRectObservable = new ObservableValue<Rect>(new Rect(0, 0, _InteriorSize.Width, _InteriorSize.Height - _ContinueInstructionsSize.Height));
+        public readonly ObservableValue<Rect> TextInstructionScreenRectObservable = new ObservableValue<Rect>(new Rect(0, 0, _InteriorSize.Width, _InteriorSize.Height - _ContinueInstructionsSize.Height));
 
         /// <summary>
         /// Represents an observable value that tracks the bounding rectangle for the key instruction screen text area.
@@ -162,7 +162,7 @@ namespace IAT.Core.Serializable
         /// <remarks>This field is intended for internal use to monitor changes to the layout region where
         /// key instructions are displayed. The value is updated as the UI layout changes.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> KeyInstructionScreenTextRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> KeyInstructionScreenTextRectObservable = new ObservableValue<Rect>(
             new Rect(0, _KeyValueSize.Height, _InteriorSize.Width, _InteriorSize.Height - _ContinueInstructionsSize.Height - _KeyValueSize.Height));
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace IAT.Core.Serializable
         /// <remarks>This field is intended for internal use to monitor changes to the instructions'
         /// display area. It is ignored during XML serialization.</remarks>
         [XmlIgnore]
-        private readonly ObservableValue<Rect> MockItemInstructionsRectObservable = new ObservableValue<Rect>(
+        public readonly ObservableValue<Rect> MockItemInstructionsRectObservable = new ObservableValue<Rect>(
             new Rect()
             {
                 X = (_InteriorSize.Width - _InstructionsSize.Width) / 2,
