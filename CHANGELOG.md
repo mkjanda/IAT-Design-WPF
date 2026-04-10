@@ -16,11 +16,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ###### --Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. This may include changes to the structure of the codebase, as well as updates to existing components to improve performance and maintainability.
 ###### --Refactored code to improve readability and maintainability, including changes to variable names, function signatures, and overall code organization. This may also include the removal of deprecated code and the addition of new comments and documentation to help developers understand the changes made.
 ###### --Updated documentation to reflect changes and new features, including updates to existing documentation as well as the addition of new documentation for any new features or changes made. This may include updates to user guides, API documentation, and other relevant materials to ensure that users and developers have access to accurate and up-to-date information about the application.
+###### --Migrated core Model Objects to comply with modern C# practices. The top level object now contains references to all domain model child objects while they contain only Guids.
+###### --Removed any code from domain model objects that causes side effects outside the onject itself, including logic that modifies observable variables contained withint the model objects. 
+###### --No domain modeel obect has access to network, display, or the file system any longer.
 ### Deprecated
 ### Removed
 ###### --Removed support for older versions of .NET, as the application now requires .NET 10.0 or later to take advantage of the latest features and improvements. This may require users to update their development environment and dependencies to ensure compatibility with the new version of the application.
 ###### --Removed deprecated code and features that are no longer necessary or relevant, as part of the ongoing effort to improve the performance and maintainability of the application. This may include the removal of old APIs, functions, or components that have been replaced by newer and more efficient alternatives.
 ###### --Dismanted the old architecture to make way for a new, more efficient and scalable architecture that better supports the needs of the application and its users. This may involve significant changes to the codebase and may require users to adapt to new workflows and processes when working with the application.
+###### --Older classes that followed WinForms patterns are being removed as they are rewritten. Those that remain do so as reference for newer implementations.
 ### Fixed
 ### Security
 ###### --Enhanced the security of product activation to a public/private AES key exchange. Product activation is neccesitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.
