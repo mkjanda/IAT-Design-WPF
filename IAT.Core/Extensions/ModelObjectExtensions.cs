@@ -1,4 +1,5 @@
-﻿using IAT.Core.Enumerations;
+﻿using IAT.Core.Domain;
+using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using sun.awt.image;

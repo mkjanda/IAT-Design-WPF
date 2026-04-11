@@ -23,7 +23,13 @@ namespace IAT.Core.Domain
         /// Gets or sets the unique identifier of the associated stimulus.
         /// </summary>
         [ObservableProperty]
-        private Guid _stimulusId;                    
+        private Guid _stimulusId;
+
+        /// <summary>
+        /// The guid of the preview image of the trial.
+        /// </summary>
+        [ObservableProperty]
+        private Guid _previewId;
 
         /// <summary>
         /// Gets or sets the current trial number.
@@ -59,19 +65,13 @@ namespace IAT.Core.Domain
         /// trial.</param>
         /// <returns>A ValidationResult indicating whether the stimulus is valid for this trial. Returns ValidationResult.Success
         /// if valid; otherwise, a failed ValidationResult with an appropriate error message.</returns>
-        public ValidationResult Validate(Stimulus stimulus)
+        public ValidationResult Validate()
         {
             if (StimulusId == Guid.Empty)
                 return ValidationResult.Fail("Trial must reference a valid stimulus");
 
             if (KeyedDirection == KeyedDirection.None)
                 return ValidationResult.Fail("Every trial must have a keyed direction");
-
-            if (stimulus is TextStimulus ts && !ts.IsValidForTest())
-                return ValidationResult.Fail("Stimulus is invalid for this trial's keying");
-
-            if (stimulus is ImageStimulus imageStim && !imageStim.IsValidForTest())
-                return ValidationResult.Fail("Stimulus is invalid for this trial's keying");
 
             return ValidationResult.Success;
         }

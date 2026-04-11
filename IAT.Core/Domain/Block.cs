@@ -3,9 +3,11 @@ using IAT.Core.Models;
 using IAT.Core.Validation;
 using System.Xml.Schema;
 using System.Xml.Serialization;
-using System.IO.Packaging;
+using IAT.Core.Serializable;
+using CommunityToolkit.Mvvm.ComponentModel;
+using net.sf.saxon.style;
 
-namespace IAT.Core.Serializable
+namespace IAT.Core.Domain
 {
     /// <summary>
     /// Represents a block of items within an IAT (Implicit Association Test), containing presentations, instructions,
@@ -16,90 +18,52 @@ namespace IAT.Core.Serializable
     /// provides methods for validation, serialization, and previewing. Blocks are typically managed as part of an IAT's
     /// structure and can be added, removed, or reordered within the test. Thread safety is not guaranteed; external
     /// synchronization is required for concurrent access.</remarks>
-    public class Block : IPackagePart, IValidatedItem
+    public partial class Block : ObservableObject
     {
 
         /// <summary>
         /// Gets or sets the unique identifier for the object.
         /// </summary>
-        [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
-        public Guid Id { get; set; } = Guid.NewGuid();
-
-
-        /// <summary>
-        /// Gets or sets the Uniform Resource Identifier (URI) associated with this instance.
-        /// </summary>
-        [XmlIgnore]
-        public Uri? Uri => PackUriHelper.CreatePartUri(new Uri($"{typeof(Block).ToString()}/{Id}.xml", UriKind.Relative));
-
-        /// <summary>
-        /// Gets the part type associated with the package.
-        /// </summary>
-        [XmlIgnore]
-        public PartType PackagePartType => PartType.Block;
-
-
-        /// <summary>
-        /// Gets the MIME type associated with the current block instance.  
-        /// </summary>
-        [XmlIgnore]
-        public String MimeType => "text/xml+" + typeof(Block).ToString();
-
+        [ObservableProperty]
+        private Guid _id = Guid.NewGuid();
 
         /// <summary>
         /// Gets or sets the number of trials to perform in the operation.
         /// </summary>
-        [XmlElement("NumPresentations", Form = XmlSchemaForm.Unqualified)]
-        required public int NumPresentations { get; set; } = 0;
+        [ObservableProperty]
+        private int _numPresentations = 0;
 
         /// <summary>
         /// Gets or sets the alternation group associated with the element.
         /// </summary>
         /// <remarks>The alternation group defines a set of mutually exclusive options for the element. If set to null, no
         /// alternation group is applied.</remarks>
-        [XmlElement("AlternationGroupGuid", Form = XmlSchemaForm.Unqualified)]
-        required public Guid AlternationGroupId { get; set; } = Guid.Empty;
-
-
-        /// <summary>
-        /// Gets or sets the alternation group associated with this element.
-        /// </summary>
-        [XmlIgnore]
-        public AlternationGroup? AlternationGroup { get; set; } = null;
-
+        [ObservableProperty]
+        private Guid _alternationGroupId = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI where instructions for completing the process can be accessed.
         /// </summary>
-        [XmlElement("InstructionsId", Form = XmlSchemaForm.Unqualified)]
-        public required Guid InstructionsId { get; set; } = Guid.Empty;
+        [ObservableProperty]
+        private Guid _instructionsId = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI used to display the left-side response in a comparison or review scenario.
         /// </summary>
-        [XmlElement("LeftResponseDisplayUri", Form = XmlSchemaForm.Unqualified)]
-        public required Guid LeftResponseId { get; set; } = Guid.Empty;
+        [ObservableProperty]
+        private Guid _leftResponseId = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI used to display the right-side response in the user interface.
         /// </summary>
-        [XmlElement("RightResponseDisplayUri", Form = XmlSchemaForm.Unqualified)]
-        public required Guid RightResponseId { get; set; } = Guid.Empty;
+        [ObservableProperty]
+        private Guid _rightResponseId = Guid.Empty;
 
         /// <summary>
         /// Gets the collection of unique identifiers for the associated trials.
         /// </summary>
-        [XmlArray("TrialIds", Form = XmlSchemaForm.Unqualified)]
-        [XmlArrayItem("TrialId", Form = XmlSchemaForm.Unqualified)]
-        public required List<Guid> TrialIds { get; init; } = [];
-
-        /// <summary>
-        /// Gets the collection of trials associated with this instance.
-        /// </summary>
-        /// <remarks>The returned list is initialized to an empty collection and is required to be set
-        /// during object initialization. The property is read-only after initialization.</remarks>
-        [XmlIgnore]
-        public required List<Trial> Trials { get; init; } = [];
+        [ObservableProperty]
+        private List<Guid> _trialIds = new();
 
         /// <summary>
         /// Indicates whether the item is a header item.
@@ -107,110 +71,45 @@ namespace IAT.Core.Serializable
         public static bool IsHeaderItem => true;
 
         /// <summary>
-        /// Gets a value indicating whether the current context represents a survey.
+        /// Determines if the representation of the item expands to show sub-items or details. For a block, 
+        /// this is typically true, as it can contain multiple trials and instructions.
         /// </summary>
-        public static bool IsSurvey => false;
+        public static bool IsExpandable => true;
 
-
-        /// <summary>
+        /// <summary>`
         /// Gets or sets the URI that identifies the cryptographic key.
         /// </summary>
-        [XmlElement("KeyId", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Guid KeyId { get; set; } = Guid.Empty;
-
-        /// <summary>
-        /// Gets or sets the key associated with this instance.
-        /// </summary>
-        [XmlIgnore]
-        public Key? Key { get; set; } = null;
+        [ObservableProperty]
+        private Guid _keyId = Guid.Empty;
 
         /// <summary>
         /// Gets the block number associated with this instance.
         /// </summary>
-        [XmlElement("BlockNumber", Form = XmlSchemaForm.Unqualified)]
-        public required int BlockNumber { get; init; } = 0;
-
-
-
-
-        /*
-                private void GeneratePreviewOverlay(Bitmap bmp)
-                {
-                    Graphics g = Graphics.FromImage(bmp);
-                    Brush br = new SolidBrush(CIAT.SaveFile.Layout.BackColor);
-                    g.FillRectangle(br, 0, 0, CIAT.SaveFile.Layout.InteriorSize.Width, CIAT.SaveFile.Layout.InteriorSize.Height);
-                    br.Dispose();
-                    br = new SolidBrush(CIAT.SaveFile.Layout.BorderColor);
-                    Font f = new Font(System.Drawing.SystemFonts.DefaultFont.FontFamily, 18F);
-                    String str;
-                    if (ItemTuples.Count == 0)
-                        str = "No Stimuli";
-                    else if (ItemTuples.Count == 1)
-                        str = "1 Stimulus";
-                    else
-                        str = String.Format("{0} Stimuli", ItemTuples.Count);
-                    Size szStr = TextRenderer.MeasureText(str, f);
-                    float ar = CIAT.SaveFile.Layout.InteriorSize.Width / CIAT.SaveFile.Layout.InteriorSize.Height;
-                    PointF ptDraw = new PointF((CIAT.SaveFile.Layout.InteriorSize.Width - szStr.Width) / 2, (CIAT.SaveFile.Layout.InteriorSize.Height - szStr.Height) / 2 - (2 * szStr.Height) + (ar > 1 ? (szStr.Height / ar) : (-ar * szStr.Height)));
-                    g.DrawString(str, f, br, ptDraw);
-                    br.Dispose();
-                    g.Dispose();
-                    f.Dispose();
-                    bmp.MakeTransparent(CIAT.SaveFile.Layout.BackColor);
-                }
-        */
+        [ObservableProperty]
+        public int _blockNumber = 0;
 
         /// <summary>
         /// Initializes a new instance of the Block class.
         /// </summary>
         public Block() { }
-        /*
-        public List<Tuple<IUri, LayoutItem>> GetPreviewComponents()
-        {
-            var components = new List<Tuple<IUri, LayoutItem>>();
-            if (Key != null)
-            {
-                components.Add(new Tuple<IUri, LayoutItem>(Key.LeftValue.IUri, LayoutItem.LeftResponseKey));
-                components.Add(new Tuple<IUri, LayoutItem>(Key.RightValue.IUri, LayoutItem.RightResponseKey));
-            }
-            components.Add(new Tuple<IUri, LayoutItem>(CIAT.SaveFile.GetDI(InstructionsUri).IUri, LayoutItem.BlockInstructions));
-            return components;
-        }
-        */
 
-        /// <summary>
-        /// Gets the item type that represents an IAT block content item.
-        /// </summary>
-        public static ContentsItemType ContentsItemType => ContentsItemType.IATBlock;
 
         /// <summary>
         /// Gets a value indicating whether an alternate item is associated with this instance.
         /// </summary>
-        public bool HasAlternateItem
+        public bool HasAlternateBlock
         {
             get
             {
-                return (AlternationGroup != null);
+                return AlternationGroupId != Guid.Empty;
             }
         }
 
         /// <summary>
         /// Gets the name associated with the current instance.
         /// </summary>
-        [XmlElement("Name", Form = XmlSchemaForm.Unqualified)]
-        public required string Name { get; set; } = String.Empty;
-
-
-        /// <summary>
-        /// Validates the current object and adds any validation errors to the specified dictionary.
-        /// </summary>
-        /// <remarks>Use this method to collect validation errors for the current object and its related
-        /// items. Existing entries in the dictionary may be updated or new entries added, depending on the validation
-        /// results.</remarks>
-        /// <param name="ErrorDictionary">A dictionary to which validation errors are added. The key is the item being validated, and the value is the
-        /// associated validation error. Cannot be null.</param>
-        public void Validate(Dictionary<IValidatedItem, ValidationError> ErrorDictionary) => this.Validate(ErrorDictionary);
-
+        [ObservableProperty]
+        private string _name = String.Empty;
 
 
 /*

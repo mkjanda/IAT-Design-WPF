@@ -1,4 +1,5 @@
-﻿using IAT.Core.Enumerations;
+﻿using IAT.Core.Domain;
+using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT_Design_WPF.Services;
@@ -31,7 +32,7 @@ namespace IAT.Core.Services
         private ConcurrentDictionary<Guid, Key> Keys = new();
         private ConcurrentDictionary<Guid, Trial> Trials = new();
         private ConcurrentDictionary<Guid, Block> Blocks = new();
-        private ConcurrentDictionary<Guid, InstructionScreen> InstructionScreen = new();
+        private ConcurrentDictionary<Guid, InstructionsScreen> InstructionScreen = new();
         private ConcurrentDictionary<Guid, Instructions> Instructions = new();
         private ConcurrentDictionary<Guid, Survey> Surveys = new();
         private ConcurrentDictionary<Guid, AlternationGroup> AlternationGroups = new();

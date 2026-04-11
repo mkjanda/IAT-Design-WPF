@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ###### --Added a service for handling network communication and data processing, which can be used to manage the flow of data between the application and external sources. This includes services for sending and receiving data, as well as processing and transforming data as needed. This service will be able handle multiple types of exchanges.
 ###### --Added support for receiving serializable objects over the network by unboxing them to be deserialized anonymously. This allows for greater flexibility in handling data received from the network without needing to define specific types for deserialization.	
 ###### --Added classes for a model and service to manage the layout of the application, including support for different types of layouts and the ability to customize the layout based on user preferences. 
+###### --The domain models for the IAT have been completely rewritten to be more lightweight and focused on representing the data and state of the application, without containing any logic that modifies observable variables or has side effects outside of the object itself. This allows for better separation of concerns and makes the domain models easier to maintain and test.
 ### Changed
 ###### --Updated dependencies to latest versions
 ###### --Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. This may include changes to the structure of the codebase, as well as updates to existing components to improve performance and maintainability.
@@ -25,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ###### --Removed deprecated code and features that are no longer necessary or relevant, as part of the ongoing effort to improve the performance and maintainability of the application. This may include the removal of old APIs, functions, or components that have been replaced by newer and more efficient alternatives.
 ###### --Dismanted the old architecture to make way for a new, more efficient and scalable architecture that better supports the needs of the application and its users. This may involve significant changes to the codebase and may require users to adapt to new workflows and processes when working with the application.
 ###### --Older classes that followed WinForms patterns are being removed as they are rewritten. Those that remain do so as reference for newer implementations.
+###### --Removed LayoutElement class becausee of overlap with LayoutItem.+
 ### Fixed
 ### Security
 ###### --Enhanced the security of product activation to a public/private AES key exchange. Product activation is neccesitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.

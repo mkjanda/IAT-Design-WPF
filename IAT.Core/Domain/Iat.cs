@@ -5,20 +5,60 @@ using System.Collections.ObjectModel;
 
 namespace IAT.Core.Domain
 {
+    /// <summary>
+    /// Represents an Implicit Association Test (IAT) configuration, including its trials, blocks, stimuli, and
+    /// instruction screens. Provides methods for validation and entity lookup by unique identifier.
+    /// </summary>
+    /// <remarks>Use this class to manage and validate the structure of an IAT, ensuring that all required
+    /// components are present and correctly configured. The class exposes collections for trials, blocks, stimuli, and
+    /// instruction screens, and provides helper methods to retrieve specific entities by their unique identifiers.
+    /// Validation methods are available to check the integrity of the entire test before execution.</remarks>
     public partial class Iat : ObservableObject
     {
+        /// <summary>
+        /// Gets the collection of trials associated with this instance.
+        /// </summary>
+        /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
+        /// additions or removals of trials. Modifying the collection will not automatically persist changes unless
+        /// explicitly handled elsewhere.</remarks>
         public ObservableCollection<Trial> Trials { get; } = new();
-        public ObservableCollection<Block> Blocks { get; } = new();
-        public ObservableCollection<Stimulus> Stimuli { get; } = new();
-        public ObservableCollection<InstructionScreen> InstructionScreens { get; } = new();
 
+        /// <summary>
+        /// Gets the collection of blocks contained in the document.
+        /// </summary>
+        /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
+        /// additions or removals of blocks. Modifying the collection will update the document's structure
+        /// accordingly.</remarks>
+        public ObservableCollection<Block> Blocks { get; } = new();
+
+        /// <summary>
+        /// Gets the collection of stimuli associated with this instance.
+        /// </summary>
+        /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
+        /// additions or removals of stimuli. Modifications to the collection will be reflected in any data bindings or
+        /// observers.</remarks>
+        public ObservableCollection<Stimulus> Stimuli { get; } = new();
+
+        /// <summary>
+        /// Gets the collection of instruction screens displayed to the user.
+        /// </summary>
+        public ObservableCollection<InstructionsScreen> InstructionScreens { get; } = new();
+
+        /// <summary>
+        /// Validates the entire test configuration, including all trials, stimuli, and instruction screens.
+        /// </summary>
+        /// <remarks>This method performs a comprehensive validation by checking that every trial is
+        /// valid, each stimulus is used in at least one trial and is itself valid, and that at least one instruction
+        /// screen is present and valid. Validation stops at the first failure encountered and returns the corresponding
+        /// error.</remarks>
+        /// <returns>A ValidationResult indicating whether the test configuration is valid. Returns ValidationResult.Success if
+        /// all checks pass; otherwise, returns a ValidationResult describing the first validation error encountered.</returns>
         public ValidationResult ValidateEntireTest()
         {
             // 1. Every trial must be valid
             foreach (var trial in Trials)
             {
-                var stimulus = GetStimulusById(trial.StimulusId);   // your lookup helper
-                var result = trial.Validate(stimulus);
+                var result = trial.Validate();
                 if (!result.IsValid)
                     return result;   // fail fast on first error (you can collect all later if needed)
             }
@@ -35,17 +75,45 @@ namespace IAT.Core.Domain
                 return ValidationResult.Fail("At least one instruction screen is required");
 
 
-            foreach (var instrucction in InstructionScreens)
-                if (!instrucction.Validate().IsValid)
-                    return ValidationResult.Fail($"Instruction screen '{instrucction.Id}' is invalid: {instrucction.Validate().ErrorMessage}");
+            foreach (var instruction in InstructionScreens)
+                if (!instruction.Validate().IsValid)
+                    return ValidationResult.Fail($"Instruction screen '{instruction.Id}' is invalid: {instruction.Validate().ErrorMessage}");
 
             return ValidationResult.Success;
         }
 
+        /// <summary>
+        /// Helper methods to retrieve entities by ID, which can be used during validation and other operations.
+        /// </summary>
+        /// <param name="id">The unique identifier of the entity.</param>
+        /// <returns>The entity if found; otherwise, null.</returns>
+        public Stimulus? GetStimulusById(Guid id) => _stimulusCache.TryGetValue(id, out var stimulus) ? stimulus : null;
+
+        /// <summary>
+        /// Returns the trial with the specified ID, or null if not found. This is useful for validation and other operations that need to look up trials by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the trial.</param>
+        /// <returns>The trial if found; otherwise, null.</returns>
+        public Trial? GetTrialById(Guid id) => _trialCache.TryGetValue(id, out var trial) ? trial : null;
+
+        /// <summary>
+        /// Retrieves the instruction screen associated with the specified unique identifier.   
+        /// </summary>
+        /// <param name="id">The unique identifier of the instruction screen to retrieve.</param>
+        /// <returns>The instruction screen corresponding to the specified identifier, or null if no matching instruction screen
+        /// is found.</returns>
+        public InstructionsScreen? GetInstructionScreenById(Guid id) => _instructionCache.TryGetValue(id, out var instruction) ? instruction : null; 
+
+        /// <summary>
+        /// Retrieves a block with the specified unique identifier, if it exists.
+        /// </summary>
+        /// <param name="id">The unique identifier of the block to retrieve.</param>
+        /// <returns>The block associated with the specified identifier, or null if no such block exists.</returns>
+        public Block? GetBlockById(Guid id) => _blockCache.TryGetValue(id, out var block) ? block : null;
+
+        private readonly Dictionary<Guid, Block> _blockCache = new();
         private readonly Dictionary<Guid, Stimulus> _stimulusCache = new();
         private readonly Dictionary<Guid, Trial> _trialCache = new();   
-        private readonly Dictionary<Guid, InstructionScreen> _instructionCache = new();
-
-        private Stimulus? GetStimulusById(Guid id) => Stimuli.FirstOrDefault(s => s.Id == id);
+        private readonly Dictionary<Guid, InstructionsScreen> _instructionCache = new();
     }
 }

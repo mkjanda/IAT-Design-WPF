@@ -1,4 +1,5 @@
 ﻿using System;
+using IAT.Core.Domain;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 

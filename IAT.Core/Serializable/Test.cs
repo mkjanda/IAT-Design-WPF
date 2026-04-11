@@ -6,6 +6,7 @@ using System.Xml.Schema;
 using System.ComponentModel.DataAnnotations;
 using IAT.Core.Models;
 using IAT.Core.Enumerations;
+using IAT.Core.Domain;
 
 namespace IAT.Core.Serializable
 {

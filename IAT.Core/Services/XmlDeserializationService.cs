@@ -5,6 +5,7 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml;
 using IAT.Core.Serializable;
+using IAT.Core.Domain;
 
 namespace IAT.Core.Services
 {

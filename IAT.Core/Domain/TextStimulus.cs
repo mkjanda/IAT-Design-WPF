@@ -18,7 +18,13 @@ namespace IAT.Core.Domain
         [ObservableProperty]
         private string _colorHex = "#FFFFFF";     // or use Color struct if you prefer
 
-        // Pure domain preview – this is the ONLY thing GetDisplayPreview should return
+        /// <summary>
+        /// Pure domain preview. This is the only thing GetDisplayPreview should return for a TextStimulus, and it should be the Text property. 
+        /// This is what will be shown in the UI when listing stimuli, and it should be a simple, human-readable string that represents the content of the stimulus. 
+        /// It should not include font, color, or other styling information, as those are not relevant for a quick preview. The Text property itself is the 
+        /// most direct representation of the stimulus content and is what users will expect to see when they look at a list of stimuli.
+        /// </summary>
+        /// <returns></returns>
         public override string GetDisplayPreview()
         {
             // Simple, fast string for UI lists and quick reference

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using com.sun.crypto.provider;
-using IAT.Core.Serializable;
+using IAT.Core.Domain;
 namespace IAT.Core.Validation
 {
 

@@ -20,9 +20,9 @@ namespace IAT.Core.Enumerations
     /// <param name="MaxSizee">The maximum allowable size, in pixels, for this media type.</param>
     /// <param name="GrowRate">The rate at which the media type can increase in size, in pixels per operation.</param>
     /// <param name="ShrinkRate">The rate at which the media type can decrease in size, in pixels per operation.</param>
-    /// <param name="LayoutElement">Identifies the layout object the item is aassociated with</param>
+    /// <param name="LayoutItem">Identifies the layout object the item is aassociated with</param>
     /// <param name="DITypes">An array of DIType values that specify the data item types associated with this media type.</param>
-    public abstract record ImageMediaType(String Name, string Description, int InitialSize, int IdealSize, int MaxSizee, int GrowRate, int ShrinkRate, LayoutElement LayoutElement, DIType[] DITypes)
+    public abstract record ImageMediaType(String Name, string Description, int InitialSize, int IdealSize, int MaxSizee, int GrowRate, int ShrinkRate, LayoutItem LayoutItem, DIType[] DITypes)
     {
         public static readonly ImageMediaType Unset = new _Unset();
 
@@ -193,7 +193,7 @@ namespace IAT.Core.Enumerations
         /// <remarks>Use this type when content should be rendered to fill the full window area, without
         /// margins or borders. This is typically used for immersive or full-screen display scenarios.</remarks>
         private sealed record _FullWindow() : ImageMediaType("FullWindow", "Represents the full window media type, which is used for displaying content that occupies the entire application window.",
-            10, 10, 100, 20, 5, LayoutElement.Interior, [ DIType.LambdaGenerated, DIType.Preview ]) { }
+            10, 10, 100, 20, 5, LayoutItem.FullWindow, [ DIType.LambdaGenerated, DIType.Preview ]) { }
 
         /// <summary>
         /// Represents the response key media type used for displaying content related to response keys within the
@@ -203,7 +203,7 @@ namespace IAT.Core.Enumerations
         /// application's user interface. It is a specialized media type that supports various display and interaction
         /// scenarios involving response keys.</remarks>
         private sealed record _ResponseKey() : ImageMediaType("ResponseKey", "Represents the response key media type, which is used for displaying content related to response keys in the application.",
-            10, 0, 30, 5, 5, LayoutElement.Key, [ DIType.DualKey, DIType.ResponseKeyText, DIType.ResponseKeyImage, DIType.Conjunction ]) { }
+            10, 0, 30, 5, 5, LayoutItem.LeftResponseKey, [ DIType.DualKey, DIType.ResponseKeyText, DIType.ResponseKeyImage, DIType.Conjunction ]) { }
 
         /// <summary>
         /// Represents the response key outline media type used for displaying outlines around response keys in the
@@ -213,7 +213,7 @@ namespace IAT.Core.Enumerations
         /// in the user interface. It is a specialized media type intended for scenarios where highlighting or
         /// emphasizing response keys is required.</remarks>
         private sealed record _ResponseKeyOutline() : ImageMediaType("ResponseKeyOutline", "Represents the response key outline media type, which is used for displaying outlines around response keys in the application.",
-            2, 2, 10, 1, 1, LayoutElement.KeyOutline, [ DIType.LeftKeyValueOutline, DIType.RightKeyValueOutline]) { }
+            2, 2, 10, 1, 1, LayoutItem.LeftResponseKey, [ DIType.LeftKeyValueOutline, DIType.RightKeyValueOutline]) { }
 
         /// <summary>
         /// Represents the stimulus media type used for displaying stimuli within the application.
@@ -223,7 +223,7 @@ namespace IAT.Core.Enumerations
         /// use in scenarios where stimuli need to be rendered according to specific layout and data integration
         /// requirements.</remarks>
         private sealed record _Stimulus() : ImageMediaType("Stimulus", "Represents the stimulus media type, which is used for displaying stimuli in the application.",
-            25, 15, 100, 20, 10, LayoutElement.Stimulus, [ DIType.StimulusImage, DIType.StimulusText]) { }
+            25, 15, 100, 20, 10, LayoutItem.Stimulus, [ DIType.StimulusImage, DIType.StimulusText]) { }
 
         /// <summary>
         /// Represents the error mark media type used for displaying error indicators within the application.
@@ -233,14 +233,14 @@ namespace IAT.Core.Enumerations
         /// used in conjunction with other layout elements to provide clear feedback to users about issues that require
         /// attention.</remarks>
         private sealed record _ErrorMark() : ImageMediaType("ErrorMark", "Represents the error mark media type, which is used for displaying error marks in the application.",
-            1, 1, 10, 1, 1, LayoutElement.ErrorMark, [ DIType.ErrorMark ]) { }   
+            1, 1, 10, 1, 1, LayoutItem.ErrorMark, [ DIType.ErrorMark ]) { }   
 
         /// <summary>
         /// Represents the block instructions media type, which is used for displaying instructions related to blocks in
         /// the application.
         /// </summary>
         private sealed record _BlockInstructions() : ImageMediaType("BlockInstructions", "Represents the block instructions media type, which is used for displaying instructions related to blocks in the application.",
-            10, 10, 25, 5, 5, LayoutElement.BlockInstructions, [ DIType.IatBlockInstructions ]) { }
+            10, 10, 25, 5, 5, LayoutItem.BlockInstructions, [ DIType.IatBlockInstructions ]) { }
 
         /// <summary>
         /// Represents the text instruction screen media type used for displaying text-based instructions on the
@@ -250,8 +250,7 @@ namespace IAT.Core.Enumerations
         /// as text to users. It is typically used in user interfaces that require clear, readable instructions as part
         /// of the workflow.</remarks>
         private sealed record _TextInstructionScreen() : ImageMediaType("TextInstructionScreen", "Represents the text instruction screen media type, which is used for displaying text instructions on the instruction screen in the application.",
-            5, 5, 25, 5, 5, LayoutElement.InstructionsText, [ DIType.TextInstructionsScreen]) { }
-
+            5, 5, 25, 5, 5, LayoutItem.TextInstructionScreen, [ DIType.TextInstructionsScreen]) { }
 
         /// <summary>
         /// Represents the media type for the keyed instruction screen, which is used to display instructions related to
@@ -263,14 +262,14 @@ namespace IAT.Core.Enumerations
         /// types.</remarks>
         private sealed record _KeyedInstructionScreen() : ImageMediaType("KeyedInstructionScreen", "Represents the keyed instruction screen media type, which is used for displaying instructions related to keyed responses on the instruction screen in the application.",
 
-            5, 5, 25, 5, 5, LayoutElement.KeyInstructionsText, [ DIType.KeyedInstructionsScreen]) { }
+            5, 5, 25, 5, 5, LayoutItem.KeyedInstructionScreen, [ DIType.KeyedInstructionsScreen]) { }
 
         /// <summary>
         /// Represents the mock item instructions media type, which is used for displaying instructions related to mock
         /// items in the application.
         /// </summary>
         private sealed record _MockItemInstructions() : ImageMediaType("MockItemInstructions", "Represents the mock item instructions media type, which is used for displaying instructions related to mock items in the application.",
-            5, 5, 25, 5, 5, LayoutElement.MockItemText, [ DIType.MockItemInstructions ]) { }
+            5, 5, 25, 5, 5, LayoutItem.MockItemInstructions, [ DIType.MockItemInstructions ]) { }
 
         /// <summary>
         /// Represents the media type for continue instructions, used to display guidance or prompts for continuing
@@ -280,7 +279,7 @@ namespace IAT.Core.Enumerations
         /// proceeding to the next step or action. It is intended for scenarios where clear, actionable instructions are
         /// required to guide user flow.</remarks>
         private sealed record _ContinueInstructions() : ImageMediaType("ContinueInstructions", "Represents the continue instructions media type, which is used for displaying instructions related to continuing in the application.",
-            5, 5, 25, 5, 5, LayoutElement.ContinueInstructions, [ DIType.ContinueInstructions ]) { }
+            5, 5, 25, 5, 5, LayoutItem.ContinueInstructions, [ DIType.ContinueInstructions ]) { }
 
         /// <summary>
         /// Represents a media type for images with variable dimensions, allowing content to be displayed at any size
@@ -290,7 +289,7 @@ namespace IAT.Core.Enumerations
         /// on the context or user input. It is typically associated with scenarios such as survey images where the
         /// dimensions are not predetermined.</remarks>
         private sealed record _VariableSize() : ImageMediaType("VariableSize", "Represents the variable size media type, which is used for displaying content that can have varying sizes in the application.",
-            0, 0, 0, 0, 0, LayoutElement.Unset, [ DIType.SurveyImage ]) { }
+            0, 0, 0, 0, 0, LayoutItem.None, [ DIType.SurveyImage ]) { }
 
         /// <summary>
         /// Represents the thumbnail image type used for previewing stimuli and instruction screens.
@@ -299,7 +298,7 @@ namespace IAT.Core.Enumerations
         /// their recommended size and intended use as visual previews. It is typically used to provide quick,
         /// low-resolution representations of larger media assets within the application.</remarks>
         private sealed record _Thumbnail() : ImageMediaType("Thumbnail", "Represents the thumbnail preview of stimuli and instruction screens.",
-            25, 15, 75, 5, 15, LayoutElement.Thumbnail, []) { }
+            25, 15, 75, 5, 15, LayoutItem.None, []) { }
 
         /// <summary>
         /// Represents a media type that indicates the absence of any applicable or available media within the
@@ -309,10 +308,10 @@ namespace IAT.Core.Enumerations
         /// present or relevant. This can be useful for scenarios where a placeholder or sentinel value is needed to
         /// signify 'no media'.</remarks>
         private sealed record _Null() : ImageMediaType("Null", "Represents a null media type, which is used for cases where no media is applicable or available in the application.",
-            1, 1, 3, 1, 1, LayoutElement.Unset, [ DIType.Null ]) { }
+            1, 1, 3, 1, 1, LayoutItem.None, [ DIType.Null ]) { }
 
         private sealed record _Unset() : ImageMediaType("Unset", "Represents an unset media type, which is used as a default or uninitialized state for media types in the application.",
-            0, 0, 0, 0, 0, LayoutElement.Unset, [ ]) { }
+            0, 0, 0, 0, 0, LayoutItem.None, [ ]) { }
 
     }
 }
