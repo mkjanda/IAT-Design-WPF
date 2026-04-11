@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Domain;
 
@@ -12,6 +13,9 @@ public abstract partial class Stimulus : ObservableObject
 
     [ObservableProperty]
     private int _originatingBlock;
+
+    [ObservableProperty]
+    private KeyedDirection _keyedDirectionName = KeyedDirection.None;
 
     // Pure domain behavior only
     public abstract ValidationResult Validate();

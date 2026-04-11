@@ -26,12 +26,6 @@ namespace IAT.Core.Domain
         private Guid _stimulusId;
 
         /// <summary>
-        /// The guid of the preview image of the trial.
-        /// </summary>
-        [ObservableProperty]
-        private Guid _previewId;
-
-        /// <summary>
         /// Gets or sets the current trial number.
         /// </summary>
         [ObservableProperty]
@@ -65,13 +59,16 @@ namespace IAT.Core.Domain
         /// trial.</param>
         /// <returns>A ValidationResult indicating whether the stimulus is valid for this trial. Returns ValidationResult.Success
         /// if valid; otherwise, a failed ValidationResult with an appropriate error message.</returns>
-        public ValidationResult Validate()
+        public ValidationResult Validate(Stimulus? stimulus)
         {
             if (StimulusId == Guid.Empty)
                 return ValidationResult.Fail("Trial must reference a valid stimulus");
 
             if (KeyedDirection == KeyedDirection.None)
                 return ValidationResult.Fail("Every trial must have a keyed direction");
+
+            if (stimulus is null || stimulus.Validate().IsValid == false)
+                return ValidationResult.Fail("Trial stimulus is invalid");
 
             return ValidationResult.Success;
         }

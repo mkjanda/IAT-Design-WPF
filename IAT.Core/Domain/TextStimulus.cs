@@ -1,5 +1,4 @@
-﻿using com.sun.org.apache.bcel.@internal.generic;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using IAT.Core.Enumerations;
 
 namespace IAT.Core.Domain
