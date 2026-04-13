@@ -1,4 +1,5 @@
 ﻿using IAT.Core.Domain;
+using IAT.Core.Exceptions;
 using System.IO;
 using System.IO.Packaging;
 using System.Text.Json;
@@ -12,7 +13,21 @@ namespace IAT.Core.Services;
 /// typically to and from a file. Methods are asynchronous and support cancellation via a cancellation token.</remarks>
 public interface IProjectPackageService
 {
+    /// <summary>
+    /// Saves the specified IAT test project to a file at the given path asynchronously.        
+    /// </summary>
+    /// <param name="test">The IAT test project to save.</param>
+    /// <param name="filePath">The file path where the test will be saved.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the save operation.</param>
+    /// <returns>A task that represents the asynchronous save operation.</returns>
     Task SaveProjectAsync(IatTest test, string filePath, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Loads an IAT test project from the specified file path asynchronously.
+    /// </summary>
+    /// <param name="filePath">The file path from which to load the test project.</param>
+    /// <param name="ct">A cancellation token that can be used to cancel the load operation.</param>
+    /// <returns>A task that represents the asynchronous load operation. The task result contains the loaded IAT test project.</returns>    
     Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct = default);
 }
 
@@ -29,6 +44,13 @@ public class ProjectPackageService : IProjectPackageService
         WriteIndented = true,
         Converters = { new JsonPolymorphicStimulusConverter() } // we'll create this next
     };
+    private readonly IImagePackageService _imagePackageService;
+
+    /// <summary>
+    /// Initializes a new instance of the ProjectPackageService class with the specified image package service.
+    /// </summary>
+    /// <param name="imagePackageService">The image package service to be used by this instance. Cannot be null.</param>
+    public ProjectPackageService(IImagePackageService imagePackageService) => _imagePackageService = imagePackageService;
 
     /// <summary>
     /// Asynchronously saves the specified IAT test to a file at the given path.
@@ -44,12 +66,37 @@ public class ProjectPackageService : IProjectPackageService
         var validationResult = test.ValidateEntireTest();
         if (!validationResult.IsValid)
         {
-            throw new ValidationException($"Validation failed: {string.Join(", ", validationResult.Errors)}");
+            throw new ValidationException($"Validation failed: {string.Join(", ", validationResult.ErrorMessages)}");
         }
 
         using var package = Package.Open(filePath, FileMode.Create);
-        // TODO: write domain objects as JSON part + images
-        await Task.CompletedTask; // placeholder — we'll fill this in the next step
+
+        // Create and serialize the main test JSON part
+        Uri testPartUri = PackUriHelper.CreatePartUri(new Uri("test.json", UriKind.Relative));
+        PackagePart testPart = package.CreatePart(testPartUri, "application/json");
+        using (Stream testStream = testPart.GetStream())
+        {
+            await JsonSerializer.SerializeAsync(testStream, test, _jsonOptions, ct);
+        }
+
+        // Import stimuli (images and text) into separate parts
+        foreach (var block in test.Blocks)
+        {
+            foreach (var trialId in block.TrialIds)
+            {
+                var trial = test.GetTrialById(trialId) ?? throw new InvalidOperationException($"Trial with ID {trialId} not found in test.");
+                if (test.GetStimulusById(trial.StimulusId) is ImageStimulus imageStimulus)
+                {
+                    // Assume sourceFilePath is available (e.g., from stimulus.FileName or a lookup)
+                    string sourceFilePath = GetSourceFilePath(imageStimulus);
+                    await _imagePackageService.ImportImageStimulusAsync(imageStimulus, sourceFilePath, package, ct);
+                }
+                else if (test.GetStimulusById(trial.StimulusId) is TextStimulus textStimulus)
+                {
+                    await _imagePackageService.ImportTextStimulusAsync(textStimulus, package, ct);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -61,8 +108,32 @@ public class ProjectPackageService : IProjectPackageService
     public async Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct)
     {
         using var package = Package.Open(filePath, FileMode.Open);
-        // TODO: read JSON part and reconstruct IatTest
-        await Task.CompletedTask;
-        return new IatTest();
+
+        // Get the main test JSON part
+        Uri testPartUri = PackUriHelper.CreatePartUri(new Uri("test.json", UriKind.Relative));
+        if (!package.PartExists(testPartUri))
+        {
+            throw new FileNotFoundException("Test data not found in package.");
+        }
+
+        PackagePart testPart = package.GetPart(testPartUri);
+        using Stream testStream = testPart.GetStream();
+
+        // Deserialize the IatTest from JSON
+        IatTest? test = await JsonSerializer.DeserializeAsync<IatTest>(testStream, _jsonOptions, ct);
+        if (test == null)
+        {
+            throw new JsonException("Failed to deserialize IatTest from package.");
+        }
+
+        return test;
+    }
+
+    private string GetSourceFilePath(ImageStimulus stimulus)
+    {
+        // TODO: Implement logic to resolve the source file path from stimulus.FileName
+        // For example, if FileName is relative, combine with a base directory
+        // For now, assume FileName is the full path
+        return stimulus.FileName;
     }
 }

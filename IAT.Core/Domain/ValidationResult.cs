@@ -16,7 +16,7 @@
         /// <summary>
         /// The error message supplied in the event the  item is not valid.
         /// </summary>
-        public string? ErrorMessage { get; }
+        static public List<string> ErrorMessages { get; private set; } = new();
 
         /// <summary>
         /// Initializes a new instance of the ValidationResult structure with the specified validity state and error
@@ -39,6 +39,7 @@
         /// <param name="message">The error message that describes the reason for the validation failure. Cannot be null.</param>
         /// <returns>A <see cref="ValidationResult"/> instance representing a failed validation, containing the provided error
         /// message.</returns>
-        public static ValidationResult Fail(string message) => new(false, message);
+        public static ValidationResult Fail(string message) => new(false, message); {
+        }
     }
 }
