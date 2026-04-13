@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using IAT.Core.Enumerations;
+using System;
 
 
 namespace IAT.Core.Domain
@@ -11,6 +12,12 @@ namespace IAT.Core.Domain
 
         [ObservableProperty]
         private string _fileName = string.Empty;   // UI binds to this
+
+        /// <summary>
+        /// The URI of the image file within the package. This property is used to locate and load the image resource when needed. 
+        /// The URI should be relative to the package structure and point to the location of the image file included in the experiment package.
+        /// </summary>
+        public Uri? PackageUri { get; set; }
 
 
         /// <summary>
