@@ -53,32 +53,30 @@ public partial class IatTest : ObservableObject
     /// all checks pass; otherwise, returns a ValidationResult describing the first validation error encountered.</returns>
     public ValidationResult ValidateEntireTest()
     {
+        var result = new ValidationResult();
         // 1. Every trial must be valid
         foreach (var trial in Trials)
         {
             var stimuulus = GetStimulusById(trial.StimulusId);
-            var result = trial.Validate(stimuulus);
-            if (!result.IsValid)
-                return result;   // fail fast on first error (you can collect all later if needed)
+            result.ErrorMessages.AddRange(trial.Validate(stimuulus).ErrorMessages);
         }
 
         // 2. Stimulus reuse across blocks with different keying is allowed — but every stimulus must appear in at least one trial
         if (!Stimuli.Any(s => Trials.Any(t => t.StimulusId == s.Id)))
-            return ValidationResult.Fail("Every stimulus must be used in at least one trial");
+            result.ErrorMessages.Add("Every stimulus must be used in at least one trial");
         foreach (var stimulus in Stimuli)
-            if (!stimulus.Validate().IsValid)
-                return ValidationResult.Fail($"Stimulus '{stimulus.Id}' is invalid: {stimulus.Validate().ErrorMessage}");
-
+            result.ErrorMessages.AddRange(stimulus.Validate().ErrorMessages);
 
         if (InstructionScreens.Count == 0)
-            return ValidationResult.Fail("At least one instruction screen is required");
+            result.ErrorMessages.Add("At least one instruction screen is required");
 
 
         foreach (var instruction in InstructionScreens)
-            if (!instruction.Validate().IsValid)
-                return ValidationResult.Fail($"Instruction screen '{instruction.Id}' is invalid: {instruction.Validate().ErrorMessage}");
+            result.ErrorMessages.AddRange(instruction.Validate().ErrorMessages);
+        if (result.ErrorMessages.Count > 0)
+            result.IsValid = false;
 
-        return ValidationResult.Success;
+        return result;
     }
 
     /// <summary>

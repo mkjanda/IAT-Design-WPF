@@ -20,5 +20,13 @@ namespace IAT.Core.Domain
         private string _instructionsColorHex = "#FFFFFF";     // or use Color struct if you prefer
 
         public TextInstructionsScreen() { }
+
+        public override ValidationResult Validate()
+        {
+            var result = base.Validate();
+            if (Instructions == string.Empty)
+                result.Fail("Instructions cannot be empty.");
+            return result;
+        }
     }
 }

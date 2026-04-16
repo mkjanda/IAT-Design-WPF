@@ -57,6 +57,9 @@ namespace IAT.Core.Domain
         [ObservableProperty]
         protected Guid _previewId = Guid.Empty;
 
+        /// <summary>
+        /// The InstructionScreen object constructor
+        /// </summary>
         public InstructionsScreen() { }
 
         /// <summary>
@@ -65,9 +68,12 @@ namespace IAT.Core.Domain
         /// <returns>A ValidationResult indicating whether the instruction screen definition is valid. Returns
         /// ValidationResult.Success if validation passes.</returns>
         /// <exception cref="Exception">Thrown if the instruction screen type is blank or if the continue instructions text is empty.</exception>
-        public ValidationResult Validate()
+        public virtual ValidationResult Validate()
         {
-            return ValidationResult.Success;
+            var validationResult = new ValidationResult();
+            if (ContinueInstructions == string.Empty)
+                validationResult.Fail("Continue instructions text cannot be empty");
+            return validationResult;
         }
     }
 }

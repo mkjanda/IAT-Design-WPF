@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ###### --Added support for receiving serializable objects over the network by unboxing them to be deserialized anonymously. This allows for greater flexibility in handling data received from the network without needing to define specific types for deserialization.	
 ###### --Added classes for a model and service to manage the layout of the application, including support for different types of layouts and the ability to customize the layout based on user preferences. 
 ###### --Added a package service to handle the saving and loading of IAT test configurations as OPC (Open Packaging Conventions) files, which can include embedded images and JSON data. This allows for easy distribution and sharing of IAT tests while ensuring that all necessary resources are included in a single package.
+###### --Added validation functionality to the IAT test configuration process, which can be used to ensure that all necessary components and resources are included in the test configuration and that the configuration is valid before it is saved or executed. This may include checks for missing or invalid data, as well as checks for compatibility with the application and its dependencies.
 ### Changed
 ###### --Updated dependencies to latest versions
 ###### --Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. This may include changes to the structure of the codebase, as well as updates to existing components to improve performance and maintainability.
@@ -32,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ###### --Dismanted the old architecture to make way for a new, more efficient and scalable architecture that better supports the needs of the application and its users. This may involve significant changes to the codebase and may require users to adapt to new workflows and processes when working with the application.
 ###### --Older classes that followed WinForms patterns are being removed as they are rewritten. Those that remain do so as reference for newer implementations.
 ###### --Removed LayoutElement class becausee of overlap with LayoutItem.
+###### --Removed the old exception based validation system, which was previously used to validate IAT test configurations and other aspects of the application. This may require users to adapt to new workflows and processes when working with the application, but will ultimately result in a more efficient and scalable architecture that better supports the needs of the application and its users.
 ### Fixed
 ### Security
 ###### --Enhanced the security of product activation to a public/private AES key exchange. Product activation is neccesitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.

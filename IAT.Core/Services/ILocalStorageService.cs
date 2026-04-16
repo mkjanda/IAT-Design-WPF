@@ -5,6 +5,12 @@ using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services
 {
+    /// <summary>
+    /// The interface ILocalStorageService defines a contract for a service that provides access to local storage, allowing for the retrieval and storage of string 
+    /// values associated with specific fields. This service can be used to manage application settings, user preferences, or any other data that needs to be persisted 
+    /// locally. The implementation of this interface may vary depending on the platform (e.g., file system, database, in-memory storage) and should handle cases where 
+    /// fields may not exist gracefully.
+    /// </summary>
     public interface ILocalStorageService
     {
         /// <summary>

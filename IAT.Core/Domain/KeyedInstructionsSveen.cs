@@ -48,6 +48,16 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Initializes a new instance of the KeyedInstructionsScreen class.
         /// </summary>
-        public KeyedInstructionsScreen() { }    
+        public KeyedInstructionsScreen() { }
+
+        public override ValidationResult Validate()
+        {
+            var result = base.Validate();
+            if (ResponseKeyId == Guid.Empty)
+                result.Fail("ResponseKeyId must be set to a valid Guid.");
+            if (Instructions == string.Empty)
+                result.Fail("Instructions cannot be empty.");
+            return result;
+        }
     }
 }

@@ -88,5 +88,17 @@ namespace IAT.Core.Domain
         /// Initializes a new instance of the MockItemInstructionsScreen class.
         /// </summary>
         public MockItemInstructionsScreen() { }
+
+        public override ValidationResult Validate()
+        {
+            var result = base.Validate();
+            if (StimulusId == Guid.Empty)
+                result.Fail("StimulusId must be set to a valid Guid.");
+            if (ResponseKeyId == Guid.Empty)
+                result.Fail("ResponseKeyId must be set to a valid Guid.");
+            if (Instructions == string.Empty)
+                result.Fail("Instructions cannot be empty.");
+            return result;
+        }
     }
 }

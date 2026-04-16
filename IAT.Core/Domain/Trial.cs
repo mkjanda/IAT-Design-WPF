@@ -61,16 +61,17 @@ namespace IAT.Core.Domain
         /// if valid; otherwise, a failed ValidationResult with an appropriate error message.</returns>
         public ValidationResult Validate(Stimulus? stimulus)
         {
+            var result = new ValidationResult();
             if (StimulusId == Guid.Empty)
-                return ValidationResult.Fail("Trial must reference a valid stimulus");
+                result.Fail("Trial must reference a valid stimulus");
 
             if (KeyedDirection == KeyedDirection.None)
-                return ValidationResult.Fail("Every trial must have a keyed direction");
+                result.Fail("Every trial must have a keyed direction");
 
             if (stimulus is null || stimulus.Validate().IsValid == false)
-                return ValidationResult.Fail("Trial stimulus is invalid");
+                result.Fail("Trial stimulus is invalid");
 
-            return ValidationResult.Success;
+            return result
         }
     }
 }
