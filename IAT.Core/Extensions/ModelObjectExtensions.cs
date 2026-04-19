@@ -3,6 +3,7 @@ using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using sun.awt.image;
+using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Media;
@@ -20,93 +21,6 @@ namespace IAT.Core.Extensions
     /// trial management.</remarks>
     public static class ModelObjectExtensions
     {
-        /// <summary>
-        /// Gets the alternation priority value associated with the specified alternation group.
-        /// </summary>
-        /// <param name="group">The alternation group from which to retrieve the priority value. Cannot be null.</param>
-        /// <returns>The integer value representing the alternation priority of the specified group.</returns>
-        public static int GetAlternationPriority(this AlternationGroup group)
-        {
-            return group.GroupID;
-        }
-
-        /// <summary>
-        /// Determines whether the specified item is a member of the alternation group.
-        /// </summary>
-        /// <param name="group">The alternation group to search for the specified item. Cannot be null.</param>
-        /// <param name="item">The item to locate within the alternation group. Cannot be null.</param>
-        /// <returns>true if the item is a member of the group; otherwise, false.</returns>
-        public static bool Contains(this AlternationGroup group, Models.IContentsItem item)
-        {
-            return group.GroupMembers.Contains(item);
-        }
-
-        /// <summary>
-        /// Returns the one-based index of the specified block within the provided contents list.   
-        /// </summary>
-        /// <remarks>If the block is not present in the contents list, the method returns 0. The method
-        /// uses a one-based index, so the first item in the list has a block number of 1.</remarks>
-        /// <param name="block">The block whose position in the contents list is to be determined.</param>
-        /// <param name="contents">The list of content items in which to search for the specified block. Cannot be null.</param>
-        /// <returns>The one-based index of the block in the contents list, or 0 if the block is not found.</returns>
-        public static int BlockNumber(this Block block, List<IContentsItem> contents)
-        {
-            return contents.IndexOf(block) + 1;
-        }
-
-        /// <summary>
-        /// Returns the number of items contained in the specified block.
-        /// </summary>
-        /// <param name="block">The block whose items are to be counted. Cannot be null.</param>
-        /// <returns>The number of items in the block.</returns>
-        public static int NumberOfItems(this Block block)
-        {
-            return block.Trials.Count;
-        }
-
-        /// <summary>
-        /// Retrieves the block at the specified index within the alternation group.
-        /// </summary>
-        /// <param name="group">The alternation group from which to retrieve the block.</param>
-        /// <param name="index">The zero-based index of the block to retrieve. Must be within the bounds of the group's members and refer to
-        /// a member of type Block.</param>
-        /// <returns>The block at the specified index if it exists and is of type Block; otherwise, null.</returns>
-        /// <exception cref="IndexOutOfRangeException">Thrown when the specified index is outside the valid range of group members or does not refer to a Block.</exception>
-        public static Block? GetBlock(this AlternationGroup group, int index)
-        {
-            if (index < 0 || index >= group.GroupMembers.Count || group.GroupMembers[index] is not Block)
-            {
-                throw new IndexOutOfRangeException($"Index {index} is out of range for the alternation group.");
-            }
-            return group.GroupMembers[index] as Block;
-
-        }
-
-        /// <summary>
-        /// Returns the alternate block in the same alternation group as the specified block, if one exists.
-        /// </summary>
-        /// <remarks>If the block is not part of an alternation group or the group does not contain
-        /// exactly two members, the method returns null or the original block. This method is typically used to
-        /// retrieve the counterpart in a binary alternation scenario.</remarks>
-        /// <param name="block">The block for which to find the alternate block within its alternation group.</param>
-        /// <returns>The alternate block in the same alternation group if the group contains exactly two members and an alternate
-        /// exists; otherwise, returns null or the original block.</returns>
-        public static Block? GetAlternateBlock(this Block block)
-        {
-            if (block.AlternationGroup == null)
-                return null;
-            if (block.AlternationGroup.GroupMembers.Count == 2)
-            {
-                foreach (var member in block.AlternationGroup.GroupMembers)
-                {
-                    if (member is Block alternate && alternate != block)
-                    {
-                        return alternate;
-                    }
-                }
-            }
-            return block;
-        }
 
         /// <summary>
         /// Determines whether the specified block contains the given trial.
@@ -133,64 +47,6 @@ namespace IAT.Core.Extensions
             return trial.KeyedDirection.Opposite;
         }
 
-
-        /// <summary>
-        /// Adds the specified trial to the block if it is not already present.
-        /// </summary>
-        /// <remarks>If the trial or its identifier already exists in the block, this method does not add
-        /// duplicates.</remarks>
-        /// <param name="block">The block to which the trial will be added. Cannot be null.</param>
-        /// <param name="trial">The trial to add to the block. Cannot be null.</param>
-        public static void AddTrial(this Block block, Trial trial)
-        {
-            if (block.Trials.Count >= 0)
-            {
-                if (!block.Trials.Contains(trial))
-                    block.Trials.Add(trial);
-                if (!block.TrialIds.Contains(trial.Id))
-                    block.TrialIds.Add(trial.Id);
-            }
-        }
-
-        /// <summary>
-        /// Removes the specified trial from the block and updates the associated trial identifiers.
-        /// </summary>
-        /// <remarks>If the specified trial does not exist in the block, no action is taken.</remarks>
-        /// <param name="block">The block from which the trial will be removed. Cannot be null.</param>
-        /// <param name="trial">The trial to remove from the block. Cannot be null.</param>
-        public static void RemoveTrial(this Block block, Trial trial)
-        {
-            block.Trials.Remove(trial);
-            block.TrialIds.Remove(trial.Id);
-        }
-
-        /// <summary>
-        /// Removes the trial with the specified identifier from the block.
-        /// </summary>
-        /// <remarks>If the specified trial is not found in the block, no action is taken.</remarks>
-        /// <param name="block">The block from which to remove the trial. Cannot be null.</param>
-        /// <param name="trialId">The unique identifier of the trial to remove.</param>
-        public static void RemoveTrial(this Block block, Guid trialId)
-        {
-            var trialToRemove = block.Trials.Find(t => t.Id == trialId);
-            if (trialToRemove != null)
-            {
-                block.Trials.Remove(trialToRemove);
-                block.TrialIds.Remove(trialId);
-            }
-        }
-
-        /// <summary>
-        /// Returns the zero-based index of the trial with the specified identifier within the block's collection of
-        /// trials.
-        /// </summary>
-        /// <param name="block">The block containing the collection of trials to search.</param>
-        /// <param name="trialId">The unique identifier of the trial to locate.</param>
-        /// <returns>The zero-based index of the trial if found; otherwise, -1.</returns>
-        public static int GetTrialIndex(this Block block, Guid trialId)
-        {
-            return block.Trials.FindIndex(t => t.Id == trialId);
-        }
 
         /// <summary>
         /// Verifies that the decrypted ciphertext from the handshake matches the specified plain text using the
@@ -226,31 +82,6 @@ namespace IAT.Core.Extensions
             handshake.PlainText = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         }
 
-        /// <summary>
-        /// Subscribes an observer to receive notifications from the specified observable GUID source.
-        /// </summary>
-        /// <remarks>The observer will be added to the list of subscribers and will receive updates when
-        /// the observable GUID changes. This method does not prevent duplicate subscriptions of the same
-        /// observer.</remarks>
-        /// <param name="observableGuid">The observable GUID source to which the observer will be subscribed. Cannot be null.</param>
-        /// <param name="subscriber">The observer that will receive notifications. Cannot be null.</param>
-        public static void Subscribe(this ObservableValue observableGuid, IObserver<Guid> subscriber)
-        {
-            observableGuid.Observers.Add(subscriber);
-            subscriber.OnNext(observableGuid.Value);
-        }
-
-        /// <summary>
-        /// Removes the specified observer from the list of subscribers to the observable GUID sequence.
-        /// </summary>
-        /// <remarks>If the specified observer is not currently subscribed, this method has no
-        /// effect.</remarks>
-        /// <param name="observableGuid">The observable GUID instance from which the observer will be unsubscribed. Cannot be null.</param>
-        /// <param name="subscriber">The observer to remove from the subscription list. Cannot be null.</param>
-        public static void Unsubscribe(this ObservableValue observableGuid, IObserver<Guid> subscriber)
-        {
-            observableGuid.Observers.Remove(subscriber);
-        }
 
         /// <summary>
         /// Compares two version instances and determines their relative order based on release, major, minor, and
@@ -286,15 +117,63 @@ namespace IAT.Core.Extensions
             return $"{version.Release}.{version.Major}.{version.Minor}.{version.Trivial}";
         }
 
-        public Rect CalculateBounds(BitmapSource src, Color backColor)
+        /// <summary>
+        /// Sets the RSA key for the specified ResultSet instance using the provided EncryptedRSAKey. The method
+        /// initializes the static RSA field of the ResultSet class with the parameters from the provided key.
+        /// </summary>
+        /// <param name="resultSet">The ResultSet instance for which to set the RSA key.</param>
+        /// <param name="key">The EncryptedRSAKey containing the RSA parameters.</param>
+        public static void SetRSAKey(this ResultSet resultSet, EncryptedRSAKey key)
         {
-            int stride = (src.PixelWidth * src.Format.BitsPerPixel + 7) / 8;
-            int size = stride * src.PixelHeight;
-            byte[] pixelData = new byte[size];
-            var backColorArgb = (UInt32)((backColor.A << 24) | (backColor.R << 16) | (backColor.G << 8) | backColor.B);
+            ResultSet.rsa = RSA.Create(key.GetRSAParameters());
+        }
 
-            var pixels = new Array<Pixel>();
-            src.Copy
+        /// <summary>
+        /// Decrypts and assembles the data contained in the specified result set.
+        /// </summary>
+        /// <remarks>This method processes each entry in the result set's table of contents, decrypting
+        /// the associated data blocks using RSA and the provided metadata. The method returns the combined decrypted
+        /// data as a single byte array.</remarks>
+        /// <param name="resultSet">The result set containing encrypted data and associated metadata to be processed. Cannot be null.</param>
+        /// <returns>A byte array containing the fully decrypted and assembled data from the result set.</returns>
+        public static byte[] Process(this ResultSet resultSet)
+        {
+            byte[] resultData = Convert.FromBase64String(resultSet.ResultData);
+            var memStream = new MemoryStream();
+            foreach (var entry in resultSet.TOC)
+            {
+                byte[] key = new byte[entry.KeyLength];
+                byte[] iv = new byte[entry.IVLength];
+                Array.Copy(resultData, entry.KeyOffset, key, 0, entry.KeyLength);
+                Array.Copy(resultData, entry.IVOffset, iv, 0, entry.IVLength);
+                byte[] decryptedKey = ResultSet.rsa.Decrypt(key, RSAEncryptionPadding.Pkcs1);
+                byte[] decryptedIv = ResultSet.rsa.Decrypt(iv, RSAEncryptionPadding.Pkcs1);
+                byte[] encryptedData = new byte[entry.DataLength];
+                Array.Copy(resultData, entry.DataOffset, encryptedData, 0, entry.DataLength);
+                memStream.Write(resultSet.DecryptData(encryptedData, decryptedKey, decryptedIv));
+            }
+            return memStream.ToArray();
+        }
+
+        /// <summary>
+        /// Decrypts the specified cipher data using the DES algorithm and the provided key and initialization vector
+        /// (IV).
+        /// </summary>
+        /// <remarks>The caller is responsible for ensuring that the key and IV are valid for DES
+        /// decryption. Supplying an invalid key or IV will result in a cryptographic exception.</remarks>
+        /// <param name="resultSet">The result set instance on which this extension method is called. This parameter is not used in the
+        /// decryption process.</param>
+        /// <param name="cipherBytes">The encrypted data to decrypt, as a byte array.</param>
+        /// <param name="key">The secret key to use for DES decryption. Must be 8 bytes in length.</param>
+        /// <param name="iv">The initialization vector to use for DES decryption. Must be 8 bytes in length.</param>
+        /// <returns>A byte array containing the decrypted data.</returns>
+        public static byte[] DecryptData(this ResultSet resultSet, byte[] cipherBytes, byte[] key, byte[] iv)
+        {
+            using var des = DES.Create();
+            des.Key = key;
+            des.IV = iv;
+            using var decryptor = des.CreateDecryptor();
+            return decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
         }
     }
 }

@@ -66,7 +66,7 @@ public class ProjectPackageService : IProjectPackageService
         var validationResult = test.ValidateEntireTest();
         if (!validationResult.IsValid)
         {
-            throw new ValidationException($"Validation failed: {string.Join(", ", validationResult.ErrorMessages)}");
+            throw new ValidationException($"Validation failed: {string.Join("|", validationResult.Errors)}");
         }
 
         using var package = Package.Open(filePath, FileMode.Create);
@@ -131,9 +131,6 @@ public class ProjectPackageService : IProjectPackageService
 
     private string GetSourceFilePath(ImageStimulus stimulus)
     {
-        // TODO: Implement logic to resolve the source file path from stimulus.FileName
-        // For example, if FileName is relative, combine with a base directory
-        // For now, assume FileName is the full path
         return stimulus.FileName;
     }
 }

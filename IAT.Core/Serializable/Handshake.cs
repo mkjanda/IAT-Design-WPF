@@ -27,7 +27,7 @@ namespace IAT.Core.Serializable
         /// </summary>
         [XmlElement("Modulus", Form = XmlSchemaForm.Unqualified)]
         public string Modulus { get; set; } = String.Empty;
-        
+
         /// <summary>
         /// Gets or sets the encrypted text represented as a base64-encoded string.
         /// </summary>
@@ -54,7 +54,8 @@ namespace IAT.Core.Serializable
         /// Initializes a new instance of the Handshake class.
         /// </summary>
         public Handshake()
-        {   
+        {
 
         }
+    }
 }

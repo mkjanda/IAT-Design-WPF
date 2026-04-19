@@ -25,7 +25,7 @@ namespace IAT.Core.Domain
         {
             var result = base.Validate();
             if (Instructions == string.Empty)
-                result.Fail("Instructions cannot be empty.");
+                result.AddError("Instructions cannot be empty.");
             return result;
         }
     }

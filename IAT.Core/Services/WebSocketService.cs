@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Collections.Generic;
 using System.Net.WebSockets;
-using System.Text;
+using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Xml.Serialization;
 using IAT.Core.Extensions;
@@ -11,6 +11,10 @@ using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services
 {
+
+    public enum WebSocketUse { ActivateProduct, VerifyEmail, ResendEmailVerification };
+
+
     /// <summary>
     /// Provides functionality for activating a product using a WebSocket-based service. Manages the activation
     /// workflow, including communication with the activation server and handling activation results.
@@ -24,11 +28,11 @@ namespace IAT.Core.Services
         /// <summary>
         /// Gets the result of the product activation attempt.
         /// </summary>
-        public ProductActivationResult ActivationResult { get; private set; }
+        public TransactionResult Result { get; private set; } = TransactionResult.Unset;
         private ManualResetEvent ResetEvent = new(false);
         private Handshake OutHandshake = new();
         private object transmissionLock = new();
-        private ClientWebSocket ActivationWebSocket = new();
+        private ClientWebSocket WebSocket = new();
         private CancellationToken AbortToken = new(false);
         private ArraySegment<byte> ReceiveBuffer = new();
         private ILocalStorageService _localStorageService;
@@ -36,7 +40,7 @@ namespace IAT.Core.Services
         private IUserNotificationService _userNotificationService;
         private IXmlDeserializationService _xmlDeserializationService;
         private MemoryStream MessageBuffer = new();
-
+        private WebSocketUse Use;
         /// <summary>
         /// Initializes a new instance of the WebSocketService class with the specified dependencies.
         /// </summary>
@@ -66,8 +70,10 @@ namespace IAT.Core.Services
             var ser = new XmlSerializer(message.GetType());
             var memStream = new MemoryStream();
             ser.Serialize(memStream, message);
-            ActivationWebSocket.SendAsync(new ArraySegment<byte>(memStream.ToArray()), WebSocketMessageType.Binary, true, AbortToken);
+            WebSocket.SendAsync(new ArraySegment<byte>(memStream.ToArray()), WebSocketMessageType.Binary, true, AbortToken);
         }
+
+
 
         /// <summary>
         /// Initiates the product activation process using the specified user and product information.
@@ -83,13 +89,14 @@ namespace IAT.Core.Services
         /// <returns>A task that represents the asynchronous activation operation.</returns>
         public async Task Activate(string fName, string lName, string eMail, string title, string productKey)
         {
+            Use = WebSocketUse.ActivateProduct;
             _localStorageService[Field.UserName] = String.Format("{0} {1} {2}", title, fName, lName);
             _localStorageService[Field.UserEmail] = eMail;
             _localStorageService[Field.ProductKey] = productKey;
-            ActivationWebSocket = new ClientWebSocket();
+            WebSocket = new ClientWebSocket();
             try
             {
-                await ActivationWebSocket.ConnectAsync(new Uri(_stringResourceService["WebSocketUri"]), new CancellationToken(false));
+                await WebSocket.ConnectAsync(new Uri(_stringResourceService["WebSocketUri"]), new CancellationToken(false));
                 await StartMessageReceiver();
                 var outTrans = new TransactionRequest(TransactionType.RequestConnection, _localStorageService);
                 SendMessage(outTrans);
@@ -97,11 +104,11 @@ namespace IAT.Core.Services
             }
             catch (Exception ex)
             {
-                ActivationResult = ProductActivationResult.CannotConnect;
+                Result = TransactionResult.CannotConnect;
                 _userNotificationService.ShowError(new ErrorNotificationMessage("Cannot Activate Product", 
                     "An error occurred while attempting to connect to the activation server. Please check your internet connection and try again.", ex));
                 ExceptionDispatchInfo.Capture(ex).Throw();
-                ActivationWebSocket.Dispose();
+                WebSocket.Dispose();
             }
 
         }
@@ -115,7 +122,7 @@ namespace IAT.Core.Services
         /// <returns>A task that represents the asynchronous receive operation.</returns>
         private async Task StartMessageReceiver()
         {
-            var result =  ActivationWebSocket.ReceiveAsync(ReceiveBuffer, AbortToken);
+            var result =  WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken);
             await result;
             ReceiveMessage(result);
         }
@@ -163,16 +170,16 @@ namespace IAT.Core.Services
                             {
                                 MessageBuffer.Write(ReceiveBuffer.ToArray());
                             }
-                            if (ActivationWebSocket.State == WebSocketState.Open)
-                                ActivationWebSocket.ReceiveAsync(ReceiveBuffer, AbortToken).ContinueWith(t => ReceiveMessage(t));
-                            if (ActivationWebSocket.State != WebSocketState.Open)
-                                ActivationWebSocket.Dispose();
+                            if (WebSocket.State == WebSocketState.Open)
+                                WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken).ContinueWith(t => ReceiveMessage(t));
+                            if (WebSocket.State != WebSocketState.Open)
+                                WebSocket.Dispose();
                         }
                         catch (Exception ex)
                         {
                             _userNotificationService.ShowError(new ErrorNotificationMessage("Error Receiving Data", "An error occurred while receiving data from the server. Please try again.", ex));
                             ExceptionDispatchInfo.Capture(ex).Throw();
-                            ActivationResult = ProductActivationResult.CannotConnect;
+                            Result = TransactionResult.CannotConnect;
                             ResetEvent.Set();
                         }
                     }
@@ -182,7 +189,7 @@ namespace IAT.Core.Services
             {
                 _userNotificationService.ShowError(new ErrorNotificationMessage("Error Receiving Data", "An error occurred while receiving data from the server. Please try again.", ex));
                 ExceptionDispatchInfo.Capture(ex).Throw();
-                ActivationResult = ProductActivationResult.CannotConnect;
+                Result = TransactionResult.CannotConnect;
                 ResetEvent.Set();
             }
         }
@@ -198,15 +205,32 @@ namespace IAT.Core.Services
             OutHandshake.CipherText = handshake.CipherText;
             if (!OutHandshake.Verify())
                 throw new InvalidOperationException("Handshake verification failed.");
-            var actRequest = new ActivationRequest()
-            {
-                FirstName = _localStorageService[Field.UserName].Split(' ')[1],
-                LastName = _localStorageService[Field.UserName].Split(' ')[2],
-                EMail = _localStorageService[Field.UserEmail],
-                ProductCode = _localStorageService[Field.ProductKey],
-                Title = _localStorageService[Field.UserName].Split(' ')[0]  
-            };
-            SendMessage(actRequest);
+            switch (Use) {
+                case WebSocketUse.VerifyEmail:
+                    var requestEmailVerification = new TransactionRequest();
+                    requestEmailVerification.Transaction = TransactionType.RequestEMailVerification;
+                    requestEmailVerification.StringValues["email"] = _localStorageService[Field.UserEmail];
+                    SendMessage(requestEmailVerification);
+                    break;
+
+                case WebSocketUse.ResendEmailVerification:
+                    var transmission = new TransactionRequest();
+                    transmission.Transaction = TransactionType.RequestNewVerificationEMail;
+                    transmission.StringValues["email"] = _localStorageService[Field.UserEmail];
+                    SendMessage(transmission);
+                    break;
+
+                case WebSocketUse.ActivateProduct:
+                    SendMessage(new ActivationRequest()
+                    {
+                        FirstName = _localStorageService[Field.UserName].Split(' ')[1],
+                        LastName = _localStorageService[Field.UserName].Split(' ')[2],
+                        EMail = _localStorageService[Field.UserEmail],
+                        ProductCode = _localStorageService[Field.ProductKey],
+                        Title = _localStorageService[Field.UserName].Split(' ')[0]
+                    });
+                    break;
+            }
         }
 
         /// <summary>
@@ -224,22 +248,28 @@ namespace IAT.Core.Services
                     break;
 
                 case TransactionType.NoSuchClient:
-                    ActivationResult = ProductActivationResult.NoSuchClient;
+                    Result = TransactionResult.NoSuchClient;
                     break;
 
                 case TransactionType.TransactionSuccess:
-                    ActivationResult = ProductActivationResult.Success;
+                    if (Use == WebSocketUse.VerifyEmail)
+                        _localStorageService[Field.ActivationKey] = transactionRequest.ActivationKey;
+                    Result = TransactionResult.Success;
                     ResetEvent.Set();
                     break;
 
                 case TransactionType.NoActivationsRemain:
-                    ActivationResult = ProductActivationResult.NoActivationsRemaining;
+                    Result = TransactionResult.NoActivationsRemaining;
                     ResetEvent.Set();
                     break;
 
                 case TransactionType.EMailAlreadyVerified:
                     _localStorageService[Field.ActivationKey] = transactionRequest.ActivationKey;
                     ResetEvent.Set();
+                    break;
+
+                case TransactionType.EmailVerificationMismatch:
+                    Result = TransactionResult.EmailMismatch;
                     break;
             }
         }

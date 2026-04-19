@@ -124,7 +124,7 @@ namespace IAT.Core.Enumerations
                 "tif" => Tif,
                 "png" => Png,
                 "bmp" => Bmp,
-                _ => throw new ArgumentException($"Unsupported image format extension: {ext}");
+                _ => throw new ArgumentException($"Unsupported image format extension: {ext}")
             };
 
         private static ImageFormat FromMimeType(String mimeType) =>

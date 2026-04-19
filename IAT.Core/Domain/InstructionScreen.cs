@@ -1,7 +1,6 @@
 ﻿using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using IAT.Core.Validation;
 using System.IO;
 using System.Xml.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -70,10 +69,9 @@ namespace IAT.Core.Domain
         /// <exception cref="Exception">Thrown if the instruction screen type is blank or if the continue instructions text is empty.</exception>
         public virtual ValidationResult Validate()
         {
-            var validationResult = new ValidationResult();
             if (ContinueInstructions == string.Empty)
-                validationResult.Fail("Continue instructions text cannot be empty");
-            return validationResult;
+                return ValidationResult.Fail("Continue instructions text cannot be empty");
+            return ValidationResult.Success;
         }
     }
 }

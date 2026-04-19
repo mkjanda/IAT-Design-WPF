@@ -63,15 +63,15 @@ namespace IAT.Core.Domain
         {
             var result = new ValidationResult();
             if (StimulusId == Guid.Empty)
-                result.Fail("Trial must reference a valid stimulus");
+                result.AddError("Trial must reference a valid stimulus");
 
             if (KeyedDirection == KeyedDirection.None)
-                result.Fail("Every trial must have a keyed direction");
+                result.AddError("Every trial must have a keyed direction");
 
             if (stimulus is null || stimulus.Validate().IsValid == false)
-                result.Fail("Trial stimulus is invalid");
+                result.AddError("Trial stimulus is invalid");
 
-            return result
+            return result;
         }
     }
 }

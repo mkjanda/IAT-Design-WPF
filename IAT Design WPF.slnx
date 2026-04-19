@@ -6,4 +6,5 @@
   <Project Path="IAT.Core/IAT.Core.csproj" />
   <Project Path="IAT.VIewModels/IAT.ViewModels.csproj" />
   <Project Path="IAT.Views/IAT.Views.csproj" />
+  <Project Path="xUnitIAT/xUnitIAT.csproj" Id="17efd02e-4e39-4616-a543-87cac01dfdb9" />
 </Solution>

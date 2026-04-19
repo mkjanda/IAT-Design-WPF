@@ -54,9 +54,9 @@ namespace IAT.Core.Domain
         {
             var result = base.Validate();
             if (ResponseKeyId == Guid.Empty)
-                result.Fail("ResponseKeyId must be set to a valid Guid.");
+                result.AddError("ResponseKeyId must be set to a valid Guid.");
             if (Instructions == string.Empty)
-                result.Fail("Instructions cannot be empty.");
+                result.AddError("Instructions cannot be empty.");
             return result;
         }
     }

@@ -1,6 +1,5 @@
 ﻿using IAT.Core.Domain;
 using IAT.Core.Exceptions;
-using IAT.Core.Validation;
 using System.IO;
 using System.IO.Packaging;
 using System.Windows.Media;
@@ -78,7 +77,7 @@ public class ImagePackageService : IImagePackageService
         var validationResult = stimulus.Validate();
         if (!validationResult.IsValid)
         {
-            throw new ValidationException($"Invalid TextStimulus: {validationResult.ErrorMessage}");
+            throw new ValidationException("Invalid TextStimulus: " + String.Join("|", validationResult.Errors));
         }
 
         // No stream manipulation needed—text is embedded in the main IatTest JSON during serialization
@@ -105,7 +104,7 @@ public class ImagePackageService : IImagePackageService
         var validationResult = stimulus.Validate();
         if (!validationResult.IsValid)
         {
-            throw new ValidationException($"Invalid ImageStimulus: {validationResult.ErrorMessage}");
+            throw new ValidationException($"Invalid ImageStimulus: " + String.Join("|", validationResult.Errors));
         }
 
         // Create a URI for the image part (e.g., /images/{ImageId}.png)

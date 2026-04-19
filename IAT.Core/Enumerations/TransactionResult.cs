@@ -11,9 +11,9 @@ namespace IAT.Core.Enumerations
     /// indicate whether activation was successful or the reason for failure, such as invalid requests, server errors,
     /// or client-specific issues. Handle each result appropriately to provide feedback or take corrective action in
     /// your application.</remarks>
-    public enum ProductActivationResult
+    public enum TransactionResult
     {
         Unset, NoSuchClient, InvalidRequest, ServerFailure, NoActivationsRemaining, InvalidProductCode, ClientFrozen, ClientDeleted, CannotConnect, Success,
-        EmailAlreadyVerified
+        EmailAlreadyVerified, EmailMismatch
     };
 }

@@ -23,7 +23,7 @@ namespace IAT.Core.Serializable
         /// appropriately.</remarks>
 
         [XmlElement("AxtivationResult", Form = XmlSchemaForm.Unqualified)]
-        public ProductActivationResult ActivationResult { get; set; } = ProductActivationResult.Unset;
+        public TransactionResult TransactionResult { get; set; } = TransactionResult.Unset;
 
         /// <summary>
         /// Gets or sets the product key associated with the current instance.

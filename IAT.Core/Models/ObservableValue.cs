@@ -101,6 +101,21 @@ namespace IAT.Core.Models
         }
 
         /// <summary>
+        /// Subscribes the passed observer to the observable value
+        /// </summary>
+        /// <param name="observer">The observer that will receive notifications. Cannot be null.</param>
+        /// <param name="notifyCurrentValue">Indicates whether the observer should be notified of the current value immediately upon subscription.</param>
+        /// <returns>An IDisposable that can be used to unsubscribe the observer from receiving notifications.</returns>
+        public IDisposable Subscribe(IObserver<T> observer, bool notifyCurrentValue = true)
+        {
+            if (!Observers.Contains(observer))
+                Observers.Add(observer);
+            if (notifyCurrentValue)
+                observer.OnNext(ObservedValue ?? default);
+            return new Unsubscriber(Observers, observer);
+        }
+
+        /// <summary>
         /// Private class that implements IDisposable to handle unsubscribing observers.
         /// </summary>
         private class Unsubscriber : IDisposable

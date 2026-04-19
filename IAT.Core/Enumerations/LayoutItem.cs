@@ -174,7 +174,7 @@ namespace IAT.Core.Enumerations
         /// </summary>
         /// <remarks>This type is intended for internal use to define the structure and behavior of block
         /// instruction layout elements. It is not intended to be used directly in application code.</remarks>
-        private sealed record _BlockInstructions() : LayoutItem("BlockInstructions", "Block instructions layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png`) { };
+        private sealed record _BlockInstructions() : LayoutItem("BlockInstructions", "Block instructions layout item.", new ValueObserver<Rect>(), MediaTypeNames.Image.Png) { };
 
         /// <summary>
         /// Represents a layout item used to indicate an error state within the layout system.

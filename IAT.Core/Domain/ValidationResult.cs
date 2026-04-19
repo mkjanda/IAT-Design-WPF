@@ -3,54 +3,73 @@
 namespace IAT.Core.Domain
 {
     /// <summary>
-    /// The result of validating a domain entity, such as a stimulus or trial. This class encapsulates whether the validation was successful 
-    /// and, if not, provides an error message describing the reason for failure. It is used to communicate validation results in a consistent 
-    /// way across the application, allowing calling code to easily check if an entity is valid and to display appropriate error messages when 
-    /// it is not.
+    /// The result of validating a domain entity, such as a stimulus, trial, or entire test. This class accumulates multiple error messages 
+    /// during validation and provides a way to check overall validity. It supports aggregating results from sub-validations (e.g., validating 
+    /// all stimuli in a test) and is designed for UI display, such as in error banners or dialogs.
     /// </summary>
     public class ValidationResult
     {
         /// <summary>
-        /// Indicates whether the validated item is valid
+        /// Indicates whether the validated item is valid (no errors).
         /// </summary>
-        public bool IsValid { get;  set; } = true;
+        public bool IsValid => Errors.Count == 0;
 
         /// <summary>
-        /// The error message supplied in the event the  item is not valid.
+        /// The list of error messages. Empty if valid.
         /// </summary>
-        public List<string> ErrorMessages { get; private set; } = new();
+        public List<string> Errors { get; } = new();
 
         /// <summary>
-        /// Initializes a new instance of the ValidationResult structure with the specified validity state and error
-        /// message.
+        /// Gets a ValidationResult that indicates a successful validation with no errors.
         /// </summary>
-        /// <param name="isValid">A value indicating whether the validation was successful. Set to <see langword="true"/> if the validation
-        /// passed; otherwise, <see langword="false"/>.</param>
-        /// <param name="error">The error message associated with the validation result, or <see langword="null"/> if there is no error.</param>
-        public ValidationResult()
+        public static ValidationResult Success => new();
+
+        /// <summary>
+        /// Creates a failed validation result with a single error message.
+        /// </summary>
+        /// <param name="message">The error message. Cannot be null or empty.</param>
+        /// <returns>A ValidationResult with the error added.</returns>
+        public static ValidationResult Fail(string message)
         {
-            IsValid = true;
-            ErrorMessages = new List<string>();
+            if (string.IsNullOrWhiteSpace(message)) throw new ArgumentException("Error message cannot be null or empty.", nameof(message));
+            var result = new ValidationResult();
+            result.Errors.Add(message);
+            return result;
         }
 
-
         /// <summary>
-        /// Gets a ValidationResult that indicates a successful validation with no error message.
+        /// Adds an error message to this result.
         /// </summary>
-        public void Success()
+        /// <param name="message">The error message to add. Cannot be null or empty.</param>
+        public void AddError(string message)
         {
+            if (string.IsNullOrWhiteSpace(message)) throw new ArgumentException("Error message cannot be null or empty.", nameof(message));
+            Errors.Add(message);
         }
 
+        /// <summary>
+        /// Combines another ValidationResult into this one by adding its errors.
+        /// </summary>
+        /// <param name="other">The other ValidationResult to combine.</param>
+        public void Combine(ValidationResult other)
+        {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+            Errors.AddRange(other.Errors);
+        }
 
         /// <summary>
-        /// Logs a validation failure by setting the IsValid property to false and adding the provided error message to the ErrorMessages list. This method can be called when a 
-        /// validation check fails to record the reason for the failure and to indicate that the validated item is not valid.      
+        /// Creates a combined ValidationResult from multiple results.
         /// </summary>
-        /// <param name="message">The error message describing the reason for the validation failure.</param>
-        public void Fail(string message)
+        /// <param name="results">The ValidationResults to combine.</param>
+        /// <returns>A new ValidationResult containing all errors from the inputs.</returns>
+        public static ValidationResult Combine(IEnumerable<ValidationResult> results)
         {
-            ErrorMessages.Add(message);
-            IsValid = false;
+            var combined = new ValidationResult();
+            foreach (var result in results)
+            {
+                combined.Combine(result);
+            }
+            return combined;
         }
     }
 }

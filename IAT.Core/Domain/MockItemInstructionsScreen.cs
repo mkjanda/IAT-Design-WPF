@@ -89,15 +89,20 @@ namespace IAT.Core.Domain
         /// </summary>
         public MockItemInstructionsScreen() { }
 
+        /// <summary>
+        /// Validates the stimulus to ensure that it meets the necessary criteria for use in the instruction screen. This method checks that the StimulusId and ResponseKeyId are set to valid GUIDs, and that 
+        /// the Instructions property is not empty. If any of these conditions are not met, the validation will fail and appropriate error messages will be added to the ValidationResult.
+        /// </summary>
+        /// <returns></returns>
         public override ValidationResult Validate()
         {
             var result = base.Validate();
             if (StimulusId == Guid.Empty)
-                result.Fail("StimulusId must be set to a valid Guid.");
+                result.AddError("StimulusId must be set to a valid Guid.");
             if (ResponseKeyId == Guid.Empty)
-                result.Fail("ResponseKeyId must be set to a valid Guid.");
+                result.AddError("ResponseKeyId must be set to a valid Guid.");
             if (Instructions == string.Empty)
-                result.Fail("Instructions cannot be empty.");
+                result.AddError("Instructions cannot be empty.");
             return result;
         }
     }
