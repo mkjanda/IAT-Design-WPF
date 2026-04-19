@@ -12,6 +12,37 @@ using IAT.Core.Enumerations;
 namespace IAT.Core.Services
 {
 
+    public interface IWebSocketService
+    {
+        /// <summary>
+        /// Gets the result of the product activation attempt.
+        /// </summary>
+        TransactionResult Result { get; }
+        /// <summary>
+        /// Initiates the product activation process using the specified user and product information.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous activation operation.</returns>
+        Task Activate();
+
+        /// <summary>
+        /// Verifies the user's email address by sending a verification request to the server. The method will handle the communication with the server and update the 
+        /// activation key in local storage if the verification is successful. If the email is already verified, it will set the activation key and update the result 
+        /// accordingly. In case of an email mismatch or other errors, it will update the result to reflect the issue. This method relies on the WebSocketService to 
+        /// manage the communication with the server and process the responses received during the verification process.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous activation operation.</returns>
+        Task VerifyEmail();
+
+        /// <summary>
+        /// Sends a new email verification message to the currently authenticated user.
+        /// </summary>
+        /// <remarks>Call this method to allow users to request a new verification email if they did not
+        /// receive or have lost the original message. This method does not throw an error if the user is already
+        /// verified.</remarks>
+        /// <returns>A task that represents the asynchronous resend operation.</returns>
+        Task ResendEmailVerification();
+    }
+
     public enum WebSocketUse { ActivateProduct, VerifyEmail, ResendEmailVerification };
 
 
@@ -23,7 +54,7 @@ namespace IAT.Core.Services
     /// connection, sending activation requests, and processing responses from the server. It relies on several
     /// supporting services for local storage, user notifications, string resources, and XML deserialization. The class
     /// is intended to be used as part of a larger activation workflow and is not thread-safe.</remarks>
-    public class WebSocketService
+    public class WebSocketService : IWebSocketService
     {
         /// <summary>
         /// Gets the result of the product activation attempt.
@@ -74,6 +105,74 @@ namespace IAT.Core.Services
         }
 
 
+        /// <summary>
+        /// Initiates a new request to resend the email verification message to the current user.
+        /// </summary>
+        /// <remarks>This method attempts to establish a WebSocket connection to the verification server
+        /// and triggers the resend of the verification email. If the connection cannot be established, an error
+        /// notification is displayed to the user. The method throws if an exception occurs during the connection
+        /// process.</remarks>
+        /// <returns>A task that represents the asynchronous resend operation.</returns>
+        public async Task ResendEmailVerification()
+        {
+            Use = WebSocketUse.ResendEmailVerification;
+            WebSocket = new ClientWebSocket();
+            try
+            {
+                await WebSocket.ConnectAsync(new Uri(_stringResourceService["WebSocketUri"]), new CancellationToken(false));
+                StartMessageReceiver();
+                var outTrans = new TransactionRequest()
+                {
+                    Transaction = TransactionType.RequestConnection,
+                    ProductKey = _localStorageService[Field.ProductKey]
+                };
+                SendMessage(outTrans);
+                ResetEvent.WaitOne();
+            }
+            catch (Exception ex)
+            {
+                Result = TransactionResult.CannotConnect;
+                _userNotificationService.ShowError(new ErrorNotificationMessage("Cannot Resend Verification Email", 
+                    "An error occurred while attempting to connect to the verification server. Please check your internet connection and try again.", ex));
+                ExceptionDispatchInfo.Capture(ex).Throw();
+                WebSocket.Dispose();
+            }
+        }   
+
+
+        /// <summary>
+        /// Initiates the email verification process by establishing a WebSocket connection and sending a verification
+        /// request.
+        /// </summary>
+        /// <remarks>If the connection to the verification server cannot be established, an error
+        /// notification is displayed and the exception is rethrown. This method must be awaited to ensure the
+        /// verification process completes before proceeding.</remarks>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        public async Task VerifyEmail()
+        {
+            Use = WebSocketUse.VerifyEmail;
+            WebSocket = new ClientWebSocket();
+            try
+            {
+                await WebSocket.ConnectAsync(new Uri(_stringResourceService["WebSocketUri"]), new CancellationToken(false));
+                StartMessageReceiver();
+                var outTrans = new TransactionRequest()
+                {
+                    Transaction = TransactionType.RequestConnection,
+                    ProductKey = _localStorageService[Field.ProductKey]
+                };
+                SendMessage(outTrans);
+                ResetEvent.WaitOne();
+            }
+            catch (Exception ex)
+            {
+                Result = TransactionResult.CannotConnect;
+                _userNotificationService.ShowError(new ErrorNotificationMessage("Cannot Verify Email", 
+                    "An error occurred while attempting to connect to the verification server. Please check your internet connection and try again.", ex));
+                ExceptionDispatchInfo.Capture(ex).Throw();
+                WebSocket.Dispose();
+            }
+        }   
 
         /// <summary>
         /// Initiates the product activation process using the specified user and product information.
@@ -81,24 +180,20 @@ namespace IAT.Core.Services
         /// <remarks>If the activation server cannot be reached, the activation result is set to indicate
         /// failure and an error notification is displayed to the user. The method will rethrow any exception
         /// encountered during the connection attempt.</remarks>
-        /// <param name="fName">The first name of the user requesting activation. Cannot be null.</param>
-        /// <param name="lName">The last name of the user requesting activation. Cannot be null.</param>
-        /// <param name="eMail">The email address associated with the activation request. Cannot be null.</param>
-        /// <param name="title">The title or honorific of the user (e.g., Mr., Ms., Dr.).</param>
-        /// <param name="productKey">The product key to be activated. Cannot be null.</param>
         /// <returns>A task that represents the asynchronous activation operation.</returns>
-        public async Task Activate(string fName, string lName, string eMail, string title, string productKey)
+        public async Task Activate()
         {
             Use = WebSocketUse.ActivateProduct;
-            _localStorageService[Field.UserName] = String.Format("{0} {1} {2}", title, fName, lName);
-            _localStorageService[Field.UserEmail] = eMail;
-            _localStorageService[Field.ProductKey] = productKey;
             WebSocket = new ClientWebSocket();
             try
             {
                 await WebSocket.ConnectAsync(new Uri(_stringResourceService["WebSocketUri"]), new CancellationToken(false));
-                await StartMessageReceiver();
-                var outTrans = new TransactionRequest(TransactionType.RequestConnection, _localStorageService);
+                StartMessageReceiver();
+                var outTrans = new TransactionRequest()
+                {
+                    Transaction = TransactionType.RequestConnection,
+                    ProductKey = _localStorageService[Field.ProductKey]
+                };
                 SendMessage(outTrans);
                 ResetEvent.WaitOne();
             }
@@ -120,11 +215,11 @@ namespace IAT.Core.Services
         /// the received message upon completion. The operation is canceled if the associated abort token is
         /// triggered.</remarks>
         /// <returns>A task that represents the asynchronous receive operation.</returns>
-        private async Task StartMessageReceiver()
+        private async void StartMessageReceiver()
         {
             var result =  WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken);
             await result;
-            ReceiveMessage(result);
+            _ = ReceiveMessage(result);
         }
 
         /// <summary>

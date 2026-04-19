@@ -123,9 +123,9 @@ namespace IAT.Core.Extensions
         /// </summary>
         /// <param name="resultSet">The ResultSet instance for which to set the RSA key.</param>
         /// <param name="key">The EncryptedRSAKey containing the RSA parameters.</param>
-        public static void SetRSAKey(this ResultSet resultSet, EncryptedRSAKey key)
+        public static void SetRSAKey(this ResultPacket resultSet, EncryptedRSAKey key)
         {
-            ResultSet.rsa = RSA.Create(key.GetRSAParameters());
+            ResultPacket.rsa = RSA.Create(key.GetRSAParameters());
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace IAT.Core.Extensions
         /// data as a single byte array.</remarks>
         /// <param name="resultSet">The result set containing encrypted data and associated metadata to be processed. Cannot be null.</param>
         /// <returns>A byte array containing the fully decrypted and assembled data from the result set.</returns>
-        public static byte[] Process(this ResultSet resultSet)
+        public static byte[] Process(this ResultPacket resultSet)
         {
             byte[] resultData = Convert.FromBase64String(resultSet.ResultData);
             var memStream = new MemoryStream();
@@ -146,8 +146,8 @@ namespace IAT.Core.Extensions
                 byte[] iv = new byte[entry.IVLength];
                 Array.Copy(resultData, entry.KeyOffset, key, 0, entry.KeyLength);
                 Array.Copy(resultData, entry.IVOffset, iv, 0, entry.IVLength);
-                byte[] decryptedKey = ResultSet.rsa.Decrypt(key, RSAEncryptionPadding.Pkcs1);
-                byte[] decryptedIv = ResultSet.rsa.Decrypt(iv, RSAEncryptionPadding.Pkcs1);
+                byte[] decryptedKey = ResultPacket.rsa.Decrypt(key, RSAEncryptionPadding.Pkcs1);
+                byte[] decryptedIv = ResultPacket.rsa.Decrypt(iv, RSAEncryptionPadding.Pkcs1);
                 byte[] encryptedData = new byte[entry.DataLength];
                 Array.Copy(resultData, entry.DataOffset, encryptedData, 0, entry.DataLength);
                 memStream.Write(resultSet.DecryptData(encryptedData, decryptedKey, decryptedIv));
@@ -167,7 +167,7 @@ namespace IAT.Core.Extensions
         /// <param name="key">The secret key to use for DES decryption. Must be 8 bytes in length.</param>
         /// <param name="iv">The initialization vector to use for DES decryption. Must be 8 bytes in length.</param>
         /// <returns>A byte array containing the decrypted data.</returns>
-        public static byte[] DecryptData(this ResultSet resultSet, byte[] cipherBytes, byte[] key, byte[] iv)
+        public static byte[] DecryptData(this ResultPacket resultSet, byte[] cipherBytes, byte[] key, byte[] iv)
         {
             using var des = DES.Create();
             des.Key = key;

@@ -4,9 +4,10 @@
              xmlns:local="clr-namespace:IAT_Design_WPF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         <ResourceDictionary>
+        <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="StringDicttionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

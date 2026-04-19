@@ -39,18 +39,13 @@ namespace IAT_Design_WPF
             var services = new ServiceCollection();
 
             services.AddTransient<Layout>();
-            services.AddTransient<SaveFile>();
-            services.AddTransient<DisplayItem>();
            
 
             // Register your services here as we build them
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
             services.AddSingleton<IStringResourceService, StringResourceService>();
-            
-            services.AddScoped<IValidator<Test>, TestValidator>();
             services.AddSingleton<IUserNotificationService, UserNotificationService>(); 
-            services.AddScoped<IValidatorService, ValidationService>();
             services.AddSingleton<IWebSocketService, WebSocketService>();
 
             Services = services.BuildServiceProvider();
