@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 using System.Xml;
 using IAT.Core.Serializable;
 using IAT.Core.Domain;
+using System.IO;
 
 namespace IAT.Core.Services
 {
@@ -22,12 +23,9 @@ namespace IAT.Core.Services
         {
             { typeof(ActivationRequest).Name, typeof(ActivationRequest) },
             { typeof(ActivationResponse).Name, typeof(ActivationResponse) },
-            { typeof(AlternationGroup).Name, typeof(AlternationGroup)  },
             { typeof(Block).Name, typeof(Block) },
-            { typeof(HistoryEntry).Name, typeof(HistoryEntry) },
-            { typeof(Key).Name, typeof(Key)  },
-            { typeof(SaveFileMetaData).Name, typeof(SaveFileMetaData) },
-            { typeof(Test).Name, typeof(Test)  },
+          //  { typeof(Key).Name, typeof(Key)  },
+            { typeof(IatTest).Name, typeof(IatTest)  },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
             { typeof(Trial).Name, typeof(Trial) },
             { typeof(Serializable.Version).Name, typeof(Serializable.Version) }

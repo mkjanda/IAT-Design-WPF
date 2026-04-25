@@ -15,6 +15,7 @@ namespace IAT.Core.Enumerations
     /// elements.</param>
     /// <param name="Description">A brief description of the layout item, providing context or purpose for its use within the layout.</param>
     /// <param name="RectangleObserver">An observer that tracks the rectangle representing the item's position and size within the layout.</param>
+    /// <param name="ImageType">The media type associated with the layout item, indicating the expected format of any image content related to this item.</param>  
     public abstract record LayoutItem(String Name, String Description, ValueObserver<Rect> RectangleObserver, string ImageType)
     {
         /// <summary>

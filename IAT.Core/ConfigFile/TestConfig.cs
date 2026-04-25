@@ -4,6 +4,7 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Text;
+using com.sun.tools.corba.se.idl;
 
 namespace IAT.Core.ConfigFile;
 
@@ -13,7 +14,8 @@ namespace IAT.Core.ConfigFile;
 /// of configuration data. The ConfigFile class encapsulates all necessary parameters to configure the behavior and appearance of the IAT application, 
 /// making it a central component for managing application settings in a structured manner.
 /// </summary>
-public class ConfigFile
+[XmlRoot("ConfigFile]")]
+public class TestConfig
 {
     /// <summary>
     /// Gets or sets the number of surveys to be conducted before the main survey sequence begins.
@@ -28,10 +30,23 @@ public class ConfigFile
     public int NumAfterSurveys { get; set; } = 0;
 
     /// <summary>
+    /// Gets or sets the version number of the result data format.
+    /// </summary>
+    [XmlAttribute("ResultDataVersion")]
+    public int ResultDataVersion { get; set; } = 4;
+
+    /// <summary>
     /// Gets or sets the name of the IAT (Item Analysis Tool) associated with this instance.
     /// </summary>
     [XmlElement("IATName", Form = XmlSchemaForm.Unqualified)]
     public string IATName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The author of the IAT, which can be used for display purposes or to provide metadata about the test configuration. 
+    /// This property is optional and can be left empty if not applicable.
+    /// </summary>
+    [XmlElement("Author", Form = XmlSchemaForm.Unqualified)]
+    public string Author { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the domain name of the server to which the application connects.
@@ -191,5 +206,5 @@ public class ConfigFile
     /// <summary>
     /// 
     /// </summary>
-    public ConfigFile() { }
+    public TestConfig() { }
 }

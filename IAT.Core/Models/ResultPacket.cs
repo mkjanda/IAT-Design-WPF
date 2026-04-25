@@ -83,7 +83,7 @@ public sealed class ResultPacket
     /// <remarks>Each entry in the collection represents a section or item in the table of contents. The order
     /// of entries in the list determines their sequence in the table of contents.</remarks>
     [XmlArray("TOC")]
-    [XmlArrayItem("ResultTOCEntry", Form = XmlSchemaForm.Unqualified)]
+    [XmlArrayItem("ResultTOCEntry", Form = XmlSchemaForm.Unqualified, Type = typeof(TOCEntry))]
     public List<TOCEntry> TOC { get; set; } = new List<TOCEntry>();
 
     /// <summary>

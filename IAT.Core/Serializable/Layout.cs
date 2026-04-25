@@ -15,7 +15,13 @@ using System.Xml.Serialization;
 
 namespace IAT.Core.Serializable
 {
-    public class Layout : IPackagePart
+    /// <summary>
+    /// This class defines the layout of various UI elements in a test block, including the stimulus area, key-value pairs, instructions, and error display. It provides properties 
+    /// to get and set the sizes of these elements, as well as observable values to track their positions and dimensions. The class also includes methods to check for overlapping 
+    /// rectangles and to calculate maximum allowable sizes for different components based on the current layout configuration. This layout information is crucial for ensuring that 
+    /// UI elements are displayed correctly without overlap and that they fit within the designated areas of the test block.
+    /// </summary>
+    public class Layout 
     {
         /// <summary>
         /// A structure of constant values that defines bitmasks for rectangle overlap
@@ -27,24 +33,6 @@ namespace IAT.Core.Serializable
             public const uint ErrorRectangle = 0x4;
             public const uint InstructionRectangle = 0x8;
         };
-
-        /// <summary>
-        /// Gets or sets the URI associated with this instance.
-        /// </summary>
-        [XmlIgnore]
-        public Uri? Uri => PackUriHelper.CreatePartUri(new Uri($"{typeof(Layout).ToString()}/{Id}.xml", UriKind.Relative));
-
-        /// <summary>
-        /// Gets the part type associated with the package part.
-        /// </summary>
-        /// [XmlIgnore]
-        public PartType PackagePartType => PartType.Layout;
-
-        /// <summary>
-        /// Gets or sets the unique identifier for the entity.
-        /// </summary>
-        [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
-        public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
         /// Represents an observable value that is initialized to an empty rectangle and is used when no observation is
@@ -191,7 +179,7 @@ namespace IAT.Core.Serializable
         private const int TextStimulusPaddingTop = 50;
 
         /// <summary>
-        /// 
+        /// Gets the total size of the layout, including borders.
         /// </summary>
         public Size TotalSize
         {

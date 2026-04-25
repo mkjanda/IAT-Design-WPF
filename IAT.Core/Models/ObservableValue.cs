@@ -6,7 +6,6 @@ using System.Text;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Xml.Schema;
-using static IAT.Core.Enumerations.PartType;
 using java.util;
 
 namespace IAT.Core.Models
@@ -14,30 +13,17 @@ namespace IAT.Core.Models
     /// <summary>
     /// Represents an observable GUID value that notifies subscribed observers when its value changes.
     /// </summary>
-    /// <remarks>Implements the IObservable<Guid> interface, allowing observers to subscribe and receive
+    /// <remarks>Implements the IObservable interface, allowing observers to subscribe and receive
     /// notifications whenever the GUID value is updated. This class is typically used in scenarios where changes to a
     /// GUID value need to be tracked or propagated to multiple listeners. Thread safety is not guaranteed; external
     /// synchronization may be required if accessed from multiple threads.</remarks>
-    public class ObservableValue<T> : IObservable<T>, IPackagePart
+    public class ObservableValue<T> : IObservable<T>
     {
-        /// <summary>
-        /// Gets or sets the URI associated with this instance.
-        /// </summary>
-        [XmlElement("Uri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Uri? Uri { get; set; }
-
         /// <summary>
         /// Gets or sets the unique identifier for the object.
         /// </summary>
         [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
         public Guid Id { get; set; } = Guid.NewGuid();
-
-        
-        /// <summary>
-        /// Gets the type of the package part represented by this instance.
-        /// </summary>
-        [XmlElement("PackagePartType", Form = XmlSchemaForm.Unqualified)]
-        public PartType PackagePartType => PartType.ObservableValue;
 
         /// <summary>
         /// Gets or sets the unique identifier that was observed.
@@ -83,7 +69,7 @@ namespace IAT.Core.Models
         }
 
         /// <summary>
-        /// Initializes a new instance of the ObservableGuid class.
+        /// Initializes a new instance of the ObservableValue class.
         /// </summary>
         public ObservableValue() 
         {

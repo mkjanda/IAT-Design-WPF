@@ -110,7 +110,10 @@ namespace IAT.Core.Domain
         [ObservableProperty]
         private string _name = String.Empty;
 
-
+        /// <summary>
+        /// Validates the current instance of the Block class, ensuring that all required properties are set and contain valid values.
+        /// </summary>
+        /// <returns>A ValidationResult object containing any validation errors.</returns>
         public ValidationResult Validate()
         {
             var result = new ValidationResult();

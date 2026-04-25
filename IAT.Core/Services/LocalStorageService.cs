@@ -1,19 +1,10 @@
-﻿using java.util;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Schema;
-using java.io;
 using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services
@@ -26,16 +17,17 @@ namespace IAT.Core.Services
         /// <remarks>Use this enumeration to represent and check the current activation state, such as
         /// whether email verification is required or if there is a version inconsistency.</remarks>
         public enum ActivationStatus { NotActivated, EMailNotVerified, Activated, InconsistentVersion };
-
         private static readonly byte[] key = { 59, 207,  78,  40, 237, 240, 82, 223, 61, 99, 218, 147, 77, 174, 189, 80,
                                                 240, 128, 216, 112, 182, 247, 222, 212, 104, 30, 54, 76, 56, 193, 227, 140 };
+        private static readonly byte[] storageKey = { 49, 132, 90, 177, 63, 214, 120, 45, 173, 200, 34, 167, 88, 155, 201, 114,
+                                                        200, 56, 173, 241, 93, 162, 205, 149, 67, 218, 132, 19, 253, 110, 244, 175 };
         private static readonly int KeyBytes = 32;
         private static readonly int NonceBytes = 12;
         private static readonly int TagBytes = 16;
 
+        private IWebSocketService _webSocketService;
         private XDocument? ActivationDocument { get; set; }
-        private Dictionary<string, string> ActivationFileContents = []; 
-
+        private Dictionary<string, string> ActivationFileContents = new();
 
         /// <summary>
         /// Initializes a new instance of the LocalStorageService class and ensures that activation data is loaded or
@@ -45,10 +37,9 @@ namespace IAT.Core.Services
         /// activation data exists in the expected file location, it is loaded; otherwise, a new activation document is
         /// created and saved. This constructor ensures that the local storage is properly initialized for subsequent
         /// operations.</remarks>
-        public LocalStorageService()
+        public LocalStorageService(IWebSocketService webSocketService)
         {
-            if (ActivationDataExistsInRegistry)
-                CopyLocalStorageDataFromRegistry();
+            _webSocketService = webSocketService;
             if (ActivationDataExists)
                 ActivationDocument = XDocument.Load(ActivationFilePath);
             else
@@ -60,6 +51,12 @@ namespace IAT.Core.Services
             }
         }
 
+        /// <summary>
+        /// Given a product key and an activation key, determines whether the activation key is valid for the product key.
+        /// </summary>
+        /// <param name="productKey">The product key to validate.</param>
+        /// <param name="ActivationKey">The activation key to validate against the product key.</param>
+        /// <returns>True if the activation key is valid for the product key; otherwise, false.</returns>
         private bool IsActivatedCode(string productKey, string ActivationKey)
         {
             AesGcm aes = new AesGcm(key, 16);
@@ -73,6 +70,13 @@ namespace IAT.Core.Services
             return false;
         }
 
+        /// <summary>
+        /// Gets the current activation status based on the presence and validity of the product key and activation key, as well as 
+        /// the result of email verification through the web socket service. The method checks for the existence of the product key 
+        /// and activation key, validates the activation key against the product key, and interacts with the web socket service to 
+        /// verify email if necessary. The returned ActivationStatus indicates whether the user is not activated, has an unverified email, 
+        /// is activated, or has an inconsistent version.
+        /// </summary>
         public ActivationStatus Activated
         {
             get
@@ -86,14 +90,16 @@ namespace IAT.Core.Services
                     else
                         return ActivationStatus.NotActivated;
                 }
-                EMailConfirmationService emailConfirm = new EMailConfirmationService();
-                Task<EMailConfirmaion.EConfirmResult> emailConfirmationCheck = Task<EMailConfirmationService.EConfirmResult>.Run(() => emailConfirm.ConfirmEMailVerification());
-                emailConfirmationCheck.Wait();
-                if (emailConfirmationCheck.IsFaulted)
-                    return ActivationStatus.EMailNotVerified;
-                else if (emailConfirmationCheck.Result != EMailConfirmationService.EConfirmResult.success)
-                    return ActivationStatus.EMailNotVerified;
-                return ActivationStatus.Activated;
+                _webSocketService.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail]);
+                if (_webSocketService.ActivationKey != string.Empty)
+                {
+                    this[Field.ActivationKey] = _webSocketService.ActivationKey;
+                    if (IsActivatedCode(this[Field.ProductKey], this[Field.ActivationKey]))
+                        return ActivationStatus.Activated;
+                    else
+                        return ActivationStatus.NotActivated;
+                }
+                return ActivationStatus.EMailNotVerified;
             }
         }
 
@@ -111,14 +117,11 @@ namespace IAT.Core.Services
                         return null;
                     if (key.Encrypted)
                     {
-                        MemoryStream memStream = new MemoryStream();
-                        CryptoStream cStream = new CryptoStream(memStream, DESCrypt.CreateDecryptor(DESData, IVData), CryptoStreamMode.Write);
-                        cStream.Write(Convert.FromBase64String(value), 0, Convert.FromBase64String(value).Length);
-                        cStream.FlushFinalBlock();
-                        String result = System.Text.Encoding.UTF8.GetString(memStream.ToArray());
-                        cStream.Dispose();
-                        memStream.Dispose();
-                        return result;
+                        var aes = new AesGcm(storageKey, 16);
+                        byte[] ciphertext = Convert.FromBase64String(value);
+                        byte[] plaintext = new byte[ciphertext.Length]; byte[] nonce = RandomNumberGenerator.GetBytes(NonceBytes); byte[] tag = new byte[TagBytes];
+                        aes.Decrypt(nonce, ciphertext, tag,  plaintext);
+                        return Encoding.UTF8.GetString(plaintext);
                     }
                     return value;
                 }
@@ -138,13 +141,11 @@ namespace IAT.Core.Services
                     String storedValue = value;
                     if (key.Encrypted)
                     {
-                        MemoryStream memStream = new MemoryStream();
-                        CryptoStream cStream = new CryptoStream(memStream, DESCrypt.CreateEncryptor(DESData, IVData), CryptoStreamMode.Write);
-                        cStream.Write(System.Text.Encoding.UTF8.GetBytes(value), 0, System.Text.Encoding.UTF8.GetBytes(value).Length);
-                        cStream.FlushFinalBlock();
-                        storedValue = Convert.ToBase64String(memStream.ToArray());
-                        cStream.Dispose();
-                        memStream.Dispose();
+                        var aes = new AesGcm(storageKey, 16);
+                        byte[] plaintext = Encoding.UTF8.GetBytes(value);
+                        byte[] nonce = new byte[NonceBytes]; byte[] tag = new byte[TagBytes]; byte[] ciphertext = new byte[plaintext.Length];
+                        aes.Encrypt(nonce, plaintext, ciphertext, tag);
+                        storedValue = Convert.ToBase64String(ciphertext);
                     }
                     if (ActivationDocument.Root.Elements().Select(elem => elem.Name).Contains(key.Name))
                         ActivationDocument.Root.Element(key.Name).SetValue(storedValue);
@@ -155,56 +156,48 @@ namespace IAT.Core.Services
             }
         }
 
-        public static String GetIATPassword(String IAT)
+        public string GetIATPassword(String IAT)
         {
-            if (Activation.ActivationDocument.Root.Element("Tests") == null)
-                return null;
-            if (Activation.ActivationDocument.Root.Element("Tests").Element(IAT) == null)
-                return null;
-            byte[] encPass = Convert.FromBase64String(Activation.ActivationDocument.Root.Element("Tests").Element(IAT).Attribute("Password").Value);
+            if (ActivationDocument?.Root?.Element("Tests")?.Elements(IAT) == null)
+                throw new InvalidOperationException("IAT not found");
+            byte[] encPass = Convert.FromBase64String(ActivationDocument.Root.Element("Tests").Element(IAT).Attribute("Password").Value);
             MemoryStream passStream = new MemoryStream();
-            CryptoStream cStream = new CryptoStream(passStream, DESCrypt.CreateDecryptor(IatDESData, IatIVData), CryptoStreamMode.Write);
-            cStream.Write(encPass, 0, encPass.Length);
-            cStream.Flush();
-            cStream.FlushFinalBlock();
-            String password = System.Text.Encoding.UTF8.GetString(passStream.ToArray());
-            cStream.Dispose();
-            passStream.Dispose();
-            return password;
+            var aes = new AesGcm(storageKey, 16);
+            byte[] ciphertext = Convert.FromBase64String(ActivationDocument.Root.Element("Tests").Element(IAT).Attribute("Password").Value);
+            byte[] nonce = new byte[NonceBytes]; byte[] tag = new byte[TagBytes]; byte[] plaintext = new byte[ciphertext.Length];
+            aes.Decrypt(nonce, ciphertext, tag,  plaintext);
+            return Encoding.UTF8.GetString(plaintext);
         }
 
-        public static void SetIATPassword(String iatName, String password)
+        public void SetIATPassword(String iatName, String password)
         {
-            MemoryStream encPassStream = new MemoryStream();
-            CryptoStream cStream = new CryptoStream(encPassStream, DESCrypt.CreateEncryptor(IatDESData, IatIVData), CryptoStreamMode.Write);
-            cStream.Write(Encoding.UTF8.GetBytes(password), 0, Encoding.UTF8.GetBytes(password).Length);
-            cStream.Flush();
-            cStream.FlushFinalBlock();
-            String encPass = Convert.ToBase64String(encPassStream.ToArray());
-            if (Activation.ActivationDocument.Root.Element("Tests") == null)
-                Activation.ActivationDocument.Root.Add(new XElement("Tests", new XElement(iatName, new XAttribute("Password", encPass))));
-            else if (Activation.ActivationDocument.Root.Element("Tests").Elements().Select(elem => elem.Name).Contains(iatName))
+            var aes = new AesGcm(storageKey, 16); byte[] plaintext = Encoding.UTF8.GetBytes(password); byte[] nonce = new byte[NonceBytes]; byte[] tag = new byte[TagBytes]; byte[] ciphertext = new byte[plaintext.Length];
+            aes.Encrypt(nonce, plaintext, ciphertext, tag);
+            var encPassword = Convert.ToBase64String(ciphertext);
+            if (ActivationDocument.Root.Element("Tests") == null)
+                ActivationDocument.Root.Add(new XElement("Tests", new XElement(iatName, new XAttribute("Password", encPassword))));
+            else if (ActivationDocument.Root.Element("Tests").Elements().Select(elem => elem.Name).Contains(iatName))
             {
-                foreach (XAttribute attr in Activation.ActivationDocument.Root.Element("Tests").Element(iatName).Attributes())
+                foreach (XAttribute attr in ActivationDocument.Root.Element("Tests").Element(iatName).Attributes())
                     attr.Remove();
-                Activation.ActivationDocument.Root.Element("Tests").Element(iatName).Add(new XAttribute("Password", encPass));
+                ActivationDocument.Root.Element("Tests").Element(iatName).Add(new XAttribute("Password", encPassword));
             }
             else
-                Activation.ActivationDocument.Root.Element("Tests").Add(new XElement(iatName, new XAttribute("Password", encPass)));
-            Activation.ActivationDocument.Save(ActivationFilePath);
+                ActivationDocument.Root.Element("Tests").Add(new XElement(iatName, new XAttribute("Password", encPassword)));
+            ActivationDocument.Save(ActivationFilePath);
         }
 
-        public static void DeleteIAT(String iatName)
+        public void DeleteIAT(string iatName)
         {
-            if (Activation.ActivationDocument.Root.Element("Tests") == null)
+            if (ActivationDocument.Root.Element("Tests") == null)
                 return;
-            if (Activation.ActivationDocument.Root.Element("Tests").Element(iatName) == null)
+            if (ActivationDocument.Root.Element("Tests").Element(iatName) == null)
                 return;
-            Activation.ActivationDocument.Root.Element("Tests").Element(iatName).Remove();
-            Activation.ActivationDocument.Save(ActivationFilePath);
+            ActivationDocument.Root.Element("Tests").Element(iatName).Remove();
+            ActivationDocument.Save(ActivationFilePath);
         }
 
-        public static int RecordError(Object error)
+        public int RecordError(object error)
         {
             XDocument xDoc;
             if (File.Exists(ErrorFilePath))
@@ -263,93 +256,13 @@ namespace IAT.Core.Services
             }
         }
 
-        private static void CopyLocalStorageDataFromRegistry()
-        {
-            if (!Directory.Exists(ActivationFileDirectory))
-                Directory.CreateDirectory(ActivationFileDirectory);
-            XDocument xDoc;
-            if (File.Exists(ActivationFilePath))
-                xDoc = XDocument.Load(ActivationFilePath);
-            else
-            {
-                xDoc = new XDocument();
-                xDoc.Add(new XElement("IATDesign"));
-            }
-            RegistryKey key = Registry.CurrentUser.OpenSubKey("Software").OpenSubKey("IATSoftware").OpenSubKey("IATClient");
-            foreach (var valueName in key.GetValueNames())
-            {
-                String name = (valueName == "UserKey") ? "VerificationCode" : valueName;
-                if (xDoc.Root.Elements().Select(elem => elem.Name).Contains(name))
-                    continue;
-                Field field = Field.Parse(name);
-                if (field == null)
-                    continue;
-                if (field.Encrypted)
-                    xDoc.Root.Add(new XElement(name, key.GetValue(valueName) as String));
-                else
-                {
-                    MemoryStream memStream = new MemoryStream();
-                    CryptoStream cryptoStream = new CryptoStream(memStream, DESCrypt.CreateDecryptor(DESData, IVData), CryptoStreamMode.Write);
-                    cryptoStream.Write(Convert.FromBase64String(key.GetValue(valueName) as String), 0, Convert.FromBase64String(key.GetValue(valueName) as String).Length);
-                    cryptoStream.Flush();
-                    cryptoStream.FlushFinalBlock();
-                    xDoc.Root.Add(new XElement(name, Encoding.UTF8.GetString(memStream.ToArray())));
-                }
-            }
-            XElement testElem;
-            if (!xDoc.Root.Elements().Select(elem => elem.Name).Contains("Tests"))
-            {
-                testElem = new XElement("Tests");
-                xDoc.Root.Add(testElem);
-            }
-            else
-                testElem = xDoc.Root.Element("Tests");
-            foreach (var subKeyName in key.GetSubKeyNames())
-            {
-                if (Encoding.UTF8.GetString(Convert.FromBase64String(subKeyName)).Contains(" "))
-                    continue;
-                var subKey = key.OpenSubKey(subKeyName);
-                byte[] encPass = Convert.FromBase64String(subKey.GetValue("Value") as String);
-                MemoryStream keyData = new MemoryStream(Convert.FromBase64String(subKey.GetValue("Key") as String));
-                byte[] des = new byte[8];
-                byte[] iv = new byte[8];
-                keyData.Read(des, 0, 8);
-                keyData.Read(iv, 0, 8);
-                MemoryStream passStream = new MemoryStream();
-                CryptoStream cryptoStream = new CryptoStream(passStream, DESCrypt.CreateDecryptor(des, iv), CryptoStreamMode.Write);
-                cryptoStream.Write(encPass, 0, encPass.Length);
-                cryptoStream.Flush();
-                cryptoStream.FlushFinalBlock();
-                cryptoStream.Dispose();
-                MemoryStream encPassStream = new MemoryStream();
-                cryptoStream = new CryptoStream(encPassStream, DESCrypt.CreateEncryptor(IatDESData, IatIVData), CryptoStreamMode.Write);
-                cryptoStream.Write(passStream.ToArray(), 0, passStream.ToArray().Length);
-                cryptoStream.Flush();
-                cryptoStream.FlushFinalBlock();
-                if (testElem.Elements().Select(elem => elem.Name).Contains(Encoding.UTF8.GetString(Convert.FromBase64String(subKeyName))))
-                    testElem.Element(Encoding.UTF8.GetString(Convert.FromBase64String(subKeyName))).Remove();
-                testElem.Add(new XElement(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(subKeyName)),
-                    new XAttribute("Password", Convert.ToBase64String(encPassStream.ToArray()))));
-                cryptoStream.Dispose();
-                passStream.Dispose();
-                encPassStream.Dispose();
-            }
-            xDoc.Save(ActivationFilePath);
-        }
 
         public static void Deactivate()
         {
             if (File.Exists(ActivationFilePath))
                 File.Delete(ActivationFilePath);
-            try
-            {
-                Registry.CurrentUser.OpenSubKey("Software", true).DeleteSubKeyTree("IATSoftware");
-            }
-            catch (Exception whoCaresEx) { }
         }
     }
-
-
 }
 
 

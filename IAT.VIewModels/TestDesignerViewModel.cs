@@ -2,7 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using IAT.Core.Models;
-using IAT.Core.Models.Enumerations;
+using IAT.Core.Enumerations;
 using IAT.Core.Services;
 using System.Collections.ObjectModel;
 
@@ -14,15 +14,15 @@ namespace IAT.ViewModels
     /// </summary>
     public partial class TestDesignerViewModel : ObservableObject
     {
-        private readonly IPackageService _packageService;
+        private readonly IProjectPackageService _packageService;
 
         [ObservableProperty]
-        private ObservableCollection<Core.Models.IATBlock> blocks = new();
+        private ObservableCollection<Core.Domain.Block> blocks = new();
 
         [ObservableProperty]
-        private Core.Models.IATBlock? selectedBlock;
+        private Core.Domain.Block? selectedBlock;
 
-        public TestDesignerViewModel(IPackageService packageService)
+        public TestDesignerViewModel(IProjectPackageService packageService)
         {
             _packageService = packageService;
         }
@@ -30,7 +30,7 @@ namespace IAT.ViewModels
         [RelayCommand]
         private async Task LoadTestAsync(string packagePath)
         {
-            var ciat = await _packageService.LoadPackageAsync(packagePath);
+            var ciat = await _packageService.LoadProjectAsync(packagePath);
             // TODO: populate Blocks from the package (we'll expand this as we port more)
             Blocks.Clear();
             // Example: Blocks.Add(new CIATBlock { Name = "Practice Block", Type = BlockType.Practice });

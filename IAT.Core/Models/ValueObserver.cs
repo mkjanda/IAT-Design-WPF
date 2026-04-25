@@ -11,23 +11,12 @@ namespace IAT.Core.Models
     /// <summary>
     /// Observes changes to a GUID value and provides notification support for GUID updates.
     /// </summary>
-    /// <remarks>Implements the IObserver<Guid> interface to receive updates from an observable GUID source.
-    /// Supports resource management through IDisposable. Typically used to track and respond to changes in GUID values
+    /// <remarks>Implements the IObserver interface to receive updates from an observable value source.
+    /// Supports resource management through IDisposable. Typically used to track and respond to changes in values
     /// within an observable pattern.</remarks>
     [XmlRoot("ValueObserver")]
     public class ValueObserver<T> : IObserver<T>, IDisposable
     {
-        /// <summary>
-        /// Gets or sets the URI associated with this instance.
-        /// </summary>
-        [XmlElement("Uri", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-        public Uri? Uri => PackUriHelper.CreatePartUri(new Uri($"{typeof(ValueObserver<T>).ToString()}/{Id}.xml", UriKind.Relative));
-
-        /// <summary>
-        /// Gets the part type associated with the package.
-        /// </summary>
-        [XmlElement("PartType", Form = XmlSchemaForm.Unqualified)]
-        public PartType PackagePartType => PartType.ValueObserver;
 
         /// <summary>
         /// Gets or sets the unique identifier for the object.
@@ -57,9 +46,9 @@ namespace IAT.Core.Models
         /// ObservableGuid.
         /// </summary>
         /// <remarks>The constructor immediately subscribes the observer to the provided ObservableGuid
-        /// and sets the initial Value property to the current value of the ObservableGuid. The observer will receive
-        /// updates as the ObservableGuid changes.</remarks>
-        /// <param name="guid">The ObservableGuid instance to observe for value changes. Cannot be null.</param>
+        /// and sets the initial Value property to the current value of the ObservableValue. The observer will receive
+        /// updates as the ObservableValue changes.</remarks>
+        /// <param name="value">The ObservableValue instance to observe for value changes. Cannot be null.</param>
         public ValueObserver(IObservable<T> value)
         {
             Subscription = value.Subscribe(this);
@@ -69,7 +58,7 @@ namespace IAT.Core.Models
         /// Receives a new GUID value and updates the current value accordingly.
         /// </summary>
         /// <param name="value">The new GUID value to set as the current value.</param>
-        public void OnNext(T value)
+        public void OnNext(T? value)
         {
             Value = value ?? default;
         }

@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 
+
 namespace IAT.Core.Domain;
 
 /// <summary>
@@ -41,6 +42,14 @@ public partial class IatTest : ObservableObject
     /// Gets the collection of instruction screens displayed to the user.
     /// </summary>
     public ObservableCollection<InstructionsScreen> InstructionScreens { get; } = new();
+
+    /// <summary>
+    /// Gets the collection of keys managed by this instance.
+    /// </summary>
+    /// <remarks>The returned collection is observable. Changes to the collection, such as adding or removing
+    /// keys, will raise collection change notifications. This property never returns null.</remarks>
+    public ObservableCollection<Key> Keys { get; } = new();
+
 
     /// <summary>
     /// Validates the entire test configuration, including all trials, stimuli, and instruction screens.
@@ -107,8 +116,16 @@ public partial class IatTest : ObservableObject
     /// <returns>The block associated with the specified identifier, or null if no such block exists.</returns>
     public Block? GetBlockById(Guid id) => _blockCache.TryGetValue(id, out var block) ? block : null;
 
+    /// <summary>
+    /// Retrieves the key associated with the specified identifier, if it exists in the cache.
+    /// </summary>
+    /// <param name="id">The unique identifier of the key to retrieve.</param>
+    /// <returns>The key associated with the specified identifier if found; otherwise, null.</returns>
+    public Key? GetKeyById(Guid id) => _keyCache.TryGetValue(id, out var key) ? key : null;
+
     private readonly Dictionary<Guid, Block> _blockCache = new();
     private readonly Dictionary<Guid, Stimulus> _stimulusCache = new();
     private readonly Dictionary<Guid, Trial> _trialCache = new();
     private readonly Dictionary<Guid, InstructionsScreen> _instructionCache = new();
+    private readonly Dictionary<Guid, Key> _keyCache = new();
 }

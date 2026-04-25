@@ -6,6 +6,15 @@ using System.Text;
 
 namespace IAT.Core.Enumerations
 {
+    /// <summary>
+    /// Represents a predefined set of response types used to categorize or identify the expected format or nature of a
+    /// response in a survey or data collection context.
+    /// </summary>
+    /// <remarks>Use the static members of this type to reference specific response types, such as Boolean,
+    /// Likert, or Date. This abstraction enables consistent handling and validation of different response formats
+    /// across survey items or data entry fields.</remarks>
+    /// <param name="Value">The integer value that uniquely identifies the response type.</param>
+    /// <param name="Name">The display name or identifier for the response type.</param>
     public abstract record ResponseType(int Value, string Name)
     {
         /// <summary>
@@ -74,7 +83,7 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Represents a response type that indicates a fixed digital value.
         /// </summary>
-        public static readonly ResponseType FixedDig = new _FixedDig();
+        public static readonly ResponseType FixedDigit = new _FixedDigit();
 
         /// <summary>
         /// Represents a response type that enforces numeric values within a specified range.
@@ -82,7 +91,7 @@ namespace IAT.Core.Enumerations
         /// <remarks>Use this response type when input or output values must be constrained to a defined
         /// numeric interval. The specific bounds and validation behavior depend on the implementation of the response
         /// type.</remarks>
-        public static readonly ResponseType BoundedNum = new _BoundedNum();
+        public static readonly ResponseType BoundedNumber = new _BoundedNumber();
 
         /// <summary>
         /// Represents a response type that enforces a bounded length constraint.
@@ -112,8 +121,8 @@ namespace IAT.Core.Enumerations
                 7 => WeightedMultiple,
                 8 => RegEx,
                 9 => MultiBoolean,
-                10 => FixedDig,
-                11 => BoundedNum,
+                10 => FixedDigit,
+                11 => BoundedNumber,
                 12 => BoundedLength,
                 _ => throw new ArgumentException($"Invalid ResponseType value: {value}")
             };
@@ -140,10 +149,35 @@ namespace IAT.Core.Enumerations
                 "weightedmultiple" => WeightedMultiple,
                 "regex" => RegEx,
                 "multiboolean" => MultiBoolean,
-                "fixeddig" => FixedDig,
-                "boundednum" => BoundedNum,
+                "fixeddig" => FixedDigit,
+                "boundednum" => BoundedNumber,
                 "boundedlength" => BoundedLength,
                 _ => throw new ArgumentException($"Unknown ResponseType name: {name}")
+            };
+
+        /// <summary>
+        /// Reeturns the corresponding ResponseType value for the specified type. The type's name is used to determine the matching ResponseType value.
+        /// </summary>
+        /// <param name="type">The type of the response object</param>
+        /// <returns>The enumerated response type</returns>
+        /// <exception cref="ArgumentException">Thrown if the passed type is invalid.</exception>
+        public static ResponseType FromType(Type type) =>
+            type.Name switch
+            {
+                nameof(_None) => None,
+                nameof(_Instruction) => Instruction,
+                nameof(_Image) => Image,
+                nameof(_Boolean) => Boolean,
+                nameof(_Likert) => Likert,
+                nameof(_Date) => Date,
+                nameof(_Multiple) => Multiple,
+                nameof(_WeightedMultiple) => WeightedMultiple,
+                nameof(_RegEx) => RegEx,
+                nameof(_MultiBoolean) => MultiBoolean,
+                nameof(_FixedDigit) => FixedDigit,
+                nameof(_BoundedNumber) => BoundedNumber,
+                nameof(_BoundedLength) => BoundedLength,
+                _ => throw new ArgumentException($"Unknown ResponseType type: {type.Name}")
             };
 
         private sealed record _None() : ResponseType(0, "None");
@@ -156,8 +190,8 @@ namespace IAT.Core.Enumerations
         private sealed record _WeightedMultiple() : ResponseType(7, "WeightedMultiple");
         private sealed record _RegEx() : ResponseType(8, "RegEx");
         private sealed record _MultiBoolean() : ResponseType(9, "MultiBoolean");
-        private sealed record _FixedDig() : ResponseType(10, "FixedDig");
-        private sealed record _BoundedNum() : ResponseType(11, "BoundedNum");
+        private sealed record _FixedDigit() : ResponseType(10, "FixedDig");
+        private sealed record _BoundedNumber() : ResponseType(11, "BoundedNum");
         private sealed record _BoundedLength() : ResponseType(12, "BoundedLength");
     }
 }

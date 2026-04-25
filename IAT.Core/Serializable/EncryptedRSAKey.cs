@@ -3,23 +3,57 @@ using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Xml;
-using System.Xml.Linq;
+using System.Xml.Serialization;
 using System.Xml.Schema;
+using System.Xml.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
 
-namespace IAT.Core.Models;
+namespace IAT.Core.Serializable;
 
+/// <summary>
+/// Contains the encrypted RSA key information, including the modulus (n), exponent (e), private exponent (d), prime factors (p and q), and other related parameters.
+/// </summary>
 public class EncryptedRSAKey 
 {
-    private string nString = string.Empty, eString = string.Empty;
-    private byte[] d, e, p, q, n, dp, dq, inverseQ;
-    private String encryptedKey;
-    public bool IsDecrypted { get; private set; } = false;
+    /// <summary>
+    /// Gets or sets the string value associated with the NString XML element.
+    /// </summary>
+    [XmlElement("NString", Form = XmlSchemaForm.Unqualified)]
+    public string NString { get; set; } = string.Empty;
 
-    public byte[] IV;// = new byte[] { (byte)0xFA, (byte)0x64, (byte)0x92, (byte)0x21, (byte)0x4A, (byte)0x74, (byte)0x41, (byte)0xE9 };
+    /// <summary>
+    /// Gets or sets the value of the EString XML element.
+    /// </summary>
+    [XmlElement("EString", Form = XmlSchemaForm.Unqualified)]
+    public string EString { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the encrypted key value.
+    /// </summary>
+    [XmlElement("EncryptedKey", Form = XmlSchemaForm.Unqualified)]
+    public string EncryptedKey { get; set; } = string.Empty;
+
+    [XmlIgnore]
+    private byte[]? d, e, p, q, n, dp, dq, inverseQ;
+
+    [XmlIgnore]
+    private bool IsDecrypted { get; private set; } = false;
+
+    [XmlIgnore]
+    private byte[] IV = new byte[] { (byte)0xFA, (byte)0x64, (byte)0x92, (byte)0x21, (byte)0x4A, (byte)0x74, (byte)0x41, (byte)0xE9 };
+
+    /// <summary>
+    /// Initializes a new instance of the EncryptedRSAKey class.
+    /// </summary>
     public EncryptedRSAKey() { }
 
+    /// <summary>
+    /// Creates a new instance of the EncryptedRSAKey class that represents a null or uninitialized key.
+    /// </summary>
+    /// <remarks>This method can be used as a placeholder when a valid RSA key is not available or required.
+    /// The returned key should not be used for cryptographic operations.</remarks>
+    /// <returns>An EncryptedRSAKey instance with all key fields set to indicate a null value.</returns>
     public static EncryptedRSAKey CreateNullKey()
     {
         EncryptedRSAKey key = new EncryptedRSAKey();
@@ -29,6 +63,14 @@ public class EncryptedRSAKey
         return key;
     }
 
+    /// <summary>
+    /// Generates an 8-byte DES cipher key from the specified input string.
+    /// </summary>
+    /// <remarks>The generated key is derived deterministically from the input string using a custom
+    /// algorithm. The same input will always produce the same key. This method does not perform any validation to
+    /// ensure the key meets DES parity requirements.</remarks>
+    /// <param name="input">The input string to be converted into a DES cipher key. Cannot be null.</param>
+    /// <returns>A byte array containing the generated 8-byte DES cipher key.</returns>
     public static byte[] stringToDESCipherKey(String input)
     {
         byte[] productHex = System.Text.Encoding.Unicode.GetBytes(input);
@@ -81,7 +123,13 @@ public class EncryptedRSAKey
         return cipher;
     }
 
-
+    /// <summary>
+    /// Decrypts the stored key using the specified password.
+    /// </summary>
+    /// <remarks>If the key has already been decrypted, this method performs no action. The method updates the
+    /// internal state with the decrypted key components upon successful decryption.</remarks>
+    /// <param name="password">The password used to decrypt the key. If the password starts with "secret:", it is interpreted as a
+    /// hexadecimal-encoded key and IV; otherwise, it is used directly to derive the decryption key. Cannot be null.</param>
     public void DecryptKey(String password)
     {
         if (IsDecrypted)
@@ -126,6 +174,14 @@ public class EncryptedRSAKey
         IsDecrypted = true;
     }
 
+    /// <summary>
+    /// Generates and encrypts a new RSA key pair using the specified password as the encryption key.
+    /// </summary>
+    /// <remarks>The generated RSA key parameters are encrypted with DES using the key and IV derived from the
+    /// provided password. The encrypted key and public key components are stored in corresponding fields. The password
+    /// must be in the expected format; otherwise, the method may fail.</remarks>
+    /// <param name="password">A string containing the password in the format 'secret:XX-XX-...-XX', where each 'XX' is a hexadecimal byte.
+    /// Used to derive the DES encryption key and initialization vector.</param>
     public void Generate(String password)
     {
         Regex r = new Regex("secret:(.+)");
@@ -143,22 +199,22 @@ public class EncryptedRSAKey
         inverseQ = rsaParams.InverseQ;
         MemoryStream memStream = new MemoryStream();
         BinaryWriter bWriter = new BinaryWriter(memStream);
-        bWriter.Write((Int32)n.Length);
-        bWriter.Write(n);
-        bWriter.Write((Int32)e.Length);
-        bWriter.Write(e);
-        bWriter.Write((Int32)d.Length);
-        bWriter.Write(d);
-        bWriter.Write((Int32)p.Length);
-        bWriter.Write(p);
-        bWriter.Write((Int32)q.Length);
-        bWriter.Write(q);
-        bWriter.Write((Int32)dp.Length);
-        bWriter.Write(dp);
-        bWriter.Write((Int32)dq.Length);
-        bWriter.Write(dq);
-        bWriter.Write((Int32)inverseQ.Length);
-        bWriter.Write(inverseQ);
+        bWriter.Write(n?.Length ?? 0);
+        bWriter.Write(n ?? Array.Empty<byte>());
+        bWriter.Write(e?.Length ?? 0);
+        bWriter.Write(e ?? Array.Empty<byte>());
+        bWriter.Write(d?.Length ?? 0);
+        bWriter.Write(d ?? Array.Empty<byte>());
+        bWriter.Write(p?.Length ?? 0);
+        bWriter.Write(p ?? Array.Empty<byte>());
+        bWriter.Write(q?.Length ?? 0);
+        bWriter.Write(q ?? Array.Empty<byte>());
+        bWriter.Write(dp?.Length ?? 0);
+        bWriter.Write(dp ?? Array.Empty<byte>());
+        bWriter.Write(dq?.Length ?? 0);
+        bWriter.Write(dq ?? Array.Empty<byte>());
+        bWriter.Write(inverseQ?.Length ?? 0);
+        bWriter.Write(inverseQ ?? Array.Empty<byte>());
         bWriter.Flush();
         MemoryStream encryptedKeyBytes = new MemoryStream();
         using var desCrypt = DES.Create();
@@ -174,18 +230,26 @@ public class EncryptedRSAKey
     }
 
 
+    /// <summary>
+    /// Retrieves the RSA key parameters for the current instance.
+    /// </summary>
+    /// <remarks>The returned parameters may include private key information. Handle the result securely to
+    /// prevent disclosure of sensitive key material.</remarks>
+    /// <returns>An <see cref="RSAParameters"/> structure containing the RSA key parameters, including modulus, exponent, and
+    /// private key components if available.</returns>
     public RSAParameters GetRSAParameters()
     {
-        RSAParameters rsaParams = new RSAParameters();
-        rsaParams.Modulus = N;
-        rsaParams.Exponent = E;
-        rsaParams.D = D;
-        rsaParams.P = P;
-        rsaParams.Q = Q;
-        rsaParams.DP = DP;
-        rsaParams.DQ = DQ;
-        rsaParams.InverseQ = InverseQ;
-        return rsaParams;
+        return new RSAParameters()
+        {
+            Modulus = n,
+            Exponent = e,
+            D = d,
+            P = p,
+            Q = q,
+            DP = dp,
+            DQ = dq,
+            InverseQ = inverseQ
+        };
     }
 }
 

@@ -4,7 +4,9 @@ using System.Text;
 
 namespace IAT.Core.Models
 {
-    internal class ResultSet
+    public class ResultSet
     {
+        public List<List<string>> SurveyResults;
+        public List<TrialResl>
     }
 }

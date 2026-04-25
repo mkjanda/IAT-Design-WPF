@@ -428,7 +428,7 @@ namespace IAT.Core.Serializable
         /// context. Keys are case-sensitive. Modifications to the returned dictionary affect the internal state of the
         /// instance.</remarks>
         [XmlIgnore]
-        public Dictionary<String, String> StringValues { get; private set; } = new();
+        public Dictionary<String, String> StringValues { get; set; } = new();
 
         /// <summary>
         /// Represents a serializable key-value pair with both key and value as strings.

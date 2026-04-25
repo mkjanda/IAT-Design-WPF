@@ -14,16 +14,16 @@ namespace IAT.Core.ConfigFile;
 /// system-generated responses. The Response class itself is abstract and cannot be instantiated directly; it provides a common 
 /// interface and shared functionality for all response types in the survey configuration system.
 /// </summary>
+[XmlInclude(typeof(Boolean))]
 [XmlInclude(typeof(BoundedLength))]
 [XmlInclude(typeof(BoundedNumber))]
+[XmlInclude(typeof(Date))]
 [XmlInclude(typeof(FixedDigit))]
+[XmlInclude(typeof(Likert))]
+[XmlInclude(typeof(MultiBoolean))]
+[XmlInclude(typeof(Multiple))]
 [XmlInclude(typeof(RegEx))]
 [XmlInclude(typeof(WeightedMultiple))]
-[XmlInclude(typeof(MultiBoolean))]
-[XmlInclude(typeof(Date))]
-[XmlInclude(typeof(Likert))]
-[XmlInclude(typeof(Multiple))]
-[XmlInclude(typeof(Boolean))]
 public abstract class Response
 {
     /// <summary>
@@ -106,13 +106,19 @@ public class BoundedLength : Response
     public BoundedLength() { }
 }
 
+/// <summary>
+/// Represents a numeric response with defined minimum and maximum bounds.
+/// </summary>
+/// <remarks>Use this class to specify a response that must fall within a specific numeric range. The minimum and
+/// maximum values define the inclusive bounds for valid responses. This type is typically used in scenarios where input
+/// validation or range enforcement is required.</remarks>
 public class BoundedNumber : Response
 {
     /// <summary>
     /// Gets the type of response represented by this instance.
     /// </summary>
     [XmlAttribute("ResponseType", Form = XmlSchemaForm.Unqualified, Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.BoundedNum;
+    public override ResponseType ResponseType => ResponseType.BoundedNumber;
 
     /// <summary>
     /// Gets or sets the minimum allowable value.
@@ -132,13 +138,20 @@ public class BoundedNumber : Response
     public BoundedNumber() { }
 }
 
+/// <summary>
+/// A class that defines a response type for fixed digit values, typically used in scenarios where a specific number of digits 
+/// is required for input or output. This class inherits from the Response base class and specifies the ResponseType as FixedDig. 
+/// The NumDigs property allows you to set the exact number of digits that should be used in the response, ensuring that the input 
+/// or output adheres to a defined format. This is particularly useful in contexts such as PIN codes, verification numbers, or any 
+/// scenario where a fixed-length numeric response is necessary.
+/// </summary>
 public class FixedDigit : Response
 {
     /// <summary>
     /// Gets the type of response represented by this instance.
     /// </summary>
     [XmlAttribute("ResponseType", Form = XmlSchemaForm.Unqualified, Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.FixedDig;
+    public override ResponseType ResponseType => ResponseType.FixedDigit;
 
     /// <summary>
     /// Gets or sets the number of digits to use in the operation.
@@ -418,7 +431,7 @@ public class UniqueResponseItem
     /// with the XML element name "UniqueResponses" for each item. Null values are allowed in the collection.</remarks>
     [XmlArray]
     [XmlArrayItem("UniqueResponses", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-    private List<string> UniqueResponses = new List<string>();
+    private List<string> UniqueResponses = [];
 
     /// <summary>
     /// Gets or sets the name of the survey.

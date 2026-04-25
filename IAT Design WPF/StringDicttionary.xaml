@@ -5,6 +5,6 @@
     <!-- UI strings used everywhere in the designer -->
     <sys:String x:Key="WebSocketUrl">http://127.0.0.1/IATServer/DataTranssactionSocket</sys:String>
     <sys:String x:Key="HandshakePlaintext">A cigarette is the perfect type of perfect pleasure. It is exquisite and utter unsatisfying.</sys:String>
-
+    <sys:String x:Key="ResultsDownloadUrl">http://127.0.0.1/IATServer/ResultsDownload</sys:String>
     <!-- Add as many as you need — group them with x:Key naming convention -->
 </ResourceDictionary>    

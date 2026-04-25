@@ -6,6 +6,7 @@ using net.sf.saxon.s9api;
 using javax.xml.transform.stream;
 using net.liberty_development.SaxonHE12s9apiExtensions;
 using IAT.Core.Extensions;
+using System.IO;
 
 
 namespace IAT.Core.Services

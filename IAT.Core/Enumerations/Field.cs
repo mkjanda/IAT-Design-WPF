@@ -8,11 +8,11 @@ namespace IAT.Core.Enumerations
     /// <summary>
     /// Represents a field definition used to identify and describe data elements within the data source.
     /// </summary>
-    /// <param name="name">The name of the field. This value is used to match and retrieve the corresponding field definition. The
+    /// <param name="Name">The name of the field. This value is used to match and retrieve the corresponding field definition. The
     /// comparison is case-insensitive.</param>
-    /// <param name="value">A value indicating whether the field content is encrypted. Set to <see langword="true"/> if the field requires
+    /// <param name="Encrypted">A value indicating whether the field content is encrypted. Set to <see langword="true"/> if the field requires
     /// encryption; otherwise, <see langword="false"/>.</param>
-    public abstract record Field(string name, bool value)
+    public abstract record Field(string Name, bool Encrypted)
     {
         /// <summary>
         /// Represents the field that identifies the product key in the data source.
@@ -55,7 +55,7 @@ namespace IAT.Core.Enumerations
         /// <param name="name">The name of the field to retrieve. The comparison is case-insensitive.</param>
         /// <returns>The field that matches the specified name.</returns>
         /// <exception cref="ArgumentException">Thrown if the specified name does not correspond to a known field.</exception>
-        public Field FromString(String name)
+        public static Field FromName(String name)
         {
             return name.ToLowerInvariant() switch
             {
