@@ -38,7 +38,7 @@ public class EncryptedRSAKey
     private byte[]? d, e, p, q, n, dp, dq, inverseQ;
 
     [XmlIgnore]
-    private bool IsDecrypted { get; private set; } = false;
+    private bool IsDecrypted { get; set; } = false;
 
     [XmlIgnore]
     private byte[] IV = new byte[] { (byte)0xFA, (byte)0x64, (byte)0x92, (byte)0x21, (byte)0x4A, (byte)0x74, (byte)0x41, (byte)0xE9 };
@@ -48,20 +48,6 @@ public class EncryptedRSAKey
     /// </summary>
     public EncryptedRSAKey() { }
 
-    /// <summary>
-    /// Creates a new instance of the EncryptedRSAKey class that represents a null or uninitialized key.
-    /// </summary>
-    /// <remarks>This method can be used as a placeholder when a valid RSA key is not available or required.
-    /// The returned key should not be used for cryptographic operations.</remarks>
-    /// <returns>An EncryptedRSAKey instance with all key fields set to indicate a null value.</returns>
-    public static EncryptedRSAKey CreateNullKey()
-    {
-        EncryptedRSAKey key = new EncryptedRSAKey();
-        key.nString = "NULL";
-        key.eString = "NULL";
-        key.encryptedKey = "NULL";
-        return key;
-    }
 
     /// <summary>
     /// Generates an 8-byte DES cipher key from the specified input string.
@@ -144,7 +130,7 @@ public class EncryptedRSAKey
         }
         else
             desCipher = stringToDESCipherKey(password);
-        MemoryStream memStream = new MemoryStream(Convert.FromBase64String(encryptedKey));
+        MemoryStream memStream = new MemoryStream(Convert.FromBase64String(EncryptedKey));
         using var des = DES.Create();
         des.Mode = CipherMode.CBC;
         des.Padding = PaddingMode.None;
@@ -224,9 +210,9 @@ public class EncryptedRSAKey
         memStream.Seek(0, SeekOrigin.Begin);
         cStream.Write(memStream.ToArray(), 0, (int)memStream.Length);
         cStream.FlushFinalBlock();
-        encryptedKey = Convert.ToBase64String(encryptedKeyBytes.ToArray());
-        nString = Convert.ToBase64String(rsaParams.Modulus);
-        eString = Convert.ToBase64String(rsaParams.Exponent);
+        EncryptedKey = Convert.ToBase64String(encryptedKeyBytes.ToArray());
+        NString = Convert.ToBase64String(rsaParams.Modulus);
+        EString = Convert.ToBase64String(rsaParams.Exponent);
     }
 
 

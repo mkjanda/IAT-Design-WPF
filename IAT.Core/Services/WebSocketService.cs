@@ -467,7 +467,7 @@ namespace IAT.Core.Services
 
                 case TransactionType.VerifyPassword:
                     byte[] encData = Convert.FromBase64String(transactionRequest.StringValues["EncryptedTestString"]);
-                    var rsa = RSA.Create(EncryptedRSAKey.GetRSAParameters());
+                    var rsa = System.Security.Cryptography.RSA.Create(RSA.GetRSAParameters());
                     byte[] decData = rsa.Decrypt(encData, RSAEncryptionPadding.Pkcs1);
                     SendMessage(new TransactionRequest()
                     {
@@ -548,8 +548,8 @@ namespace IAT.Core.Services
 
         private void ProcessMessage(EncryptedRSAKey key)
         {
-            EncryptedRSAKey = key;
-            EncryptedRSAKey.DecryptKey(_password);
+            RSA = key;
+            RSA.DecryptKey(_password);
             SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestPasswordVerification,

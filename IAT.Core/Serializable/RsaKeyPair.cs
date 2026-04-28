@@ -8,7 +8,7 @@ namespace IAT.Core.Serializable;
 
 class RsaKeyPair 
 {
-    [XmlElement("DataKey", Form = XmlSchemaForm.Unqualified, Type = typeof(EncryptedRSAKey)]
+    [XmlElement("DataKey", Form = XmlSchemaForm.Unqualified, Type = typeof(EncryptedRSAKey))]
     private EncryptedRSAKey DataKey { get; init; } = new EncryptedRSAKey();
 
     public RsaKeyPair() { }

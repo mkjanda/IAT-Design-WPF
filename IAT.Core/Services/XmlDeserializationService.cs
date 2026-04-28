@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 using System.Xml;
 using IAT.Core.Serializable;
 using IAT.Core.Domain;
+using IAT.Core.Models;
 using System.IO;
 
 namespace IAT.Core.Services
@@ -23,7 +24,9 @@ namespace IAT.Core.Services
         {
             { typeof(ActivationRequest).Name, typeof(ActivationRequest) },
             { typeof(ActivationResponse).Name, typeof(ActivationResponse) },
-            { typeof(Block).Name, typeof(Block) },
+            { typeof(Block).Name, typeof(Block) }, { typeof(Handshake).Name, typeof(Handshake) },
+            { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
+            { "SurveyResults", typeof(SurveyResponse) }, 
           //  { typeof(Key).Name, typeof(Key)  },
             { typeof(IatTest).Name, typeof(IatTest)  },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },

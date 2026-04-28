@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ExcelComponents>
+  <ExcelAddendumComponent InputFileName="\xl\SharedStringAddendum.xslt" Action="TransformAndAppend" />
+  <ExcelCopyComponent InputFileName="\_rels\a.rels" Action="Copy">
+    <OutputDirectory>/_rels/</OutputDirectory>
+    <OutputFileName>.rels</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-package.relationships+xml</ContentType>
+  </ExcelCopyComponent>
+  <ExcelCopyComponent InputFileName="\xl\theme\theme1.xml" Action="Copy">
+    <OutputDirectory>/xl/theme/</OutputDirectory>
+    <OutputFileName>theme1.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.theme+xml</ContentType>
+  </ExcelCopyComponent>
+  <ExcelTransformComponent InputFileName="\xl\sharedStrings.xslt" Action="Transform">
+    <OutputDirectory>/xl/</OutputDirectory>
+    <OutputFileName>sharedStrings.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelCopyComponent InputFileName="\xl\styles.xml" Action="Copy">
+    <OutputDirectory>/xl/</OutputDirectory>
+    <OutputFileName>styles.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml</ContentType>
+  </ExcelCopyComponent>
+  <ExcelTransformComponent InputFileName="\xl\workbook.xml.xslt" Action="Transform">
+    <OutputDirectory>/xl/</OutputDirectory>
+    <OutputFileName>workbook.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelTransformComponent InputFileName="\xl\_rels\workbook.xml.rels.xslt" Action="Transform">
+    <OutputDirectory>/xl/_rels/</OutputDirectory>
+    <OutputFileName>workbook.xml.rels</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-package.relationships+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelTransformComponent InputFileName="\xl\drawings\title_drawing.xslt" Action="Transform">
+    <OutputDirectory>/xl/drawings/</OutputDirectory>
+    <OutputFileName>drawing1.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.drawing+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelMultiTransformComponent InputFileName="\xl\drawings\item_drawing.xslt" Action="MultiTransform">
+    <OutputDirectory>/xl/drawings/</OutputDirectory>
+    <OutputFileNameTemplate StartingValue="2">drawing{0}.xml</OutputFileNameTemplate>
+    <ContentType>application/vnd.openxmlformats-officedocument.drawing+xml</ContentType>
+  </ExcelMultiTransformComponent>
+  <ExcelTransformComponent InputFileName="\xl\drawings\_rels\title_page_rels.xslt" Action="Transform">
+    <OutputDirectory>/xl/drawings/_rels/</OutputDirectory>
+    <OutputFileName>drawing1.xml.rels</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-package.relationships+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelMultiTransformComponent InputFileName="\xl\drawings\_rels\slide_drawing_rels.xslt" Action="MultiTransform">
+    <OutputDirectory>/xl/drawings/_rels/</OutputDirectory>
+    <OutputFileNameTemplate StartingValue="2">drawing{0}.xml.rels</OutputFileNameTemplate>
+    <ContentType>application/vnd.openxmlformats-package.relationships+xml</ContentType>
+  </ExcelMultiTransformComponent>
+  <ExcelCopyComponent InputFileName="\xl\worksheets\TitleWorksheet.xml" Action="Copy">
+    <OutputDirectory>/xl/worksheets/</OutputDirectory>
+    <OutputFileName>sheet1.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml</ContentType>
+  </ExcelCopyComponent>
+  <ExcelTransformComponent InputFileName="\xl\worksheets\SummaryWorksheet.xslt" Action="Transform">
+    <OutputDirectory>/xl/worksheets/</OutputDirectory>
+    <OutputFileName>sheet2.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelTransformComponent InputFileName="\xl\worksheets\LatencyWorksheet.xslt" Action="Transform">
+    <OutputDirectory>/xl/worksheets/</OutputDirectory>
+    <OutputFileName>sheet3.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelMultiTransformComponent InputFileName="\xl\worksheets\ItemAnalWorksheet.xslt" Action="MultiTransform">
+    <OutputDirectory>/xl/worksheets/</OutputDirectory>
+    <OutputFileNameTemplate StartingValue="4">sheet{0}.xml</OutputFileNameTemplate>
+    <ContentType>application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml</ContentType>
+  </ExcelMultiTransformComponent>
+  <ExcelCopyComponent InputFileName="\xl\worksheets\rels\TitleWorksheet.xml.rels" Action="Copy">
+    <OutputDirectory>/xl/worksheets/_rels/</OutputDirectory>
+    <OutputFileName>sheet1.xml.rels</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-package.relationships+xml</ContentType>
+  </ExcelCopyComponent>
+  <ExcelMultiTransformComponent InputFileName="\xl\worksheets\rels\ItemAnalWorksheetRels.xslt" Action="MultiTransform">
+    <OutputDirectory>/xl/worksheets/_rels/</OutputDirectory>
+    <OutputFileNameTemplate StartingValue="4">sheet{0}.xml.rels</OutputFileNameTemplate>
+    <ContentType>application/vnd.openxmlformats-package.relationships+xml</ContentType>
+  </ExcelMultiTransformComponent>
+  <ExcelTransformComponent InputFileName="\docProps\app.xml.xslt" Action="Transform">
+    <OutputDirectory>/docProps/</OutputDirectory>
+    <OutputFileName>app.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-officedocument.extended-properties+xml</ContentType>
+  </ExcelTransformComponent>
+  <ExcelTransformComponent InputFileName="\docProps\core.xml.xslt" Action="Transform">
+    <OutputDirectory>/docProps/</OutputDirectory>
+    <OutputFileName>core.xml</OutputFileName>
+    <ContentType>application/vnd.openxmlformats-package.core-properties+xml</ContentType>
+  </ExcelTransformComponent>
+</ExcelComponents>

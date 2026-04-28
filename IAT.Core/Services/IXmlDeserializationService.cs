@@ -4,6 +4,13 @@ using System.IO;
 
 namespace IAT.Core.Services
 {
+    /// <summary>
+    /// Defines methods for deserializing XML data into objects when the target type is not known at compile time.
+    /// </summary>
+    /// <remarks>Implementations of this interface provide functionality to convert XML representations into
+    /// .NET objects without requiring the caller to specify the expected type in advance. The caller is responsible for
+    /// casting the result to the appropriate type after deserialization, based on the context or additional
+    /// metadata.</remarks>
     public interface IXmlDeserializationService
     {
         /// <summary>

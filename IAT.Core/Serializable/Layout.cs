@@ -28,9 +28,29 @@ namespace IAT.Core.Serializable
         /// </summary>
         public struct Overlap
         {
+            /// <summary>
+            /// Represents an overlap involving the stimulus rectangle. This flag is set when the stimulus rectangle overlaps with any other defined rectangle in the layout.
+            /// </summary>
             public const uint StimulusRectangle = 0x1;
+
+            /// <summary>
+            /// Represents the flag value for key-value rectangles in the associated API or enumeration.
+            /// </summary>
+            /// <remarks>Use this constant to specify or identify key-value rectangle data when
+            /// interacting with APIs that support multiple data types or flags. The meaning and usage of this value may
+            /// depend on the specific context in which it is used.</remarks>
             public const uint KeyValueRectangles = 0x2;
+
+            /// <summary>
+            /// Represents the error code for a rectangle-related error condition.
+            /// </summary>
             public const uint ErrorRectangle = 0x4;
+
+            /// <summary>
+            /// Represents the instruction code for a rectangle operation.
+            /// </summary>
+            /// <remarks>Use this constant to identify rectangle instructions when working with
+            /// instruction sets that support multiple operation types.</remarks>
             public const uint InstructionRectangle = 0x8;
         };
 

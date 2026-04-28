@@ -22,6 +22,7 @@ namespace IAT.ViewModels
         [ObservableProperty]
         private Core.Domain.Block? selectedBlock;
 
+
         public TestDesignerViewModel(IProjectPackageService packageService)
         {
             _packageService = packageService;

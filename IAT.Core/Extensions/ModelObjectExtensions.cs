@@ -3,11 +3,13 @@ using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using sun.awt.image;
+using sun.tools.tree;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static javax.xml.ws.soap.AddressingFeature;
 
 namespace IAT.Core.Extensions
 {
@@ -47,40 +49,6 @@ namespace IAT.Core.Extensions
             return trial.KeyedDirection.Opposite;
         }
 
-
-        /// <summary>
-        /// Verifies that the decrypted ciphertext from the handshake matches the specified plain text using the
-        /// provided RSA key.
-        /// </summary>
-        /// <remarks>This method performs a fixed-time comparison to help prevent timing attacks. The
-        /// comparison is case-sensitive and uses UTF-8 encoding for the plain text.</remarks>
-        /// <param name="handshake">The handshake containing the base64-encoded ciphertext to verify. The CipherText property must not be null
-        /// or empty.</param>
-        /// <param name="rsa">The RSA key used to decrypt the ciphertext. Must be initialized with the appropriate private key.</param>
-        /// <param name="PlainText">The plain text string to compare against the decrypted ciphertext. Encoded as UTF-8 for comparison.</param>
-        /// <returns>true if the decrypted ciphertext matches the specified plain text; otherwise, false.</returns>
-        public static bool Verify(this Handshake handshake)
-        {
-            var cipherBytes = Convert.FromBase64String(handshake.CipherText ?? string.Empty);
-            var plainBytes = Convert.FromBase64String(handshake.PlainText ?? string.Empty);
-            var decryptedBytes = Handshake.RSA.Decrypt(cipherBytes, RSAEncryptionPadding.Pkcs1);
-            return CryptographicOperations.FixedTimeEquals(decryptedBytes, plainBytes);
-        }
-
-        /// <summary>
-        /// Initializes the specified handshake with new cryptographic parameters, including a random plaintext, its
-        /// encrypted ciphertext, and the public key information.
-        /// </summary>
-        /// <remarks>This method generates a new 32-byte random plaintext, encrypts it using the
-        /// handshake's RSA public key, and sets the handshake's modulus and public key properties. The method
-        /// overwrites any existing values in the handshake instance.</remarks>
-        /// <param name="handshake">The handshake object to populate with generated cryptographic values. Cannot be null.</param>
-        public static void Formulate(this Handshake handshake)
-        {
-            handshake.Modulus = Convert.ToBase64String(Handshake.RSA.ExportParameters(false).Modulus?.ToArray<byte>() ?? new byte[] { 1 });
-            handshake.PublicKey = Convert.ToBase64String(Handshake.RSA.ExportRSAPublicKey());
-            handshake.PlainText = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        }
 
 
         /// <summary>
@@ -146,8 +114,8 @@ namespace IAT.Core.Extensions
                 byte[] iv = new byte[entry.IVLength];
                 Array.Copy(resultData, entry.KeyOffset, key, 0, entry.KeyLength);
                 Array.Copy(resultData, entry.IVOffset, iv, 0, entry.IVLength);
-                byte[] decryptedKey = ResultPacket.rsa.Decrypt(key, RSAEncryptionPadding.Pkcs1);
-                byte[] decryptedIv = ResultPacket.rsa.Decrypt(iv, RSAEncryptionPadding.Pkcs1);
+                byte[] decryptedKey = ResultPacket.rsa?.Decrypt(key, RSAEncryptionPadding.Pkcs1) ?? Array.Empty<byte>();
+                byte[] decryptedIv = ResultPacket.rsa?.Decrypt(iv, RSAEncryptionPadding.Pkcs1) ?? Array.Empty<byte>();
                 byte[] encryptedData = new byte[entry.DataLength];
                 Array.Copy(resultData, entry.DataOffset, encryptedData, 0, entry.DataLength);
                 memStream.Write(resultSet.DecryptData(encryptedData, decryptedKey, decryptedIv));
@@ -174,6 +142,79 @@ namespace IAT.Core.Extensions
             des.IV = iv;
             using var decryptor = des.CreateDecryptor();
             return decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+        }
+
+        /// <summary>
+        /// Scores the specified IAT response using the D-score algorithm, which calculates a standardized score based on
+        /// the response times of the trials. The D-score is commonly used in Implicit Association Tests (IAT) to measure
+        /// the strength of associations between concepts.
+        /// </summary>
+        /// <param name="response">The IAT response to be scored.</param>
+        /// <returns>The D-score representing the strength of associations in the IAT response.</returns>
+        public static double Score(this IATResponse response)
+        {
+            long LatencySum = 0;
+            int nLT300 = 0;
+            for (int ctr = 0; ctr < response.Responses.Count; ctr++)
+            {
+                LatencySum += response.Responses[ctr].ResponseTime;
+                if (response.Responses[ctr].ResponseTime < 300)
+                    nLT300++;
+            }
+            if (nLT300 * 10 >= response.Responses.Count)
+            {
+                return double.NaN;
+            }
+
+            var Block3 = new List<TrialResponse>();
+            var Block4 = new List<TrialResponse>();
+            var Block6 = new List<TrialResponse>();
+            var Block7 = new List<TrialResponse>();
+
+            for (int ctr = 0; ctr < response.Responses.Count; ctr++)
+            {
+                if (response.Responses[ctr].ResponseTime > 10000)
+                    continue;
+
+                switch (response.Responses[ctr].BlockNumber)
+                {
+                    case 3:
+                        Block3.Add(response.Responses[ctr]);
+                        break;
+
+                    case 4:
+                        Block4.Add(response.Responses[ctr]);
+                        break;
+
+                    case 6:
+                        Block6.Add(response.Responses[ctr]);
+                        break;
+
+                    case 7:
+                        Block7.Add(response.Responses[ctr]);   
+                        break;
+                }
+            }
+
+            var InclusiveSDList1 = new List<TrialResponse>();
+            var InclusiveSDList2 = new List<TrialResponse>();
+
+            InclusiveSDList1.AddRange(Block3);
+            InclusiveSDList1.AddRange(Block6);
+            double mean = InclusiveSDList1.Select(r => r.ResponseTime).Average();
+            double sd3_6 = Math.Sqrt(InclusiveSDList1.Select(r => (double)r.ResponseTime).Aggregate<double, double>(0, (sd, rt) => sd + Math.Pow(rt - mean, 2)) / (double)(InclusiveSDList1.Count - 1));
+
+            InclusiveSDList2.AddRange(Block4);
+            InclusiveSDList2.AddRange(Block7);
+            mean = InclusiveSDList2.Select(r => r.ResponseTime).Average();
+            double sd4_7 = Math.Sqrt(InclusiveSDList2.Select(r => (double)r.ResponseTime).Aggregate<double, double>(0, (sd, rt) => sd + Math.Pow(rt - mean, 2)) / (double)(InclusiveSDList2.Count - 1));
+
+            double mean3 = Block3.Select(r => r.ResponseTime).Average();
+            double mean4 = Block4.Select(r => r.ResponseTime).Average();
+            double mean6 = Block6.Select(r => r.ResponseTime).Average();
+            double mean7 = Block7.Select(r => r.ResponseTime).Average();
+
+            return (((mean6 - mean3) / sd3_6) + ((mean7 - mean4) / sd4_7)) / 2;
         }
     }
 }

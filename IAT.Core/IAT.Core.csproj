@@ -7,6 +7,74 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
 	  <UseWPF>true</UseWPF>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="ExcelXslt\docProps\app.xml.xslt" />
+    <None Remove="ExcelXslt\docProps\core.xml.xslt" />
+    <None Remove="ExcelXslt\printerSettings\printerSettings1.bin" />
+    <None Remove="ExcelXslt\xl\drawings\item_drawing.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\title_drawing.xml" />
+    <None Remove="ExcelXslt\xl\drawings\title_drawing.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\wrapped_drawings.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\_rels\drawing_rels.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\_rels\drawing_rels_addendum.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\_rels\slide_drawing_rels.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\_rels\title_drawing.xml.rels" />
+    <None Remove="ExcelXslt\xl\drawings\_rels\title_drawing.xml.rels.xslt" />
+    <None Remove="ExcelXslt\xl\drawings\_rels\title_page_rels.xslt" />
+    <None Remove="ExcelXslt\xl\printerSettings\printerSettings1.bin" />
+    <None Remove="ExcelXslt\xl\sharedStrings.xml" />
+    <None Remove="ExcelXslt\xl\sharedStrings.xslt" />
+    <None Remove="ExcelXslt\xl\styles.xml" />
+    <None Remove="ExcelXslt\xl\theme\theme1.xml" />
+    <None Remove="ExcelXslt\xl\workbook.xml.xslt" />
+    <None Remove="ExcelXslt\xl\worksheets\ItemAnalWorksheet.xslt" />
+    <None Remove="ExcelXslt\xl\worksheets\LatencyWorksheet.xslt" />
+    <None Remove="ExcelXslt\xl\worksheets\rels\ItemAnalWorksheetRels.xslt" />
+    <None Remove="ExcelXslt\xl\worksheets\rels\TitleWorksheet.xml.rels" />
+    <None Remove="ExcelXslt\xl\worksheets\rels\WorksheetRels.xslt" />
+    <None Remove="ExcelXslt\xl\worksheets\SummaryWorksheet.xslt" />
+    <None Remove="ExcelXslt\xl\worksheets\TitleWorksheet.xml" />
+    <None Remove="ExcelXslt\xl\worksheets\wrapped_ItemAnalysisWorksheets.xslt" />
+    <None Remove="ExcelXslt\xl\_rels\workbook.xml.rels.xslt" />
+    <None Remove="ExcelXslt\[Content Types].xslt" />
+    <None Remove="ExcelXslt\_Contents.xml" />
+    <None Remove="ExcelXslt\_rels\a.rels" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="ExcelXslt\docProps\app.xml.xslt" />
+    <EmbeddedResource Include="ExcelXslt\docProps\core.xml.xslt" />
+    <EmbeddedResource Include="ExcelXslt\printerSettings\printerSettings1.bin" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\item_drawing.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\title_drawing.xml" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\title_drawing.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\wrapped_drawings.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\_rels\drawing_rels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\_rels\drawing_rels_addendum.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\_rels\slide_drawing_rels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\_rels\title_drawing.xml.rels" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\_rels\title_drawing.xml.rels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\drawings\_rels\title_page_rels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\printerSettings\printerSettings1.bin" />
+    <EmbeddedResource Include="ExcelXslt\xl\sharedStrings.xml" />
+    <EmbeddedResource Include="ExcelXslt\xl\sharedStrings.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\styles.xml" />
+    <EmbeddedResource Include="ExcelXslt\xl\theme\theme1.xml" />
+    <EmbeddedResource Include="ExcelXslt\xl\workbook.xml.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\ItemAnalWorksheet.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\LatencyWorksheet.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\rels\ItemAnalWorksheetRels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\rels\TitleWorksheet.xml.rels" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\rels\WorksheetRels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\SummaryWorksheet.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\TitleWorksheet.xml" />
+    <EmbeddedResource Include="ExcelXslt\xl\worksheets\wrapped_ItemAnalysisWorksheets.xslt" />
+    <EmbeddedResource Include="ExcelXslt\xl\_rels\workbook.xml.rels.xslt" />
+    <EmbeddedResource Include="ExcelXslt\[Content Types].xslt" />
+    <EmbeddedResource Include="ExcelXslt\_Contents.xml" />
+    <EmbeddedResource Include="ExcelXslt\_rels\a.rels" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
