@@ -1,22 +1,21 @@
-﻿using System;
+﻿using com.sun.security.ntlm;
+using IAT.Core.ConfigFile;
 using IAT.Core.Enumerations;
-using IAT.Core.Extensions;
-using IAT.Core.Models;
 using IAT.Core.Serializable;
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
-using System.Text;
-using System.Text.Json;
+using System.Net;
+using System.Net.Http;
 using System.Net.WebSockets;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Windows;
-using System.Xml.Serialization;
-using System.Net;
 using System.Xml.Linq;
-using IAT.Core.ConfigFile;
-using System.Net.Http;
-using jdk.nashorn.@internal.ir;
+using System.Xml.Serialization;
 
 
 namespace IAT.Core.Services
@@ -65,13 +64,25 @@ namespace IAT.Core.Services
         Task<XDocument> GetResults(string iatName, string password, string productKey);
 
         /// <summary>
+        /// Retrieves the manifest containing slides for the specified item, using the provided credentials and product
+        /// key.
+        /// </summary>
+        /// <param name="iatName">The name of the item for which to retrieve slides. Cannot be null or empty.</param>
+        /// <param name="password">The password used to authenticate the request. Cannot be null or empty.</param>
+        /// <param name="productKey">The product key associated with the item. Cannot be null or empty.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a Manifest object with the
+        /// slides for the specified item.</returns>
+        Task<Manifest> GetItemSlides(string iatName, string password, string productKey);
+
+
+        /// <summary>
         /// The activation key associated with the current activation or verification process. This property is updated upon successful email 
         /// verification or product activation and can be used to retrieve the activation key for storage or display purposes.
         /// </summary>
         public string ActivationKey { get; set; }
     }
 
-    public enum WebSocketUse { ActivateProduct, VerifyEmail, ResendEmailVerification, GetResults };
+    public enum WebSocketUse { ActivateProduct, VerifyEmail, ResendEmailVerification, GetResults, GetItemSlides };
 
 
     /// <summary>
@@ -88,7 +99,7 @@ namespace IAT.Core.Services
         /// Gets the result of the product activation attempt.
         /// </summary>
         public TransactionResult Result { get; private set; } = TransactionResult.Unset;
-
+        private Manifest _slideManifest = new Manifest();
         private ManualResetEvent ResetEvent = new(false);
         private Handshake OutHandshake = new();
         private object transmissionLock = new();
@@ -257,7 +268,6 @@ namespace IAT.Core.Services
         }
 
 
-
         /// <summary>
         /// Asynchronously retrieves a list of result packets for the specified IAT using the provided credentials and
         /// product key.
@@ -300,6 +310,38 @@ namespace IAT.Core.Services
             }
             return _results;
         }
+
+        public async Task<Manifest> GetItemSlides(string iatName, string password, string productKey)
+        {
+            _testName = iatName;
+            _password = password;
+            _productKey = productKey;
+            Use = WebSocketUse.GetItemSlides;
+            WebSocket = new ClientWebSocket();
+            try
+            {
+                await WebSocket.ConnectAsync(new Uri(_stringResourceService["WebSocketUri"]), new CancellationToken(false));
+                StartMessageReceiver();
+                var outTrans = new TransactionRequest()
+                {
+                    Transaction = TransactionType.RequestConnection,
+                    ProductKey = _productKey
+                };
+                SendMessage(outTrans);
+                ResetEvent.WaitOne();
+            }
+            catch (Exception ex)
+            {
+                Result = TransactionResult.CannotConnect;
+                _userNotificationService.ShowError(new ErrorNotificationMessage("Cannot Activate Product",
+                    "An error occurred while attempting to connect to the activation server. Please check your internet connection and try again.", ex));
+                ExceptionDispatchInfo.Capture(ex).Throw();
+                WebSocket.Dispose();
+            }
+            return _slideManifest;
+        }
+
+
 
         /// <summary>
         /// Begins asynchronously receiving a message from the activation WebSocket connection.
@@ -350,10 +392,14 @@ namespace IAT.Core.Services
                                         ProcessMessage(handshake);
                                         break;
                                     case TransactionRequest transactionRequest:
-                                        ProcessMessage(transactionRequest);
+                                        _ = ProcessMessage(transactionRequest);
                                         break;
                                     case EncryptedRSAKey key:
                                         ProcessMessage(key);
+                                        break;
+
+                                    case Manifest manifest:
+                                        ProcessMessage(manifest);
                                         break;
                                 }
                             }
@@ -407,6 +453,17 @@ namespace IAT.Core.Services
         }
 
 
+        private void ProcessMessage(Manifest manifest)
+        {
+            _slideManifest = manifest;
+            SendMessage(new TransactionRequest()
+            {
+                Transaction = TransactionType.ItemSlideManifestReceived,
+                IATName = _testName,
+                ProductKey = _productKey
+            });
+        }
+
         /// <summary>
         /// Processes the specified transaction request and updates the activation result or sends a handshake message
         /// as appropriate.
@@ -451,6 +508,15 @@ namespace IAT.Core.Services
                                 IATName = _testName
                             });
                             break;
+
+                        case WebSocketUse.GetItemSlides:
+                            SendMessage(new TransactionRequest()
+                            {
+                                Transaction = TransactionType.IATExists,
+                                IATName = _testName
+                            });
+                            break;
+
                     }
                     break;
 
@@ -484,6 +550,7 @@ namespace IAT.Core.Services
                 case TransactionType.PasswordValid:
                     SendMessage(new TransactionRequest()
                     {
+                        Transaction = Use == WebSocketUse.GetResults ? TransactionType.RequestResults : TransactionType.RequestItemSlides,
                         IATName = _testName,
                         ProductKey = _productKey,
                     });
@@ -507,6 +574,35 @@ namespace IAT.Core.Services
                     _httpClient.Dispose();
                     Result = TransactionResult.Success;
                     ResetEvent.Set();
+                    break;
+
+                case TransactionType.ItemSlideDownloadReady:
+                    var httpClient = new HttpClient();
+                    _ = httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")).ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                        {
+                            _userNotificationService.ShowError(new ErrorNotificationMessage("Error Downloading Item Slides", "An error occurred while downloading item slide data. Please try again.", t.Exception));
+                            ExceptionDispatchInfo.Capture(t.Exception).Throw();
+                            Result = TransactionResult.ServerFailure;
+                            ResetEvent.Set();
+                        }
+                        else
+                        {
+                            var receipt = new MemoryStream(t.Result);
+                            var slideData = new List<byte[]>();
+                            var fileList = _slideManifest.Contents.Where(fe => fe.FileEntityType == FileEntity.EFileEntityType.File).Cast<ManifestFile>().Where(mf => mf.ResourceType == ManifestFile.EResourceType.itemSlide).ToList();
+                            foreach (var file in fileList)
+                            {
+                                file.Content = new byte[file.Size];
+                                receipt.Read(file.Content, 0, (int)file.Size);
+                            }
+                            receipt.Dispose();
+                            httpClient.Dispose();
+                            Result = TransactionResult.Success;
+                            ResetEvent.Set();
+                        }
+                    });
                     break;
 
                 case TransactionType.PasswordInvalid:

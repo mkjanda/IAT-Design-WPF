@@ -87,7 +87,7 @@ namespace IAT.Core.Services
                             SurveyResponses.Add(resultElem as SurveyResponse);
                     }
                 }
-            });
+            }).ContinueWith(t => _webSocketService.GetItemSlides(iatName, password, _localStorageService[Field.ProductKey]));
         }
     }
 }

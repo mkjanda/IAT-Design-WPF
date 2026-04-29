@@ -53,14 +53,22 @@ namespace IAT.Core.Serializable
     /// </summary>
     /// <remarks>This class is typically used for serialization and deserialization of IAT results in XML
     /// format. The structure aligns with the expected schema for IAT result data exchange.</remarks>
-    [XmlRoot("IATResultSet")]
+    [XmlRoot("IATResult")]
     public class IATResponse
     {
+        /// <summary>
+        /// The D-score calculated from the trial responses, representing the strength of associations measured by the IAT. 
+        /// This value is typically derived from the response times and error rates of the individual trials, providing insight 
+        /// into implicit biases or associations
+        /// </summary>
+        [XmlElement("IATScore", Form = XmlSchemaForm.Unqualified, DataType = "decimal")]
+        public decimal Score { get; set; } = 0m;
+
         /// <summary>
         /// Gets or sets the collection of trial responses associated with the current session.
         /// </summary>
         [XmlArray]
-        [XmlArrayItem("IATResponseSetElement")]
+        [XmlArrayItem("IATResponse")]
         public List<TrialResponse> Responses { get; set; } = new();
     }
 }
