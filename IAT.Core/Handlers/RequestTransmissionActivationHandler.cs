@@ -9,6 +9,9 @@ using System.Text;
 
 namespace IAT.Core.Handlers
 {
+    /// <summary>
+    /// Handler for processing the RequestTransmissionActivationCommand, which is responsible for sending an activation request
+    /// </summary>
     internal class RequestTransmissionActivationHandler : IRequestHandler<RequestTransmissionActivationCommand, TransactionResult>
     {
         readonly private IWebSocketService _webSocketService;
@@ -22,7 +25,7 @@ namespace IAT.Core.Handlers
         
         public async Task<TransactionResult> Handle(RequestTransmissionActivationCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new ActivationRequest() 
+            await _webSocketService.SendMessage(new ActivationRequest() 
             {
                 FirstName = _transactionState.UserName.Split(' ')[1],
                 LastName = _transactionState.UserName.Split(' ')[2],

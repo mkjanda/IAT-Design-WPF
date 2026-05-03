@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
 using System.Xml.Linq;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
@@ -67,5 +67,7 @@ namespace IAT.Core.Models
         /// verification or product activation and can be used to retrieve the activation key for storage or display purposes.
         /// </summary>
         public string ActivationKey { get; set; } = string.Empty;
+
+        public ManualResetEvent Event { get; } = new ManualResetEvent(false);
     }
 }

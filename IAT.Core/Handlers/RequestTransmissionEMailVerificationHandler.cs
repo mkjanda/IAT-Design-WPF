@@ -9,6 +9,9 @@ using IAT.Core.Models;
 
 namespace IAT.Core.Handlers
 {
+    /// <summary>
+    /// Handler for processing the RequestTransmissionEMailVerificationCommand, which is responsible for sending an email verification request
+    /// </summary>
     internal class RequestTransmissionEMailVerificationHandler : IRequestHandler<RequestTransmissionEMailVerificationCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
@@ -21,7 +24,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestTransmissionEMailVerificationCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestEMailVerification,
                 StringValues = new Dictionary<string, string> { { "email", _transactionState.Email } },
