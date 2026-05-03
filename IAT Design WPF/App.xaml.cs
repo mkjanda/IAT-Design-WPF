@@ -3,11 +3,12 @@ using System.Windows;
 using Velopack;
 using Microsoft.Extensions.DependencyInjection;
 using IAT.Core.Services;
-using IAT.ViewModels;
+using IAT.Core.Models;
 using System.CodeDom;
-using IAT.Core.Validation;
+using IAT.Views;
 using IAT_Design_WPF.Services;
 using IAT.Core.Serializable;
+using IAT.Core.Handlers;
 
 namespace IAT_Design_WPF
 {
@@ -38,7 +39,7 @@ namespace IAT_Design_WPF
             // 3. Dependency Injection setup (the professional way)
             var services = new ServiceCollection();
 
-            services.AddTransient<Layout>();
+            services.AddSingleton<TransactionState>();
            
 
             // Register your services here as we build them
@@ -47,6 +48,9 @@ namespace IAT_Design_WPF
             services.AddSingleton<IStringResourceService, StringResourceService>();
             services.AddSingleton<IUserNotificationService, UserNotificationService>(); 
             services.AddSingleton<IWebSocketService, WebSocketService>();
+            services.AddSingleton<IDialogService, DialogService>();
+            services.AddSingleton<IProductActivationService, ProductActivationService>();
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ActivationHandler>());
 
             Services = services.BuildServiceProvider();
 

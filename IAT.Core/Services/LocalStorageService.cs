@@ -25,7 +25,7 @@ namespace IAT.Core.Services
         private static readonly int NonceBytes = 12;
         private static readonly int TagBytes = 16;
 
-        private IWebSocketService _webSocketService;
+        private IWebSocketService _wss;
         private XDocument? ActivationDocument { get; set; }
         private Dictionary<string, string> ActivationFileContents = new();
 
@@ -39,7 +39,7 @@ namespace IAT.Core.Services
         /// operations.</remarks>
         public LocalStorageService(IWebSocketService webSocketService)
         {
-            _webSocketService = webSocketService;
+            _wss = webSocketService;
             if (ActivationDataExists)
                 ActivationDocument = XDocument.Load(ActivationFilePath);
             else
@@ -90,10 +90,10 @@ namespace IAT.Core.Services
                     else
                         return ActivationStatus.NotActivated;
                 }
-                _webSocketService.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail]);
-                if (_webSocketService.ActivationKey != string.Empty)
+                _wss.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail]);
+                if (_wss.ActivationKey != string.Empty)
                 {
-                    this[Field.ActivationKey] = _webSocketService.ActivationKey;
+                    this[Field.ActivationKey] = _wss.ActivationKey;
                     if (IsActivatedCode(this[Field.ProductKey], this[Field.ActivationKey]))
                         return ActivationStatus.Activated;
                     else

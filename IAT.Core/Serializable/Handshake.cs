@@ -4,9 +4,14 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Security.Cryptography;
+using MediatR;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Serializable
 {
+    public record HandshakeCommand(Handshake inHand) : IRequest<TransactionResult>;
+
+
     /// <summary>
     /// Represents the data exchanged during a cryptographic handshake, including public key, modulus, and encrypted or
     /// plain text values.

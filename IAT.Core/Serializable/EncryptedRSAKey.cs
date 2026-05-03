@@ -8,14 +8,25 @@ using System.Xml.Schema;
 using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
+using MediatR;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Serializable;
+
+/// <summary>
+/// Represents a command to process an encrypted RSA key as part of a request that returns a transaction result.
+/// </summary>
+/// <param name="Key">The encrypted RSA key to be processed. Cannot be null.</param>
+public record RSAKeyCommand(EncryptedRSAKey Key) : IRequest<TransactionResult>;
+
 
 /// <summary>
 /// Contains the encrypted RSA key information, including the modulus (n), exponent (e), private exponent (d), prime factors (p and q), and other related parameters.
 /// </summary>
 public class EncryptedRSAKey 
 {
+
+
     /// <summary>
     /// Gets or sets the string value associated with the NString XML element.
     /// </summary>

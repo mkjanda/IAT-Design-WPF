@@ -6,5 +6,6 @@
     <sys:String x:Key="WebSocketUrl">http://127.0.0.1/IATServer/DataTranssactionSocket</sys:String>
     <sys:String x:Key="HandshakePlaintext">A cigarette is the perfect type of perfect pleasure. It is exquisite and utter unsatisfying.</sys:String>
     <sys:String x:Key="ResultsDownloadUrl">http://127.0.0.1/IATServer/ResultsDownload</sys:String>
-    <!-- Add as many as you need — group them with x:Key naming convention -->
+    <sys:String x:Key="DeploymentIATExists">An IAT with that name already exists on the server. You may attempt to deploy this test atop it. In that event a backup of your test and data will be made on the server for the duration of the redeployment process. It is possible for this process too fail and recommended that you download your results before attempting it.</sys:String>
+    <sys:String x:Key="InvalidPassword">Invalid Password</sys:String>
 </ResourceDictionary>    

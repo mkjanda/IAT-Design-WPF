@@ -1,5 +1,7 @@
 ﻿using System.Xml.Serialization;
 using System.Xml.Schema;
+using MediatR;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Serializable
 {
@@ -9,7 +11,7 @@ namespace IAT.Core.Serializable
     /// <remarks>This class is typically used to serialize or deserialize activation requests in XML format
     /// for product registration workflows. All properties are required and must be provided to create a valid
     /// activation request.</remarks>
-    class ActivationRequest 
+    public class ActivationRequest 
     {
         /// <summary>
         /// Gets the unique code that identifies the product.

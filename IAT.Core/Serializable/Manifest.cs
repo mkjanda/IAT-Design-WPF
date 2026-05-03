@@ -5,9 +5,14 @@ using System.Text;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using IAT.Core.Enumerations;
+using MediatR;
 
 namespace IAT.Core.Serializable
 {
+
+    public record ManifestCommand(Manifest manifest) : IRequest<TransactionResult>;
+
     /// <summary>
     /// Represents an abstract file system entity, such as a file or directory, with common properties for path, size,
     /// and type.

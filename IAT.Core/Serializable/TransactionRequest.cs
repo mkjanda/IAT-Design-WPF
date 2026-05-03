@@ -7,6 +7,7 @@ using System.Text;
 using System.Xml.Serialization;
 using System.ComponentModel.Design.Serialization;
 using IAT.Core.Enumerations;
+using MediatR;
 
 namespace IAT.Core.Serializable
 {

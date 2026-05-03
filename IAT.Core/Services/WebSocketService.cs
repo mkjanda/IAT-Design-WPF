@@ -1,10 +1,11 @@
-﻿using com.sun.security.ntlm;
-using IAT.Core.ConfigFile;
+﻿using IAT.Core.ConfigFile;
 using IAT.Core.Enumerations;
+using IAT.Core.Models;
 using IAT.Core.Serializable;
+using IAT.Core.Handlers; 
+using MediatR;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -13,7 +14,6 @@ using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Windows;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 
@@ -23,17 +23,21 @@ namespace IAT.Core.Services
 
     public interface IWebSocketService
     {
+        Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
+
+
         /// <summary>
-        /// Gets the result of the product activation attempt.
+        /// Closes the web socket connection gracefully by sending a close message to the server and disposing of the WebSocket instance. 
+        /// If the WebSocket is already closed, it simply disposes of the instance.
         /// </summary>
-        TransactionResult Result { get; }
+        /// <returns>A task that represents the operation</returns>
+        public Task CloseSocketAsync();
+
         /// <summary>
         /// Initiates the product activation process using the specified user and product information.
         /// </summary>
         /// <returns>A task that represents the asynchronous activation operation.</returns>
         Task Activate(string productKey, string email, string userName);
-
-        public EncryptedRSAKey RSA { get; }
 
         /// <summary>
         /// Verifies the user's email address by sending a verification request to the server. The method will handle the communication with the server and update the 
@@ -74,15 +78,16 @@ namespace IAT.Core.Services
         /// slides for the specified item.</returns>
         Task<Manifest> GetItemSlides(string iatName, string password, string productKey);
 
-
         /// <summary>
-        /// The activation key associated with the current activation or verification process. This property is updated upon successful email 
-        /// verification or product activation and can be used to retrieve the activation key for storage or display purposes.
+        /// Asynchronously sends the specified message object over the active WebSocket connection using binary serialization. 
+        /// The message is serialized to XML and transmitted as a binary WebSocket message.
         /// </summary>
-        public string ActivationKey { get; set; }
-    }
+        /// <param name="message">The message object to be sent over the WebSocket connection.</param>
+        Task SendMessage(object message);    
 
-    public enum WebSocketUse { ActivateProduct, VerifyEmail, ResendEmailVerification, GetResults, GetItemSlides };
+
+
+    }
 
 
     /// <summary>
@@ -98,44 +103,48 @@ namespace IAT.Core.Services
         /// <summary>
         /// Gets the result of the product activation attempt.
         /// </summary>
-        public TransactionResult Result { get; private set; } = TransactionResult.Unset;
-        private Manifest _slideManifest = new Manifest();
-        private ManualResetEvent ResetEvent = new(false);
-        private Handshake OutHandshake = new();
-        private object transmissionLock = new();
         private ClientWebSocket WebSocket = new();
-        private CancellationToken AbortToken = new(false);
-        private ArraySegment<byte> ReceiveBuffer = new();
-        private IStringResourceService _stringResourceService;
-        private IUserNotificationService _userNotificationService;
-        private IXmlDeserializationService _xmlDeserializationService;
-        private MemoryStream MessageBuffer = new();
-        private WebSocketUse Use;
-        private string _productKey = string.Empty;
-        private string _email = string.Empty;
-        private string _userName = string.Empty;
-        private string _password = string.Empty;
-        private string _testName = string.Empty;
-        public string ActivationKey { get; set; } = String.Empty;
-        public EncryptedRSAKey RSA { get; private set; }
-        private XDocument _results;
-        private static readonly byte[] AesKeyBytes = new byte[32] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE,
-            0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE };
-        private static readonly int NonceBytes = 12;
-        private static readonly int TagBytes = 16;
+        private readonly CancellationToken AbortToken = new(false);
+        private readonly ArraySegment<byte> ReceiveBuffer = new();
+        private readonly TransactionState _transactionState;
+        private readonly IDialogService _dialogService;
+        private readonly IStringResourceService _stringResourceService;
+        private readonly IUserNotificationService _userNotificationService;
+        private readonly IXmlDeserializationService _xmlDeserializationService;
+        public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
+        private readonly IMediator _mediator;
+        private readonly MemoryStream MessageBuffer = new();
 
 
         /// <summary>
         /// Initializes a new instance of the WebSocketService class with the specified dependencies.
         /// </summary>
         /// <param name="stringResourceService">The service used to provide localized string resources.</param>
-        /// <param name="userNotificationService">The service used to display notifications to the user.</param>
         /// <param name="xmlDeserializationService">The service used to deserialize XML data.</param>
-        public WebSocketService(IStringResourceService stringResourceService, IUserNotificationService userNotificationService, IXmlDeserializationService xmlDeserializationService)
+        /// <param name="transactionState">The state object used to manage transaction state.</param>
+        /// <param name="mediator">The mediator used for handling requests and notifications.</param>
+        /// <param name="dialogService">The service used to display dialog notifications to the user.</param>
+        public WebSocketService(IStringResourceService stringResourceService, IXmlDeserializationService xmlDeserializationService, 
+            TransactionState transactionState, IMediator mediator, IDialogService dialogService)
         {
-            _userNotificationService = userNotificationService;
             _stringResourceService = stringResourceService;
             _xmlDeserializationService = xmlDeserializationService;
+            _transactionState = transactionState;
+            _dialogService = dialogService;
+            _mediator = mediator;
+            TransactionCommands = new Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>>() {
+                { TransactionType.AbortTransaction, (request) => new AbortTransactionCommand(request) },
+                { TransactionType.ClientDeleted, (request) => new ClientDeletedCommand(request)  },
+                { TransactionType.ClientFrozen, (request) => new ClientFrozenCommand(request) },
+                { TransactionType.EMailAlreadyVerified, (request) => new EMailAlreadyVerifiedCommand(request) },
+                { TransactionType.PasswordInvalid, (request) => new InvalidPasswordCommand(request) },
+                { TransactionType.ItemSlideDownloadReady, (request) => new ItemSlidesReadyCommand(request) },
+                { TransactionType.NoActivationsRemain, (request) => new NoActivationsCommand(request) },
+                { TransactionType.NoSuchClient, (request) => new NoSuchClientCommand(request) },
+                { TransactionType.NoSuchIAT, (request) => new NoSuchIATCommand(request) },
+                { TransactionType.ResultsReady, (request) => new ResultsReadyCommand(request) },
+                { TransactionType.TransactionFail, (request) => new TransactionFailCommand(request) },
+                { TransactionType.VerifyPassword, (request) => new VerifyPasswordCommand(request) } };
         }
 
         /// <summary>
@@ -146,15 +155,83 @@ namespace IAT.Core.Services
         /// intended for use with an established WebSocket connection.</remarks>
         /// <param name="message">The object to send. The object must be serializable by the XmlSerializer corresponding to its runtime type.
         /// Cannot be null.</param>
-        private void SendMessage(object message)
+        public async Task SendMessage(object message)
         {
             var ser = new XmlSerializer(message.GetType());
             var memStream = new MemoryStream();
             ser.Serialize(memStream, message);
-            WebSocket.SendAsync(new ArraySegment<byte>(memStream.ToArray()), WebSocketMessageType.Binary, true, AbortToken);
+            await WebSocket.SendAsync(new ArraySegment<byte>(memStream.ToArray()), WebSocketMessageType.Binary, true, AbortToken);
         }
 
+        /// <summary>
+        /// Closes the active WebSocket connection gracefully by sending a close message to the server and disposing of the WebSocket instance. 
+        /// If the WebSocket is already closed, it simply disposes of the instance.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous close operation.</returns>
+        public async Task CloseSocketAsync()
+        {
+            if (WebSocket.State == WebSocketState.Open)
+            {
+                await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
+            }
+            WebSocket.Dispose();
+        }
 
+        /// <summary>
+        /// Processes the result of an asynchronous WebSocket receive operation and handles incoming messages
+        /// accordingly.
+        /// </summary>
+        /// <remarks>If the received message is complete, the method deserializes and processes it. If the
+        /// WebSocket remains open, the method continues to receive additional messages. Errors encountered during
+        /// message processing are reported to the user notification service.</remarks>
+        /// <param name="t">A task representing the asynchronous WebSocket receive operation whose result contains the received data and
+        /// status information.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        private async Task ReceiveMessages()
+        {
+            try
+            {
+                while (WebSocket.State == WebSocketState.Open)
+                {
+                    var result = await WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken);
+                    if (result.Count != 0)
+                    {
+                        if (result.EndOfMessage)
+                        {
+                            MessageBuffer.Write(ReceiveBuffer.ToArray());
+                            MessageBuffer.Seek(0, SeekOrigin.Begin);
+                            var message = _xmlDeserializationService.DeserializeUnknownType(MessageBuffer);
+                            var command = await (message switch
+                            {
+                                TransactionRequest tr => Task.FromResult(TransactionCommands[tr.Transaction](tr)),
+                                Handshake hs => Task.FromResult<IRequest<TransactionResult>>(new HandshakeCommand(hs)),
+                                EncryptedRSAKey key => Task.FromResult<IRequest<TransactionResult>>(new RSAKeyCommand(key)),
+                                Manifest manifest => Task.FromResult<IRequest<TransactionResult>>(new ManifestCommand(manifest))
+                            });
+                            var transactionResult = await _mediator.Send(command);
+                            if (transactionResult != TransactionResult.Unset)
+                            {
+                                _transactionState.Result = transactionResult;
+                                return;
+                            }
+                        }
+                        MessageBuffer.Seek(0, SeekOrigin.Begin);
+                    }
+                    else
+                    {
+                        MessageBuffer.Write(ReceiveBuffer.ToArray());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _dialogService.ShowNotificationAsync("An error occurred while receiving data from the server. Please try again.", "Error Receiving Data");
+                WebSocket.Dispose();
+                ExceptionDispatchInfo.Capture(ex).Throw();
+            }
+        }
+
+        /*
         /// <summary>
         /// Initiates a new request to resend the email verification message to the current user.
         /// </summary>
@@ -166,7 +243,7 @@ namespace IAT.Core.Services
         public async Task ResendEmailVerification(string productKey, string email)
         {
             Use = WebSocketUse.ResendEmailVerification;
-            _productKey = productKey;
+            ProductKey = productKey;
             _email = email;
             WebSocket = new ClientWebSocket();
             try
@@ -177,7 +254,7 @@ namespace IAT.Core.Services
                 var outTrans = new TransactionRequest()
                 {
                     Transaction = TransactionType.RequestConnection,
-                    ProductKey = _productKey
+                    ProductKey = ProductKey
                 };
                 SendMessage(outTrans);
                 ResetEvent.WaitOne();
@@ -193,6 +270,7 @@ namespace IAT.Core.Services
         }
 
 
+
         /// <summary>
         /// Initiates the email verification process by establishing a WebSocket connection and sending a verification
         /// request.
@@ -204,7 +282,7 @@ namespace IAT.Core.Services
         public async Task VerifyEmail(string productKey, string email)
         {
             Use = WebSocketUse.VerifyEmail;
-            _productKey = productKey;
+            ProductKey = productKey;
             _email = email;
             WebSocket = new ClientWebSocket();
             try
@@ -239,7 +317,7 @@ namespace IAT.Core.Services
         public async Task Activate(String productKey, string email, string userName)
         {
             Use = WebSocketUse.ActivateProduct;
-            _productKey = productKey;
+            ProductKey = productKey;
             _email = email;
             _userName = userName;
 
@@ -251,7 +329,7 @@ namespace IAT.Core.Services
                 var outTrans = new TransactionRequest()
                 {
                     Transaction = TransactionType.RequestConnection,
-                    ProductKey = _productKey
+                    ProductKey = ProductKey
                 };
                 SendMessage(outTrans);
                 ResetEvent.WaitOne();
@@ -285,7 +363,7 @@ namespace IAT.Core.Services
         {
             _testName = iatName;
             _password = password;
-            _productKey = productKey;
+            ProductKey = productKey;
             Use = WebSocketUse.GetResults;
             WebSocket = new ClientWebSocket();
             try
@@ -295,7 +373,7 @@ namespace IAT.Core.Services
                 var outTrans = new TransactionRequest()
                 {
                     Transaction = TransactionType.RequestConnection,
-                    ProductKey = _productKey
+                    ProductKey = ProductKey
                 };
                 SendMessage(outTrans);
                 ResetEvent.WaitOne();
@@ -315,7 +393,7 @@ namespace IAT.Core.Services
         {
             _testName = iatName;
             _password = password;
-            _productKey = productKey;
+            ProductKey = productKey;
             Use = WebSocketUse.GetItemSlides;
             WebSocket = new ClientWebSocket();
             try
@@ -325,7 +403,7 @@ namespace IAT.Core.Services
                 var outTrans = new TransactionRequest()
                 {
                     Transaction = TransactionType.RequestConnection,
-                    ProductKey = _productKey
+                    ProductKey = ProductKey
                 };
                 SendMessage(outTrans);
                 ResetEvent.WaitOne();
@@ -343,93 +421,7 @@ namespace IAT.Core.Services
 
 
 
-        /// <summary>
-        /// Begins asynchronously receiving a message from the activation WebSocket connection.
-        /// </summary>
-        /// <remarks>This method initiates a receive operation on the underlying WebSocket and processes
-        /// the received message upon completion. The operation is canceled if the associated abort token is
-        /// triggered.</remarks>
-        /// <returns>A task that represents the asynchronous receive operation.</returns>
-        private async void StartMessageReceiver()
-        {
-            var result = WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken);
-            await result;
-            _ = ReceiveMessage(result);
-        }
 
-        /// <summary>
-        /// Processes the result of an asynchronous WebSocket receive operation and handles incoming messages
-        /// accordingly.
-        /// </summary>
-        /// <remarks>If the received message is complete, the method deserializes and processes it. If the
-        /// WebSocket remains open, the method continues to receive additional messages. Errors encountered during
-        /// message processing are reported to the user notification service.</remarks>
-        /// <param name="t">A task representing the asynchronous WebSocket receive operation whose result contains the received data and
-        /// status information.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        private async Task ReceiveMessage(Task<WebSocketReceiveResult> t)
-        {
-            if (t.IsCanceled)
-                return;
-            if (t.IsFaulted)
-                return;
-            try
-            {
-                if (t.Result.Count != 0)
-                {
-                    lock (transmissionLock)
-                    {
-                        try
-                        {
-                            if (t.Result.EndOfMessage)
-                            {
-                                MessageBuffer.Write(ReceiveBuffer.ToArray());
-                                MessageBuffer.Seek(0, SeekOrigin.Begin);
-                                var message = _xmlDeserializationService.DeserializeUnknownType(MessageBuffer);
-                                switch (message)
-                                {
-                                    case Handshake handshake:
-                                        ProcessMessage(handshake);
-                                        break;
-                                    case TransactionRequest transactionRequest:
-                                        _ = ProcessMessage(transactionRequest);
-                                        break;
-                                    case EncryptedRSAKey key:
-                                        ProcessMessage(key);
-                                        break;
-
-                                    case Manifest manifest:
-                                        ProcessMessage(manifest);
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                MessageBuffer.Write(ReceiveBuffer.ToArray());
-                            }
-                            if (WebSocket.State == WebSocketState.Open)
-                                WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken).ContinueWith(t => ReceiveMessage(t));
-                            if (WebSocket.State != WebSocketState.Open)
-                                WebSocket.Dispose();
-                        }
-                        catch (Exception ex)
-                        {
-                            _userNotificationService.ShowError(new ErrorNotificationMessage("Error Receiving Data", "An error occurred while receiving data from the server. Please try again.", ex));
-                            ExceptionDispatchInfo.Capture(ex).Throw();
-                            Result = TransactionResult.CannotConnect;
-                            ResetEvent.Set();
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _userNotificationService.ShowError(new ErrorNotificationMessage("Error Receiving Data", "An error occurred while receiving data from the server. Please try again.", ex));
-                ExceptionDispatchInfo.Capture(ex).Throw();
-                Result = TransactionResult.CannotConnect;
-                ResetEvent.Set();
-            }
-        }
 
 
         /// <summary>
@@ -460,7 +452,7 @@ namespace IAT.Core.Services
             {
                 Transaction = TransactionType.ItemSlideManifestReceived,
                 IATName = _testName,
-                ProductKey = _productKey
+                ProductKey = ProductKey
             });
         }
 
@@ -496,7 +488,7 @@ namespace IAT.Core.Services
                                 FirstName = _userName.Split(' ')[1],
                                 LastName = _userName.Split(' ')[2],
                                 EMail = _email,
-                                ProductCode = _productKey,
+                                ProductCode = ProductKey,
                                 Title = _userName.Split(' ')[0]
                             });
                             break;
@@ -517,19 +509,62 @@ namespace IAT.Core.Services
                             });
                             break;
 
+                        case WebSocketUse.DeployTest:
+                            SendMessage(new TransactionRequest()
+                            {
+                                Transaction = TransactionType.RequestIATUpload,
+                                IATName = _testName
+                            });
+                            break;
+
                     }
                     break;
 
 
                 case TransactionType.IATExists:
-                    SendMessage(new TransactionRequest()
+                    switch (Use)
                     {
-                        Transaction = TransactionType.RequestEncryptionKey,
-                        IATName = _testName,
-                        ProductKey = _productKey
-                    });
-                    break;
+                        case WebSocketUse.GetResults:
+                            SendMessage(new TransactionRequest()
+                            {
+                                Transaction = TransactionType.RequestEncryptionKey,
+                                IATName = _testName,
+                                ProductKey = ProductKey
+                            });
+                            break;
 
+                        case WebSocketUse.GetItemSlides:
+                            SendMessage(new TransactionRequest()
+                            {
+                                Transaction = TransactionType.RequestEncryptionKey,
+                                IATName = _testName,
+                                ProductKey = ProductKey
+                            });
+                            break;
+
+                        case WebSocketUse.DeployTest:
+                            if (await _dialogService.ShowConfirmationAsync(_stringResourceService.GetString("DeploymentIATExists")))
+                            {
+                                SendMessage(new TransactionRequest()
+                                {
+                                    Transaction = TransactionType.RequestIATRedeploy,
+                                    IATName = _testName,
+                                    ProductKey = ProductKey
+                                });
+                            }
+                            else
+                            {
+                                SendMessage(new TransactionRequest()
+                                {
+                                    Transaction = TransactionType.AbortTransaction,
+                                    ProductKey = ProductKey
+                                });
+                                Result = TransactionResult.Canceled;
+                                ResetEvent.Set();
+                            }
+                            break;
+                    }
+                    break;
 
                 case TransactionType.VerifyPassword:
                     byte[] encData = Convert.FromBase64String(transactionRequest.StringValues["EncryptedTestString"]);
@@ -542,8 +577,8 @@ namespace IAT.Core.Services
                         {
                             { "DecryptedTestString", Convert.ToBase64String(decData) }
                         },
-                         IATName = _testName,
-                         ProductKey = _productKey
+                        IATName = _testName,
+                        ProductKey = ProductKey
                     });
                     break;
 
@@ -552,8 +587,14 @@ namespace IAT.Core.Services
                     {
                         Transaction = Use == WebSocketUse.GetResults ? TransactionType.RequestResults : TransactionType.RequestItemSlides,
                         IATName = _testName,
-                        ProductKey = _productKey,
+                        ProductKey = ProductKey,
                     });
+                    break;
+
+                case TransactionType.PasswordInvalid:
+                    await _dialogService.ShowNotificationAsync(_stringResourceService.GetString("InvalidPassword"), "Invalid Password"); 
+                    Result = TransactionResult.InvalidPassword;
+                    ResetEvent.Set();
                     break;
 
                 case TransactionType.ResultsReady:
@@ -605,11 +646,6 @@ namespace IAT.Core.Services
                     });
                     break;
 
-                case TransactionType.PasswordInvalid:
-                    Result = TransactionResult.InvalidPassword;
-                    ResetEvent.Set();
-                    break;
-
                 case TransactionType.NoSuchIAT:
                     Result = TransactionResult.NoSuchIAT;
                     ResetEvent.Set();
@@ -650,8 +686,8 @@ namespace IAT.Core.Services
             {
                 Transaction = TransactionType.RequestPasswordVerification,
                 IATName = _testName,
-                ProductKey = _productKey
+                ProductKey = ProductKey
             });
-        }
+        }*/
     }
 }
