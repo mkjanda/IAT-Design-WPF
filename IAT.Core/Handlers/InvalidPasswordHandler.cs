@@ -8,7 +8,7 @@ using IAT.Core.Services;
 
 namespace IAT.Core.Handlers
 {
-    internal class InvalidPasswordHandler : IRequestHandler<InvalidPasswordCommand, TransactionResult>
+    public class InvalidPasswordHandler : IRequestHandler<InvalidPasswordCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;

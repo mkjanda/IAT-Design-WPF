@@ -13,7 +13,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handles the handshake process for a transaction request.
     /// </summary>
-    internal class HandshakeHandler : IRequestHandler<HandshakeCommand, TransactionResult>
+    public class HandshakeHandler : IRequestHandler<HandshakeCommand, TransactionResult>
     {
         private static readonly byte[] AesKeyBytes = new byte[32] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE,
             0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE };
@@ -34,7 +34,7 @@ namespace IAT.Core.Handlers
             var plaintext = Convert.FromBase64String(request.inHand.Text);
             var ciphertext = new byte[plaintext.Length];
             aes.Decrypt(nonce, ciphertext, tag, plaintext);
-            _wss.SendMessage(new Handshake() { 
+            await _wss.SendMessage(new Handshake() { 
                 Text = Convert.ToBase64String(ciphertext)
             });
             return TransactionResult.Unset;

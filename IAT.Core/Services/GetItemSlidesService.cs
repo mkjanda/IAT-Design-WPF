@@ -4,11 +4,11 @@ using IAT.Core.Models;
 
 namespace IAT.Core.Services
 {
-    interface IGetItemSlidesService
+    public interface IGetItemSlidesService
     {
         Task<Manifest> GetItemSlides(string productKey, string iatName, string password);
     }
-    internal class GetItemSlidesService : IGetItemSlidesService
+    public class GetItemSlidesService : IGetItemSlidesService
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

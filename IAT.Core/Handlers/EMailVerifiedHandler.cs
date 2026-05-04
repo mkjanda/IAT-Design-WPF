@@ -8,7 +8,7 @@ using IAT.Core.Services;
 
 namespace IAT.Core.Handlers
 {
-    internal class EMailVerifiedHandler : IRequestHandler<EMailVerifiedCommand, TransactionResult>
+    public class EMailVerifiedHandler : IRequestHandler<EMailVerifiedCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

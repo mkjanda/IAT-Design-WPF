@@ -174,8 +174,4 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request associated with the invalid password attempt. Cannot be null.</param>
     public record PasswordInvalidCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    internal class TransactionCommands
-    {
-    }
 }

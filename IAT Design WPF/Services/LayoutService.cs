@@ -1,5 +1,5 @@
-﻿using IAT.Core.Enumerations;
-using IAT.Core.Serializable;
+﻿using IAT.Core.Domain;
+using IAT.Core.Enumerations;
 using System;
 using System.Windows;
 

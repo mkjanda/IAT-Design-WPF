@@ -11,7 +11,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the AbortTransactionCommand, which is triggered when a transaction is aborted. It closes the WebSocket connection and shows a notification to the user.  
     /// </summary>
-    internal class AbortTransactionHandler : IRequestHandler<AbortTransactionCommand, TransactionResult>
+    public class AbortTransactionHandler : IRequestHandler<AbortTransactionCommand, TransactionResult>
     {
         private readonly IWebSocketService _wss;
         private readonly IDialogService _dialogService;

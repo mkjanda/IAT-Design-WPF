@@ -10,7 +10,7 @@ using System.Text;
 
 namespace IAT.Core.Services
 {
-    interface IResendEmailVerificationService
+    public interface IResendEmailVerificationService
     {
         Task<TransactionResult> ResendEmailVerification(string productKey, string email);
     }
@@ -20,7 +20,7 @@ namespace IAT.Core.Services
     /// the initial verification email or needs to have it sent again for any reason. It initiates the resend process by sending a 
     /// request to the server and waits for the result of the transaction.
     /// </summary>
-    internal class ResendEmailVerificationService : IResendEmailVerificationService
+    public class ResendEmailVerificationService : IResendEmailVerificationService
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

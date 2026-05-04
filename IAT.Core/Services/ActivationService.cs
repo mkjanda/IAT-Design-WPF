@@ -22,7 +22,7 @@ namespace IAT.Core.Services
         Task<TransactionResult> ActivateProduct(string productKey, string userName, string email);
     }
 
-    internal class ActivationService : IActivationService
+    public class ActivationService : IActivationService
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

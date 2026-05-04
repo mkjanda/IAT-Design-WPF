@@ -11,7 +11,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the TransactionSuccessCommand, which is triggered when a transaction is successful. It closes the WebSocket connection and returns a success result.
     /// </summary>
-    internal class TransactionSuccessHandler : IRequestHandler<TransactionSuccessCommand, TransactionResult>
+    public class TransactionSuccessHandler : IRequestHandler<TransactionSuccessCommand, TransactionResult>
     {
         private readonly IWebSocketService _wss;
 

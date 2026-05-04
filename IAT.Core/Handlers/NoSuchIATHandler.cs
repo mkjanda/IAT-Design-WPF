@@ -8,7 +8,7 @@ using IAT.Core.Services;
 
 namespace IAT.Core.Handlers
 {
-    internal class NoSuchIATHandler : IRequestHandler<NoSuchIATCommand, TransactionResult>
+    public class NoSuchIATHandler : IRequestHandler<NoSuchIATCommand, TransactionResult>
     {
         private readonly IWebSocketService _wss;
         private readonly IDialogService _dialogService;

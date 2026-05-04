@@ -15,7 +15,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the ResultsReadyCommand, which is triggered when the server indicates that the test results are ready for download.
     /// </summary>
-    internal class ResultsReadyHandler : IRequestHandler<ResultsReadyCommand, TransactionResult>
+    public class ResultsReadyHandler : IRequestHandler<ResultsReadyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IStringResourceService _stringResourceService;

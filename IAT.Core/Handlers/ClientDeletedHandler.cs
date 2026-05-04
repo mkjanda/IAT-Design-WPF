@@ -11,7 +11,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handels the client deletion transaction result by closing the WebSocket connection and showing a notification to the user.
     /// </summary>
-    internal class ClientDeletedHandler : IRequestHandler<ClientDeletedCommand, TransactionResult>
+    public class ClientDeletedHandler : IRequestHandler<ClientDeletedCommand, TransactionResult>
     {
         private readonly IWebSocketService _wss;
         private readonly IDialogService _dialogService;

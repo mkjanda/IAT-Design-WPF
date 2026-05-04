@@ -14,6 +14,12 @@ namespace IAT.Core.Domain;
 /// Validation methods are available to check the integrity of the entire test before execution.</remarks>
 public partial class IatTest : ObservableObject
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Represents the layout of the test, including positions and sizes of various UI elements. This property is initialized with a default layout configuration.
+    /// </summary>
+    public LayoutConfiguration Layout { get; set; } = new LayoutConfiguration();
     /// <summary>
     /// Gets the collection of trials associated with this instance.
     /// </summary>
@@ -122,6 +128,8 @@ public partial class IatTest : ObservableObject
     /// <param name="id">The unique identifier of the key to retrieve.</param>
     /// <returns>The key associated with the specified identifier if found; otherwise, null.</returns>
     public Key? GetKeyById(Guid id) => _keyCache.TryGetValue(id, out var key) ? key : null;
+
+
 
     private readonly Dictionary<Guid, Block> _blockCache = new();
     private readonly Dictionary<Guid, Stimulus> _stimulusCache = new();

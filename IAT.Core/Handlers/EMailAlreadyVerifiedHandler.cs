@@ -12,7 +12,7 @@ namespace IAT.Core.Handlers
     /// Handler for the EMailAlreadyVerifiedCommand, which is triggered when the server indicates that the email 
     /// has already been verified. It closes the WebSocket connection and returns a success result.
     /// </summary>
-    internal class EMailAlreadyVerifiedHandler : IRequestHandler<EMailAlreadyVerifiedCommand, TransactionResult>
+    public class EMailAlreadyVerifiedHandler : IRequestHandler<EMailAlreadyVerifiedCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

@@ -14,7 +14,7 @@ namespace IAT.Core.Handlers
     /// It shows a confirmation dialog to the user and either sends a redeploy request or closes the WebSocket 
     /// connection based on the user's choice.
     /// </summary>
-    internal class IATExistsDeploymentHandler : IRequestHandler<IATExistsDeploymentCommand, TransactionResult>
+    public class IATExistsDeploymentHandler : IRequestHandler<IATExistsDeploymentCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;
@@ -34,7 +34,7 @@ namespace IAT.Core.Handlers
         {
             if (await _dialogService.ShowConfirmationAsync(_stringResourceService.GetString("DeploymentIATExists")))
             {
-                _webSocketService.SendMessage(new TransactionRequest()
+                await _webSocketService.SendMessage(new TransactionRequest()
                 {
                     Transaction = TransactionType.RequestIATRedeploy,
                     IATName = _transactionState.IATName,

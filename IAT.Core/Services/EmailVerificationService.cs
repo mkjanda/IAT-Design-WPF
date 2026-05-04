@@ -8,17 +8,17 @@ using IAT.Core.Handlers;
 
 namespace IAT.Core.Services
 {
-    interface IEmailVerfiicationService
+    public interface IEmailVerificationService
     {
         Task<TransactionResult> VerifyEmail(string productKey, string email);
     }
 
-    internal class EmailVerfiicationService : IEmailVerfiicationService
+    public class EmailVerificationService : IEmailVerificationService
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
         public TransactionResult Result { get; private set; } = TransactionResult.Unset;
-        public EmailVerfiicationService(IWebSocketService webSocketService, TransactionState transactionState)
+        public EmailVerificationService(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;

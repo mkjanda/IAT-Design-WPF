@@ -8,7 +8,7 @@ using IAT.Core.Serializable;
 
 namespace IAT.Core.Handlers
 {
-    internal class PasswordValidResultsHandler : IRequestHandler<PasswordValidResultsCommand, TransactionResult>
+    public class PasswordValidResultsHandler : IRequestHandler<PasswordValidResultsCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         public PasswordValidResultsHandler(IWebSocketService webSocketService)
@@ -18,7 +18,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(PasswordValidResultsCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestResults
             });

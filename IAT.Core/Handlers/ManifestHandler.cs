@@ -9,7 +9,7 @@ using System.Text;
 
 namespace IAT.Core.Handlers
 {
-    internal class ManifestHandler : IRequestHandler<ManifestCommand, TransactionResult>
+    public class ManifestHandler : IRequestHandler<ManifestCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
@@ -21,7 +21,7 @@ namespace IAT.Core.Handlers
         public async Task<TransactionResult> Handle(ManifestCommand request, CancellationToken cancellationToken)
         {
             _transactionState.SlideManifest = request.manifest;
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.ItemSlideManifestReceived,
                 IATName = _transactionState.IATName

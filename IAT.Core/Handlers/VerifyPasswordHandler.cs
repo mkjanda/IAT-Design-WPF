@@ -15,7 +15,7 @@ namespace IAT.Core.Handlers
     /// Handler for the VerifyPasswordCommand, which is triggered when the server requests password verification. 
     /// It decrypts the provided test string using RSA and sends the decrypted string back to the server for verification.
     /// </summary>
-    internal class VerifyPasswordHandler : IRequestHandler<VerifyPasswordCommand, TransactionResult>
+    public class VerifyPasswordHandler : IRequestHandler<VerifyPasswordCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
@@ -29,7 +29,7 @@ namespace IAT.Core.Handlers
             var encBytes = Convert.FromBase64String(request.transaction.StringValues["EncryptedTestString"]);
             var rsa = RSA.Create(_transactionState.RSA.GetRSAParameters());
             var decData = rsa.Decrypt(encBytes, RSAEncryptionPadding.Pkcs1);
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.VerifyPassword,
                 StringValues = new Dictionary<string, string>()

@@ -9,6 +9,7 @@ using IAT.Views;
 using IAT_Design_WPF.Services;
 using IAT.Core.Serializable;
 using IAT.Core.Handlers;
+using IAT.ViewModels;
 
 namespace IAT_Design_WPF
 {
@@ -49,8 +50,14 @@ namespace IAT_Design_WPF
             services.AddSingleton<IUserNotificationService, UserNotificationService>(); 
             services.AddSingleton<IWebSocketService, WebSocketService>();
             services.AddSingleton<IDialogService, DialogService>();
-            services.AddSingleton<IProductActivationService, ProductActivationService>();
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ActivationHandler>());
+            services.AddSingleton<ILayoutCalculatorService, LayoutCalculatorService>();
+            services.AddSingleton<LayoutViewModel>();
+            services.AddSingleton<IActivationService, ActivationService>();
+            services.AddSingleton<IEmailVerificationService, EmailVerificationService>();
+            services.AddSingleton<IGetItemSlidesService, GetItemSlidesService>();
+            services.AddSingleton<IResendEmailVerificationService, ResendEmailVerificationService>();
+            services.AddSingleton<IResultRetrievalService, ResultRetrievalService>();
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
             Services = services.BuildServiceProvider();
 

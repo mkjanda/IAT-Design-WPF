@@ -12,7 +12,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for processing the RequestTransmissionEMailVerificationCommand, which is responsible for sending an email verification request
     /// </summary>
-    internal class RequestTransmissionEMailVerificationHandler : IRequestHandler<RequestTransmissionEMailVerificationCommand, TransactionResult>
+    public class RequestTransmissionEMailVerificationHandler : IRequestHandler<RequestTransmissionEMailVerificationCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

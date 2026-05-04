@@ -12,7 +12,7 @@ namespace IAT.Core.Handlers
     /// Handler for the NoSuchClientCommand, which is triggered when the server indicates that there is no such client. 
     /// It shows a notification to the user and closes the WebSocket connection.
     /// </summary>
-    internal class NoSuchClientHandler : IRequestHandler<NoSuchClientCommand, TransactionResult>
+    public class NoSuchClientHandler : IRequestHandler<NoSuchClientCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;

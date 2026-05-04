@@ -12,7 +12,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the IATExistsRetrievalCommand, which is triggered when checking if an IAT exists. It sends a request for the encryption key to the server.
     /// </summary>
-    internal class IATExistsRetrievalHandler : IRequestHandler<IATExistsRetrievalCommand, TransactionResult>
+    public class IATExistsRetrievalHandler : IRequestHandler<IATExistsRetrievalCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;

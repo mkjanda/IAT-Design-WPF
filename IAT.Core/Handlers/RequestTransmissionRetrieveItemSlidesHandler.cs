@@ -9,7 +9,7 @@ using IAT.Core.Models;
 
 namespace IAT.Core.Handlers
 {
-    internal class RequestTransmissionRetrieveItemSlidesHandler : IRequestHandler<RequestTransmissionRetrieveItemSlidesCommand, TransactionResult>
+    public class RequestTransmissionRetrieveItemSlidesHandler : IRequestHandler<RequestTransmissionRetrieveItemSlidesCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
@@ -22,7 +22,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestTransmissionRetrieveItemSlidesCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.IATExists,
                 IATName = _transactionState.IATName,

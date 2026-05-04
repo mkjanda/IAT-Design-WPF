@@ -11,7 +11,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the NoActivationsCommand, which is triggered when the server indicates that there are no activations remaining for the transaction.
     /// </summary>
-    internal class NoActivationsHandler : IRequestHandler<NoActivationsCommand, TransactionResult>
+    public class NoActivationsHandler : IRequestHandler<NoActivationsCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;

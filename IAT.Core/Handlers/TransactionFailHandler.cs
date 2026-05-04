@@ -11,7 +11,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the TransactionFailCommand, which is triggered when a transaction fails. It closes the WebSocket connection and returns a failure result.   
     /// </summary>
-    internal class TransactionFailHandler : IRequestHandler<TransactionFailCommand, TransactionResult>
+    public class TransactionFailHandler : IRequestHandler<TransactionFailCommand, TransactionResult>
     {
         private readonly IWebSocketService _wss;
 

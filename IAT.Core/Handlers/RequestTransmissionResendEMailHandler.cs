@@ -9,7 +9,7 @@ using IAT.Core.Models;
 
 namespace IAT.Core.Handlers
 {
-    internal class RequestTransmissionResendEMailHandler : IRequestHandler<RequestTransmissionResendEMailCommand, TransactionResult>
+    public class RequestTransmissionResendEMailHandler : IRequestHandler<RequestTransmissionResendEMailCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
@@ -22,7 +22,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestTransmissionResendEMailCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestNewVerificationEMail,
                 StringValues = new Dictionary<string, string> { { "email", _transactionState.Email } },

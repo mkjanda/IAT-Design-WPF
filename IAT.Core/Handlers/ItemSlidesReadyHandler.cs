@@ -12,7 +12,7 @@ using IAT.Core.Models;
 
 namespace IAT.Core.Handlers
 {
-    internal class ItemSlidesReadyHandler : IRequestHandler<ItemSlidesReadyCommand, TransactionResult>
+    public class ItemSlidesReadyHandler : IRequestHandler<ItemSlidesReadyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IStringResourceService _stringResourceService;

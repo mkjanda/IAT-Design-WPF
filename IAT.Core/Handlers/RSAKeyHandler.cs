@@ -13,7 +13,7 @@ namespace IAT.Core.Handlers
     /// Handler for the RSAKeyCommand, which is triggered when the server sends the RSA encryption key. It decrypts the key using the transaction password 
     /// and stores it in the transaction state, then sends a request to verify the password with the server.
     /// </summary>
-    internal class RSAKeyHandler : IRequestHandler<RSAKeyCommand, TransactionResult>
+    public class RSAKeyHandler : IRequestHandler<RSAKeyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
@@ -28,7 +28,7 @@ namespace IAT.Core.Handlers
         {
             request.Key.DecryptKey(_transactionState.Password);
             _transactionState.RSA = request.Key;
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestPasswordVerification,
                 ProductKey = _transactionState.ProductKey,

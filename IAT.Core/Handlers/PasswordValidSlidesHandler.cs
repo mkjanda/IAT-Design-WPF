@@ -9,7 +9,7 @@ using IAT.Core.Serializable;
 
 namespace IAT.Core.Handlers
 {
-    internal class PasswordValidSlidesHandler : IRequestHandler<PasswordValidSlidesCommand, TransactionResult>
+    public class PasswordValidSlidesHandler : IRequestHandler<PasswordValidSlidesCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
 
@@ -20,7 +20,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(PasswordValidSlidesCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestItemSlideManifest
             });

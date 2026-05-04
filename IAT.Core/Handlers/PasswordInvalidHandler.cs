@@ -8,7 +8,7 @@ using IAT.Core.Serializable;
 
 namespace IAT.Core.Handlers
 {
-    internal class PasswordInvalidHandler : IRequestHandler<PasswordInvalidCommand, TransactionResult>
+    public class PasswordInvalidHandler : IRequestHandler<PasswordInvalidCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
 

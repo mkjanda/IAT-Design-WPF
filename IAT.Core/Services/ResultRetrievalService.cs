@@ -8,16 +8,16 @@ using System.Xml.Linq;
 
 namespace IAT.Core.Services
 {
-    interface IResultRetrievalSerrvice
+    public interface IResultRetrievalService
     {
         Task<XDocument> GetResults(string productKey, string iatName, string password);
     }
-    internal class ResultRetrievalSerrvice
+    public class ResultRetrievalService : IResultRetrievalService
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
 
-        public ResultRetrievalSerrvice(IWebSocketService webSocketService, TransactionState transactionState)
+        public ResultRetrievalService(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;

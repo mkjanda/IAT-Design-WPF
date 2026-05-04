@@ -12,7 +12,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for processing the RequestTransmissionActivationCommand, which is responsible for sending an activation request
     /// </summary>
-    internal class RequestTransmissionActivationHandler : IRequestHandler<RequestTransmissionActivationCommand, TransactionResult>
+    public class RequestTransmissionActivationHandler : IRequestHandler<RequestTransmissionActivationCommand, TransactionResult>
     {
         readonly private IWebSocketService _webSocketService;
         readonly private TransactionState _transactionState;

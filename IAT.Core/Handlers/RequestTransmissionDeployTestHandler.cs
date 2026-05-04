@@ -9,7 +9,7 @@ using IAT.Core.Models;
 
 namespace IAT.Core.Handlers
 {
-    internal class RequestTransmissionDeployTestHandler : IRequestHandler<RequestTransmissionDeployTestCommand, TransactionResult>
+    public class RequestTransmissionDeployTestHandler : IRequestHandler<RequestTransmissionDeployTestCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
 
@@ -23,7 +23,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestTransmissionDeployTestCommand request, CancellationToken cancellationToken)
         {
-            _webSocketService.SendMessage(new TransactionRequest()
+            await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Transaction = TransactionType.RequestIATUpload,
                 IATName = _transactionState.IATName,

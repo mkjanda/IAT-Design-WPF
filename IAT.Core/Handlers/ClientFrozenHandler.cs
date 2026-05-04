@@ -11,7 +11,7 @@ namespace IAT.Core.Handlers
     /// <summary>
     /// Handler for the ClientFrozenCommand, which is triggered when a client is frozen. It closes the WebSocket connection and shows a notification to the user.
     /// </summary>
-    internal class ClientFrozenHandler : IRequestHandler<ClientFrozenCommand, TransactionResult>
+    public class ClientFrozenHandler : IRequestHandler<ClientFrozenCommand, TransactionResult>
     {
         private readonly IWebSocketService _wss;
         private readonly IDialogService _dialogService;
