@@ -140,6 +140,11 @@ public partial class IatTest : ObservableObject
     /// <returns>The key associated with the specified identifier if found; otherwise, null.</returns>
     public Key? GetKeyById(Guid id) => _keyCache.TryGetValue(id, out var key) ? key : null;
 
+    /// <summary>
+    /// Retrieves the formatted text associated with the specified identifier, if it exists.
+    /// </summary>
+    /// <param name="id">The unique identifier of the formatted text to retrieve.</param>
+    /// <returns>The formatted text associated with the specified identifier, or null if no such entry exists.</returns>
     public FormattedText? GetFormattedTextById(Guid id) => _formattedTextCache.TryGetValue(id, out var formattedText) ? formattedText : null;
 
 

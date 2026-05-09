@@ -44,8 +44,8 @@ public interface IProjectPackageService
     /// Retrieves the byte array of an image from the cache using its unique identifier.
     /// </summary>
     /// <param name="stimulusId">The unique identifier of the image to retrieve.</param>
-    /// <returns>A read-only memory region containing the image data.</returns>
-    ReadOnlyMemory<byte> GetImageBytes(Guid stimulusId);
+    /// <returns>A byte array containing the image data.</returns>
+    byte[] GetImageBytes(Guid stimulusId);
 
     /// <summary>
     /// Gets the image type associated with the specified stimulus identifier.
@@ -75,7 +75,7 @@ public class ProjectPackageService : IProjectPackageService
         WriteIndented = true,
         Converters = { new JsonPolymorphicStimulusConverter() } // we'll create this next
     };
-    private readonly Dictionary<Guid, ReadOnlyMemory<byte>> _imageCache = new();
+    private readonly Dictionary<Guid, byte[]> _imageCache = new();
     private readonly Dictionary<Guid, string> _imageTypes = new();
     private readonly IImagePackageService _imagePackageService;
     private readonly Dictionary<Guid, string> _originalNames = new();   
@@ -190,7 +190,7 @@ public class ProjectPackageService : IProjectPackageService
     /// <param name="stimulusId">The unique identifier of the stimulus whose image data is to be retrieved.</param>
     /// <returns>A read-only memory region containing the image bytes for the specified stimulus. Returns an empty memory region
     /// if no image is found for the given identifier.</returns>
-    public ReadOnlyMemory<byte> GetImageBytes(Guid stimulusId) => _imageCache.GetValueOrDefault(stimulusId);
+    public byte[] GetImageBytes(Guid stimulusId) => _imageCache.GetValueOrDefault(stimulusId);
 
     /// <summary>
     /// Retrieves the image type associated with the specified stimulus identifier.

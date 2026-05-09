@@ -21,12 +21,4 @@ public abstract class Event
     /// </summary>
     [XmlElement("EventType", Form = XmlSchemaForm.Unqualified)]
     public abstract EventType EventType { get; }
-
-    /// <summary>
-    /// No argument  constructor for IAT Event object
-    /// </summary>
-    public Event()
-    {
-    }
-
 }

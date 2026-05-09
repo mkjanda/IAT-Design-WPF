@@ -1,13 +1,12 @@
 ﻿using IAT.Core.Handlers;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using IAT.Core.Services.Network;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml.Linq;
 
-namespace IAT.Core.Services
+namespace IAT.Core.Services.Network
 {
     public interface IResultRetrievalService
     {

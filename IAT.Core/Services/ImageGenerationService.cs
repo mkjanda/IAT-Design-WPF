@@ -1,15 +1,16 @@
 ﻿using IAT.Core.Domain;
+using IAT.Core.Enumerations;
+using IAT.Core.Models;
 using IAT.Core.Serializable;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Packaging;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using IAT.Core.Models;
-using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services;
 
@@ -33,13 +34,12 @@ public interface IImageGenerationService
     /// <summary>
     /// Renders the specified formatted text as a bitmap image.
     /// </summary>
-    /// <remarks>The returned bitmap reflects the formatting and layout specified by the provided
-    /// IFormattedText instance. The caller is responsible for managing the lifetime of the resulting BitmapSource as
-    /// appropriate for their application.</remarks>
-    /// <param name="text">The formatted text to render. Cannot be null.</param>
+    /// <remarks>The returned bitmap reflects the formatting and layout specified in the input text. The
+    /// caller is responsible for managing the lifetime of the resulting BitmapSource as appropriate for their
+    /// application.</remarks>
+    /// <param name="text"></param>
     /// <returns>A BitmapSource containing the rendered text as an image.</returns>
     BitmapSource RenderTextToBitmap(IFormattedText text);
-
     /// <summary>
     /// Creates a BitmapSource from the specified byte array containing image data.
     /// </summary>
@@ -62,6 +62,26 @@ public interface IImageGenerationService
     /// <param name="trialId">The unique identifier of the trial containing the slide. Must correspond to a valid trial in the block.</param>
     /// <returns>A BitmapSource representing the rendered slide. Returns null if the slide cannot be rendered.</returns>
     BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId);
+
+    /// <summary>
+    /// Renders an outline image of the key and returns it as a bitmap source.
+    /// </summary>
+    /// <returns>A <see cref="BitmapSource"/> representing the rendered outline of the key.</returns>
+    BitmapSource RenderKeyOutline();
+
+    /// <summary>
+    /// Returns a new bitmap that is a resized version of the specified source bitmap, using the given target width and
+    /// height.
+    /// </summary>
+    /// <remarks>The returned bitmap is independent of the original source. If the target dimensions do not
+    /// match the source aspect ratio, the image may appear stretched or compressed.</remarks>
+    /// <param name="bmpSource">The source bitmap to resize. Cannot be null.</param>
+    /// <param name="targetWidth">The desired width, in pixels, of the resulting bitmap. Must be greater than zero.</param>
+    /// <param name="targetHeight">The desired height, in pixels, of the resulting bitmap. Must be greater than zero.</param>
+    /// <returns>A new BitmapSource instance representing the resized bitmap. The aspect ratio may not be preserved if the target
+    /// dimensions differ from the source.</returns>
+    BitmapSource GetResizedBitmap(BitmapSource bmpSource, int targetWidth, int targetHeight);
+
 }
 
 /// <summary>
@@ -111,7 +131,7 @@ public class ImageGenerationService : IImageGenerationService
         var bmp = new RenderTargetBitmap((int)boundingRect.Width, (int)boundingRect.Height, 96, 96, PixelFormats.Pbgra32);
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
-        {
+        { 
             dc.DrawText(formattedText, new Point((int)((width - formattedText.Width) / 2), (int)((height - formattedText.Height) / 2)));  // offset for crisp edges
         }
         bmp.Render(visual);
@@ -249,7 +269,7 @@ public class ImageGenerationService : IImageGenerationService
         double dpiX = dpi.PixelsPerInchX;
         double dpiY = dpi.PixelsPerInchY;
         var rects = _layout.GetFinalRects(test.Layout);
-        var bmp = new RenderTargetBitmap((int)rects.Interior.Width, (int)rects.Interior.Height, 96, 96, PixelFormats.Pbgra32);
+        var bmp = new RenderTargetBitmap((int)rects.Interior.Width, (int)rects.Interior.Height, dpiX, dpiY, PixelFormats.Pbgra32);
 
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
@@ -276,6 +296,52 @@ public class ImageGenerationService : IImageGenerationService
                     dc.DrawImage(RenderTextToBitmap(textStimulus), rects.Stimulus);
                 }
             }
+        }
+        bmp.Render(visual);
+        bmp.Freeze();
+        return bmp;
+    }
+
+    /// <summary>
+    /// Asynchronously loads an image from the specified package and returns a bitmap resized to the given dimensions.
+    /// </summary>
+    /// <remarks>The returned BitmapSource is frozen for thread safety. If the original image dimensions match
+    /// the requested size, the image is returned without resizing.</remarks>
+    /// <param name="bmpSource">The source bitmap to resize. Cannot be null.</param>
+    /// <param name="targetWidth">The desired width, in pixels, of the resulting bitmap. Must be a positive integer.</param>
+    /// <param name="targetHeight">The desired height, in pixels, of the resulting bitmap. Must be a positive integer.</param>
+    /// <returns>A BitmapSource containing the image resized to the specified width and height.</returns>
+    /// <exception cref="ArgumentException">Thrown if stimulus is not of type ImageStimulus.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the PackageUri property is not set on the ImageStimulus.</exception>
+    public BitmapSource GetResizedBitmap(BitmapSource bmpSource, int targetWidth, int targetHeight)
+    {
+        var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+        RenderTargetBitmap bmpDest = new RenderTargetBitmap(targetWidth, targetHeight, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawImage(bmpSource, new Rect(0, 0, targetWidth, targetHeight));
+        }
+        bmpDest.Render(visual);
+        bmpDest.Freeze();
+        return bmpDest;
+    }
+
+    /// <summary>
+    /// Renders a visual outline of the key area defined in the layout as a bitmap image. The outline is drawn with a lime green border 
+    /// and is sized according to the layout's left key rectangle. This method is useful for debugging or visualizing the key area within 
+    /// the application's layout. The resulting BitmapSource is frozen for thread safety and can be displayed in WPF user interfaces.
+    /// </summary>
+    /// <returns>A BitmapSource containing the visual outline of the key area.</returns>
+    public BitmapSource RenderKeyOutline()
+    {
+        var outlineRect = _layout.GetFinalRects(_iat.Layout).LeftKey;
+        var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+        var bmp = new RenderTargetBitmap((int)outlineRect.Width, (int)outlineRect.Height, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        var visual = new DrawingVisual();
+        using (var dc = visual.RenderOpen())
+        {
+            dc.DrawRectangle(null, new Pen(Brushes.LimeGreen, 4), new Rect(2, 2, outlineRect.Width - 4, outlineRect.Height - 4));
         }
         bmp.Render(visual);
         bmp.Freeze();

@@ -45,12 +45,11 @@ namespace IAT.Core.Serializable
         [XmlIgnore]
         public string _Name = string.Empty;
 
+        /// <summary>
+        /// Gets the type of the file entity represented by this instance.
+        /// </summary>
         [XmlElement("FileEntityType", Form = XmlSchemaForm.Unqualified, Type = typeof(EFileEntityType))]
-        public EFileEntityType FileEntityType { get; set; }
-
-        public FileEntity()
-        {
-        }
+        public abstract EFileEntityType FileEntityType { get; }
     }
 
     /// <summary>
@@ -63,7 +62,12 @@ namespace IAT.Core.Serializable
     /// functionality.</remarks>
     public class ManifestFile : FileEntity
     {
-        public enum EResourceType { itemSlide, testConfiguration, updateFile, image, errorMark };
+        public enum EResourceType { itemSlide, testConfiguration, updateFile, image, errorMark, keyOutline };
+
+        /// <summary>
+        /// Gets or sets the type of the file entity.
+        /// </summary>
+        public override EFileEntityType FileEntityType => EFileEntityType.File;
 
         /// <summary>
         /// Gets or sets the type of resource represented by this instance.
@@ -84,7 +88,7 @@ namespace IAT.Core.Serializable
         /// only within the class implementation.</remarks>
         [XmlArray("ReferenceIds", Form = XmlSchemaForm.Unqualified)]
         [XmlArrayItem("ReferenceId", Form = XmlSchemaForm.Unqualified, Type = typeof(int))]
-        public List<int> ReferenceIds { get; private set; } = new List<int>();
+        public List<int> ReferenceIds { get; set; } = new List<int>();
 
         /// <summary>
         /// Gets or sets the MIME type of the content.

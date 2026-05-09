@@ -40,7 +40,7 @@ public sealed class BeginIATBlock : Event
     /// The 1-based index of the block. This property specifies the block number for this IAT block, which is used to identify and organize the blocks within the test structure.
     /// </summary>
     [XmlElement("BlockNum", Form = XmlSchemaForm.Unqualified)]
-    public int BlockNum { get; set; }
+    public int BlockNumber { get; set; }
 
     /// <summary>
     /// The number of stimuli in the block

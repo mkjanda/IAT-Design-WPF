@@ -17,6 +17,14 @@ namespace IAT.Core.Domain
     public class FormattedText : IFormattedText
     {
         /// <summary>
+        /// The guid of the formatted text instance. This property serves as a unique identifier for each instance of FormattedText, 
+        /// allowing for easy tracking and management of individual text elements within the application. The Id is automatically 
+        /// generated when a new instance is created, ensuring that each FormattedText object has a distinct identifier that can be 
+        /// used for referencing and manipulation throughout the application's lifecycle.
+        /// </summary>
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        /// <summary>
         /// The text content to be rendered. This property can contain any string value, including plain text, formatted text with special characters, 
         /// or multiline text. The content of this property will be rendered according to the associated TextStyle and LayoutItem properties. It is 
         /// important to ensure that the text is properly formatted and does not contain unsupported characters that may affect rendering quality or performance.
@@ -31,6 +39,6 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets the layout item associated with this instance.
         /// </summary>
-        public LayoutItem LayoutItem { get; init; }
+        public LayoutItem LayoutItem { get; set; }
     }
 }

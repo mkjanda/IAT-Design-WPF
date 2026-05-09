@@ -15,8 +15,14 @@ namespace IAT.Core.ConfigFile;
 /// making it a central component for managing application settings in a structured manner.
 /// </summary>
 [XmlRoot("ConfigFile]")]
-public class SerializableIatConfig
+public class IATConfigFile
 {
+    /// <summary>
+    /// Gets or sets the width of the slide, in pixels.
+    /// </summary>
+    [XmlIgnore]
+    public int SlideWidth => 500;
+
     /// <summary>
     /// Gets or sets the number of surveys to be conducted before the main survey sequence begins.
     /// </summary>
@@ -39,14 +45,7 @@ public class SerializableIatConfig
     /// Gets or sets the name of the IAT (Item Analysis Tool) associated with this instance.
     /// </summary>
     [XmlElement("IATName", Form = XmlSchemaForm.Unqualified)]
-    public string IATName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The author of the IAT, which can be used for display purposes or to provide metadata about the test configuration. 
-    /// This property is optional and can be left empty if not applicable.
-    /// </summary>
-    [XmlElement("Author", Form = XmlSchemaForm.Unqualified)]
-    public string Author { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the domain name of the server to which the application connects.
@@ -82,13 +81,13 @@ public class SerializableIatConfig
     /// Gets or sets a value indicating whether the 7-block feature is enabled.
     /// </summary>
     [XmlElement("Is7Block", Form = XmlSchemaForm.Unqualified)]
-    public bool Is7Block { get; set; } = false;
+    public bool Is7Block { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the URL to which the user is redirected after the operation completes.
     /// </summary>
     [XmlElement("RedirectOnComplete", Form = XmlSchemaForm.Unqualified)]
-    public string RedirectOnComplete { get; set; } = string.Empty;
+    public string RedirectOnComplete { get; set; } = "https://iatsoftware.net";
 
     /// <summary>
     /// Gets or sets the character key used to indicate a left response.
@@ -106,25 +105,25 @@ public class SerializableIatConfig
     /// Gets or sets the type of randomization to apply.
     /// </summary>
     [XmlElement("RandomizationType", Form = XmlSchemaForm.Unqualified)]
-    public string RandomizationType { get; set; } = "Full";
+    public string RandomizationType { get; set; } = "SetNumberOfPresentations";
 
     /// <summary>
     /// Gets or sets the identifier for the error mark associated with this instance.
     /// </summary>
     [XmlElement("ErrorMarkID", Form = XmlSchemaForm.Unqualified)]
-    public int ErrorMarkID { get; set; } = 0;
+    public int ErrorMarkID { get; set; } = 1;
 
     /// <summary>
     /// Gets or sets the identifier for the left key outline.
     /// </summary>
     [XmlElement("LeftKeyOutlineID", Form = XmlSchemaForm.Unqualified)] 
-    public int LeftKeyOutlineID { get; set; } = 0;
+    public int LeftKeyOutlineID { get; set; } = 2;
 
     /// <summary>
     /// Gets or sets the identifier for the right key outline.
     /// </summary>
     [XmlElement("RightKeyOutlineID", Form = XmlSchemaForm.Unqualified)]
-    public int RightKeyOutlineID { get; set; } = 0;
+    public int RightKeyOutlineID { get; set; } = 3;
 
     /// <summary>
     /// Gets or sets a value indicating whether self-alternating surveys should be prefixed.
@@ -206,5 +205,5 @@ public class SerializableIatConfig
     /// <summary>
     /// 
     /// </summary>
-    public SerializableIatConfig() { }
+    public IATConfigFile() { }
 }
