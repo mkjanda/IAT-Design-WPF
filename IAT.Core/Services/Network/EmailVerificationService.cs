@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using IAT.Core.Handlers;
 
-namespace IAT.Core.Services
+namespace IAT.Core.Services.Network
 {
     public interface IEmailVerificationService
     {

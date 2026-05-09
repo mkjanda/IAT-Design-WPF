@@ -4,10 +4,10 @@ using System.Text;
 using MediatR;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
-using IAT.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Cryptography;
 using IAT.Core.Models;
+using IAT.Core.Services.Network;
 
 namespace IAT.Core.Handlers
 {

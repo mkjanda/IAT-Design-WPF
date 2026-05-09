@@ -2,7 +2,7 @@
 using IAT.Core.Handlers;
 using IAT.Core.Models;
 
-namespace IAT.Core.Services
+namespace IAT.Core.Services.Network
 {
     public interface IGetItemSlidesService
     {

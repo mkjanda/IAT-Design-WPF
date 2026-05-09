@@ -1,7 +1,7 @@
 ﻿using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using IAT.Core.Services;
+using IAT.Core.Services.Network;
 using MediatR;
 using System;
 using System.Collections.Generic;

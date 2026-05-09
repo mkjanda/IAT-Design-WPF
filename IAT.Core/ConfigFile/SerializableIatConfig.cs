@@ -15,7 +15,7 @@ namespace IAT.Core.ConfigFile;
 /// making it a central component for managing application settings in a structured manner.
 /// </summary>
 [XmlRoot("ConfigFile]")]
-public class TestConfig
+public class SerializableIatConfig
 {
     /// <summary>
     /// Gets or sets the number of surveys to be conducted before the main survey sequence begins.
@@ -206,5 +206,5 @@ public class TestConfig
     /// <summary>
     /// 
     /// </summary>
-    public TestConfig() { }
+    public SerializableIatConfig() { }
 }

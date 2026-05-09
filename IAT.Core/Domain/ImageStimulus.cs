@@ -7,10 +7,7 @@ namespace IAT.Core.Domain
 {
     public sealed partial class ImageStimulus : Stimulus
     {
-        [ObservableProperty]
         private Guid _imageId;           // service assigns this
-
-        [ObservableProperty]
         private string _fileName = string.Empty;   // UI binds to this
 
         /// <summary>

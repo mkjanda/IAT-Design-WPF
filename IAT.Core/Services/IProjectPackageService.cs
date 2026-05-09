@@ -1,8 +1,10 @@
-﻿using IAT.Core.Domain;
+﻿using com.sun.tools.corba.se.idl;
+using IAT.Core.Domain;
 using IAT.Core.Exceptions;
 using System.IO;
 using System.IO.Packaging;
 using System.Text.Json;
+using System.Windows.Media.Imaging;
 
 namespace IAT.Core.Services;
 
@@ -29,6 +31,35 @@ public interface IProjectPackageService
     /// <param name="ct">A cancellation token that can be used to cancel the load operation.</param>
     /// <returns>A task that represents the asynchronous load operation. The task result contains the loaded IAT test project.</returns>    
     Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct = default);
+
+    /// <summary>
+    /// Adds an image to the cache and returns a unique identifier for the stored image. This method is asynchronous and allows for cancellation via a cancellation token.
+    /// </summary>
+    /// <param name="imageData">The byte array containing the image data to be added to the cache.</param>
+    /// <param name="originalFileName">The original file name of the image being added.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the unique identifier for the stored image.</returns>
+    Task<Guid> AddImageAsync(byte[] imageData, string originalFileName);
+
+    /// <summary>
+    /// Retrieves the byte array of an image from the cache using its unique identifier.
+    /// </summary>
+    /// <param name="stimulusId">The unique identifier of the image to retrieve.</param>
+    /// <returns>A read-only memory region containing the image data.</returns>
+    ReadOnlyMemory<byte> GetImageBytes(Guid stimulusId);
+
+    /// <summary>
+    /// Gets the image type associated with the specified stimulus identifier.
+    /// </summary>
+    /// <param name="stimulusId">The unique identifier of the stimulus for which to retrieve the image type.</param>
+    /// <returns>A string representing the image type of the specified stimulus. Returns an empty string if the stimulus does not
+    /// have an associated image type.</returns>
+    string GetImageType(Guid stimulusId);
+
+    /// <summary>
+    /// Removes the image associated with the specified stimulus identifier.
+    /// </summary>
+    /// <param name="stimulusId">The unique identifier of the stimulus whose image is to be removed.</param>
+    void RemoveImage(Guid stimulusId);
 }
 
 /// <summary>
@@ -44,7 +75,10 @@ public class ProjectPackageService : IProjectPackageService
         WriteIndented = true,
         Converters = { new JsonPolymorphicStimulusConverter() } // we'll create this next
     };
+    private readonly Dictionary<Guid, ReadOnlyMemory<byte>> _imageCache = new();
+    private readonly Dictionary<Guid, string> _imageTypes = new();
     private readonly IImagePackageService _imagePackageService;
+    private readonly Dictionary<Guid, string> _originalNames = new();   
 
     /// <summary>
     /// Initializes a new instance of the ProjectPackageService class with the specified image package service.
@@ -129,6 +163,60 @@ public class ProjectPackageService : IProjectPackageService
         return test;
     }
 
+    /// <summary>
+    /// Asynchronously adds an image to the cache and returns a unique identifier for the stored image.
+    /// </summary>
+    /// <param name="imageData">The binary data of the image to add. Cannot be null or empty.</param>
+    /// <param name="originalFileName">The original file name of the image, including its extension. Used to determine the image type.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the unique identifier assigned to
+    /// the stored image.</returns>
+    /// <exception cref="ArgumentException">Thrown if imageData is null or empty.</exception>
+    public Task<Guid> AddImageAsync(byte[] imageData, string originalFileName)
+    {
+        if (imageData == null || imageData.Length == 0)
+        {
+            throw new ArgumentException("Image data cannot be null or empty.", nameof(imageData));
+        }
+        var imageId = Guid.NewGuid();
+        _imageCache[imageId] = imageData; _imageTypes[imageId] = originalFileName.Reverse().TakeWhile(ch => ch != '.').Reverse().ToString()?.ToLowerInvariant() ?? string.Empty;
+        _originalNames[imageId] = originalFileName;
+        return Task.FromResult(imageId);
+    }
+
+
+    /// <summary>
+    /// Retrieves the image data associated with the specified stimulus identifier.
+    /// </summary>
+    /// <param name="stimulusId">The unique identifier of the stimulus whose image data is to be retrieved.</param>
+    /// <returns>A read-only memory region containing the image bytes for the specified stimulus. Returns an empty memory region
+    /// if no image is found for the given identifier.</returns>
+    public ReadOnlyMemory<byte> GetImageBytes(Guid stimulusId) => _imageCache.GetValueOrDefault(stimulusId);
+
+    /// <summary>
+    /// Retrieves the image type associated with the specified stimulus identifier.
+    /// </summary>
+    /// <param name="stimulusId">The unique identifier of the stimulus for which to retrieve the image type.</param>
+    /// <returns>A string representing the image type associated with the specified stimulus identifier, or null if no image type
+    /// is found.</returns>
+    public string GetImageType(Guid stimulusId) => _imageTypes.GetValueOrDefault(stimulusId) ?? string.Empty;
+
+
+    /// <summary>
+    /// Removes the image data associated with the specified stimulus ID from the cache. This is useful for managing memory and ensuring that 
+    /// outdated or unused image data does not consume resources unnecessarily.
+    /// </summary>
+    /// <param name="stimulusId">The ID of the stimulus whose image data should be removed from the cache.</param>
+    public void RemoveImage(Guid stimulusId)
+    {
+        if (_imageCache.ContainsKey(stimulusId))
+        {
+            _imageCache.Remove(stimulusId);
+            _imageTypes.Remove(stimulusId);
+            _originalNames.Remove(stimulusId);
+        }
+    }
+
+ 
     private string GetSourceFilePath(ImageStimulus stimulus)
     {
         return stimulus.FileName;

@@ -2,7 +2,7 @@
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using IAT.Core.Handlers; 
+using IAT.Core.Handlers;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 
 
-namespace IAT.Core.Services
+namespace IAT.Core.Services.Network
 {
     /// <summary>
     /// Defines the contract for a service that manages WebSocket connections, message handling, and command dispatching

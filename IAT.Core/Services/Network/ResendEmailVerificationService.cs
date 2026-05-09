@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace IAT.Core.Services
+namespace IAT.Core.Services.Network
 {
     public interface IResendEmailVerificationService
     {

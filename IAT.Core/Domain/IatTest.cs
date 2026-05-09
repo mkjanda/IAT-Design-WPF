@@ -14,12 +14,23 @@ namespace IAT.Core.Domain;
 /// Validation methods are available to check the integrity of the entire test before execution.</remarks>
 public partial class IatTest : ObservableObject
 {
+    /// <summary>
+    /// The unique identifier for this IAT test instance. This property is initialized with a new GUID by default, ensuring that each test has a 
+    /// distinct identifier. The ID can be used for tracking, referencing, and managing test instances within the application or when persisting data. 
+    /// It is important to ensure that the ID remains unique across all test instances to avoid conflicts and maintain data integrity.
+    /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Gets or sets the name of the IAT test.
+    /// </summary>
+    public string Name { get; set; } = "New IAT Test";
 
     /// <summary>
     /// Represents the layout of the test, including positions and sizes of various UI elements. This property is initialized with a default layout configuration.
     /// </summary>
-    public LayoutConfiguration Layout { get; set; } = new LayoutConfiguration();
+    public Layout Layout { get; set; } = new Layout();
+
     /// <summary>
     /// Gets the collection of trials associated with this instance.
     /// </summary>
@@ -129,8 +140,10 @@ public partial class IatTest : ObservableObject
     /// <returns>The key associated with the specified identifier if found; otherwise, null.</returns>
     public Key? GetKeyById(Guid id) => _keyCache.TryGetValue(id, out var key) ? key : null;
 
+    public FormattedText? GetFormattedTextById(Guid id) => _formattedTextCache.TryGetValue(id, out var formattedText) ? formattedText : null;
 
 
+    private readonly Dictionary<Guid, FormattedText> _formattedTextCache = new();
     private readonly Dictionary<Guid, Block> _blockCache = new();
     private readonly Dictionary<Guid, Stimulus> _stimulusCache = new();
     private readonly Dictionary<Guid, Trial> _trialCache = new();

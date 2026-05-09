@@ -7,7 +7,7 @@ using IAT.Core.Handlers;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 
-namespace IAT.Core.Services
+namespace IAT.Core.Services.Network
 {
     public interface IActivationService {
         /// <summary>

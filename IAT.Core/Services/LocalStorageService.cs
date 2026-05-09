@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using IAT.Core.Enumerations;
+using IAT.Core.Services.Network;
 
 namespace IAT.Core.Services
 {

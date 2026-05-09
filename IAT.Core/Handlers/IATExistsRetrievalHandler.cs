@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
-using IAT.Core.Services;
 using MediatR;
 using IAT.Core.Models;
+using IAT.Core.Services.Network;
 
 namespace IAT.Core.Handlers
 {

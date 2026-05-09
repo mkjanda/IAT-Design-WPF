@@ -15,8 +15,4 @@
     <ProjectReference Include="..\IAT.Core\IAT.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controls\" />
-  </ItemGroup>
-
 </Project>

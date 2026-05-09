@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
+using System.Windows.Media;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Domain
 {
@@ -11,7 +13,7 @@ namespace IAT.Core.Domain
     /// of the test interface, allowing for customization and adjustments to fit different screen sizes and configurations. The UserSizeOverrides dictionary 
     /// allows for specific size overrides for individual elements based on user preferences or requirements.
     /// </summary>
-    public class LayoutConfiguration
+    public class Layout
     {
         /// <summary>
         /// The unique identifier for this layout configuration, allowing it to be referenced and managed within the context of an IAT test. This ID is 
@@ -70,13 +72,16 @@ namespace IAT.Core.Domain
         /// </summary>
         public Rect ContinueInstructionsRect { get; set; } = _defaultContinueInstructionsRect;
 
+        TextStyle DefaultKeyStyle { get; set; } = new TextStyle { FontFamily = "Segoe UI", FontSize = 24, FontColor = Colors.Black };
+
+
         /// <summary>
-        /// Contains the user overrides of the sizes of the various layout elements. The keys in the dictionary represent the names of the 
-        /// layout elements (e.g., "InteriorRect", "StimulusRect", etc.), and the values are the corresponding Size objects that specify the 
-        /// overridden dimensions for those elements. This allows users to customize the layout by providing specific size overrides for individual 
-        /// elements, which can be applied during layout calculations to adjust the interface according to user preferences or requirements.
+        /// Contains the user overrides of the sizes of the various layout elements. The keys in the dictionary represent the layout items 
+        /// (e.g., LayoutItem.Interior, LayoutItem.Stimulus, etc.), and the values are the corresponding Size objects that specify the overridden 
+        /// dimensions for those elements. This allows users to customize the layout by providing specific size overrides for individual elements, 
+        /// which can be applied during layout calculations to adjust the interface according to user preferences or requirements.
         /// </summary>
-        public Dictionary<string, Size> UserSizeOverrides = new();
+        public Dictionary<LayoutItem, Size> UserSizeOverrides = new();
 
         private static readonly Rect _defaultInteriorRect = new Rect(0, 0, 600, 600);
         private static readonly Rect _defaultStimulusRect = new Rect(30, 140, 540, 300);

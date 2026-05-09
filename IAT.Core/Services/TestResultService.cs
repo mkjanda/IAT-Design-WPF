@@ -5,6 +5,7 @@ using IAT.Core.Serializable;
 using System.IO;
 using System.Xml.Serialization;
 using System.Security.Cryptography;
+using IAT.Core.Services.Network;
 
 namespace IAT.Core.Services
 {
@@ -21,7 +22,7 @@ namespace IAT.Core.Services
         private readonly IWebSocketService _webSocketService;
         private readonly ILocalStorageService _localStorageService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
-        private TestConfig? ConfigFile { get; set; } = null;
+        private SerializableIatConfig? ConfigFile { get; set; } = null;
         private List<ResultPacket> Results { get; set; } = new();
 
         private List<SurveyResponse?> SurveyResponses = new();
@@ -57,8 +58,8 @@ namespace IAT.Core.Services
             _ = _webSocketService.GetResults(iatName, password, _localStorageService[Field.ProductKey]).ContinueWith(t =>
             {
                 var xDoc = t.Result;
-                var ser = new XmlSerializer(typeof(TestConfig), new XmlRootAttribute("ConfigFile"));
-                ConfigFile = ser.Deserialize(xDoc.CreateReader()) as TestConfig ?? throw new NullReferenceException();
+                var ser = new XmlSerializer(typeof(SerializableIatConfig), new XmlRootAttribute("ConfigFile"));
+                ConfigFile = ser.Deserialize(xDoc.CreateReader()) as SerializableIatConfig ?? throw new NullReferenceException();
                 ser = new XmlSerializer(typeof(List<ResultPacket>), new XmlRootAttribute("ResultSet"));
                 Results = ser.Deserialize(xDoc.CreateReader()) as List<ResultPacket> ?? throw new NullReferenceException();
                 var rsa = RSA.Create(_webSocketService.RSA.GetRSAParameters());

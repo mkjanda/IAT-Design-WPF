@@ -17,52 +17,50 @@ namespace IAT.Core.Domain
     /// provides methods for validation, serialization, and previewing. Blocks are typically managed as part of an IAT's
     /// structure and can be added, removed, or reordered within the test. Thread safety is not guaranteed; external
     /// synchronization is required for concurrent access.</remarks>
-    public partial class Block : ObservableObject
+    public partial class Block 
     {
 
         /// <summary>
         /// Gets or sets the unique identifier for the object.
         /// </summary>
-        [ObservableProperty]
-        private Guid _id = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
         /// Gets or sets the number of trials to perform in the operation.
         /// </summary>
-        [ObservableProperty]
-        private int _numPresentations = 0;
+        public int NumPresentations { get; set; } = 0;
+
+        /// <summary>
+        /// Id of the instructions that appear through the block in the test window
+        /// </summary>
+        public Guid BlockInstructionsId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the alternation group associated with the element.
         /// </summary>
         /// <remarks>The alternation group defines a set of mutually exclusive options for the element. If set to null, no
         /// alternation group is applied.</remarks>
-        [ObservableProperty]
-        private Guid _alternationGroupId = Guid.Empty;
+        public Guid AlternationGroupId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI where instructions for completing the process can be accessed.
         /// </summary>
-        [ObservableProperty]
-        private List<Guid> _instructionsIds = new();
+        public List<Guid> InstructionsIds { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the URI used to display the left-side response in a comparison or review scenario.
         /// </summary>
-        [ObservableProperty]
-        private Guid _leftResponseId = Guid.Empty;
+        public Guid LeftResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the URI used to display the right-side response in the user interface.
         /// </summary>
-        [ObservableProperty]
-        private Guid _rightResponseId = Guid.Empty;
+        public Guid RightResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets the collection of unique identifiers for the associated trials.
         /// </summary>
-        [ObservableProperty]
-        private List<Guid> _trialIds = new();
+        public List<Guid> TrialIds { get; set; } = new();
 
         /// <summary>
         /// Indicates whether the item is a header item.
@@ -75,17 +73,10 @@ namespace IAT.Core.Domain
         /// </summary>
         public static bool IsExpandable => true;
 
-        /// <summary>`
-        /// Gets or sets the URI that identifies the cryptographic key.
-        /// </summary>
-        [ObservableProperty]
-        private Guid _keyId = Guid.Empty;
-
         /// <summary>
         /// Gets the block number associated with this instance.
         /// </summary>
-        [ObservableProperty]
-        public int _blockNumber = 0;
+        public int BlockNumber { get; set; } = 0;
 
         /// <summary>
         /// Initializes a new instance of the Block class.
@@ -107,8 +98,8 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets the name associated with the current instance.
         /// </summary>
-        [ObservableProperty]
-        private string _name = String.Empty;
+        
+        public string Name { get; set; } = String.Empty;
 
         /// <summary>
         /// Validates the current instance of the Block class, ensuring that all required properties are set and contain valid values.

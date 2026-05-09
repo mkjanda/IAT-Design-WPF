@@ -10,6 +10,7 @@ using IAT_Design_WPF.Services;
 using IAT.Core.Serializable;
 using IAT.Core.Handlers;
 using IAT.ViewModels;
+using IAT.Core.Services.Network;
 
 namespace IAT_Design_WPF
 {
