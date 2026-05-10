@@ -19,7 +19,7 @@ public sealed class DisplayItem
     /// Gets or sets the unique identifier for the object.
     /// </summary>
     [XmlElement("ID", Form = XmlSchemaForm.Unqualified)]
-    public int ID { get; set; } = -1;
+    public int Id { get; set; } = -1;
 
     /// <summary>
     /// Gets or sets the name of the file associated with this instance.
@@ -50,9 +50,4 @@ public sealed class DisplayItem
     /// </summary>
     [XmlElement("Height", Form = XmlSchemaForm.Unqualified)]
     public int Height { get; set; } = 0;
-
-    /// <summary>
-    /// Initializes a new instance of the DisplayItem class.
-    /// </summary>
-    public DisplayItem() { }
 }

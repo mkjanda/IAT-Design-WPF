@@ -11,6 +11,7 @@ using IAT.Core.Enumerations;
 using sun.awt.image;
 using IAT.Core.Extensions;
 using com.sun.xml.@internal.messaging.saaj.soap;
+using java.util.function;
 
 namespace IAT.Core.Services
 {
@@ -37,18 +38,24 @@ namespace IAT.Core.Services
             _layout = layout;
         }
 
-        public void ProcessBlock(Block block, Manifest manifest, Dictionary<Guid, int> idDictionary)
+        public void ProcessBlock(Block block, Dictionary<Guid, int> idDictionary)
         {
-            PngBitmapEncoder encoder = new PngBitmapEncoder()
+            int x = 0, y = 0, width = 0, height = 0, id = 0;
+            string filename = string.Empty;
+            PngBitmapEncoder pngEncoder = new PngBitmapEncoder()
             {
                 Interlace = PngInterlaceOption.On
             };
+            JpegBitmapEncoder jpegEncoder = new JpegBitmapEncoder()
+            {
+                QualityLevel = 90
+            };
             var memStream = new MemoryStream();
             var bmp = _imageService.RenderKeyToBitmap(block.LeftResponseId);
-            encoder.Frames.Add(BitmapFrame.Create(bmp));
-            encoder.Save(memStream);
+            pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
+            pngEncoder.Save(memStream);
             if (!idDictionary.ContainsKey(block.LeftResponseId)) idDictionary[block.LeftResponseId] = idDictionary.Count + 1;
-            manifest.AddFile(new ManifestFile()
+            _testPackage.FileManifest.AddFile(new ManifestFile()
             {
                 Path = $"image{idDictionary.Count}.png",
                 Size = memStream.Length, // will be updated later
@@ -61,10 +68,10 @@ namespace IAT.Core.Services
 
             memStream = new MemoryStream();
             bmp = _imageService.RenderKeyToBitmap(block.RightResponseId);
-            encoder.Frames.Add(BitmapFrame.Create(bmp));
-            encoder.Save(memStream);
+            pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
+            pngEncoder.Save(memStream);
             if (!idDictionary.ContainsKey(block.RightResponseId)) idDictionary[block.RightResponseId] = idDictionary.Count + 1;
-            manifest.AddFile(new ManifestFile()
+            _testPackage.FileManifest.AddFile(new ManifestFile()
             {
                 Path = $"image{idDictionary.Count}.png",
                 Size = memStream.Length, // will be updated later
@@ -78,10 +85,10 @@ namespace IAT.Core.Services
 
             var instructions = _iat.GetFormattedTextById(block.BlockInstructionsId);
             bmp = _imageService.RenderTextToBitmap(instructions);
-            encoder.Frames.Add(BitmapFrame.Create(bmp));
-            encoder.Save(memStream);
+            pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
+            pngEncoder.Save(memStream);
             if (!idDictionary.ContainsKey(block.BlockInstructionsId)) idDictionary[block.BlockInstructionsId] = idDictionary.Count + 1;
-            manifest.AddFile(new ManifestFile()
+            _testPackage.FileManifest.AddFile(new ManifestFile()
             {
                 Path = $"image{idDictionary.Count}.png",
                 Size = memStream.Length, // will be updated later
@@ -97,50 +104,109 @@ namespace IAT.Core.Services
             foreach (var trialId in block.TrialIds)
             {
                 byte[] imageData;
-                var trial = _iat.GetTrialById(trialId);
+                var trial = _iat.GetTrialById(trialId) ?? throw new ArgumentException($"No trial found with ID {trialId}");
                 var stimulusId = trial?.StimulusId ?? Guid.Empty;
                 var stimulus = _iat.GetStimulusById(stimulusId);
-                if (!idDictionary.ContainsKey(stimulusId)) idDictionary[stimulusId] = idDictionary.Count + 1;
-                if (stimulus is ImageStimulus) { 
-                    imageData = _package.GetImageBytes(stimulusId);
-                    memStream = new MemoryStream(imageData);
-                    BitmapImage bitmapImage = new BitmapImage();
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = memStream;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                    bitmapImage.Freeze();
-                    bmp = _imageService.GetResizedBitmap(bitmapImage, (int)layoutRects.Stimulus.Width, (int)layoutRects.Stimulus.Height);
-                    encoder.Frames.Clear();
-                    encoder.Frames.Add(BitmapFrame.Create(bmp));
-                    memStream.Dispose(); memStream  = new MemoryStream();
-                    encoder.Save(memStream);
-                    manifest.Contents.Add(new ManifestFile()
+                var rects = _layout.GetFinalRects(_iat.Layout);
+                var resourceId = 0;
+                if (!idDictionary.ContainsKey(stimulusId)) {
+                    idDictionary[stimulusId] = idDictionary.Count + 1;
+                    resourceId = idDictionary.Count;
+                    if (stimulus is ImageStimulus) {
+                        imageData = _package.GetImageBytes(stimulusId);
+                        memStream = new MemoryStream(imageData);
+                        BitmapImage bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.StreamSource = memStream;
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+                        double arStimulusRect = rects.Stimulus.Width / rects.Stimulus.Height;
+                        double arImage = bitmapImage.PixelWidth / (double)bitmapImage.PixelHeight;
+                        if (arImage > arStimulusRect)
+                        {
+                            width = (int)rects.Stimulus.Width;
+                            height = (int)(rects.Stimulus.Width / arImage);
+                        }
+                        else
+                        {
+                            height = (int)rects.Stimulus.Height;
+                            width = (int)(rects.Stimulus.Height * arImage);
+                        }
+
+                        bmp = _imageService.GetResizedBitmap(bitmapImage, width, height);
+                        width = bmp.PixelWidth;
+                        height = bmp.PixelHeight;
+                        x = (int)(rects.Stimulus.Width - width) / 2;
+                        y = (int)(rects.Stimulus.Height - height) / 2;
+                        if (_package.GetImageType(stimulusId) == "jpeg" || _package.GetImageType(stimulusId) == "jpg")
+                        {
+                            jpegEncoder.Frames.Clear();
+                            jpegEncoder.Frames.Add(BitmapFrame.Create(bmp));
+                            memStream.Dispose(); memStream = new MemoryStream();
+                            jpegEncoder.Save(memStream);
+                            filename = $"image{idDictionary.Count}.jpg";
+                        } else
+                        {
+                            pngEncoder.Frames.Clear();
+                            pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
+                            memStream.Dispose(); memStream = new MemoryStream();
+                            pngEncoder.Save(memStream);
+                            filename = $"image{idDictionary.Count}.png";
+                        }
+                        _testPackage.FileManifest.Contents.Add(new ManifestFile()
+                        {
+                            Path = filename,
+                            Size = memStream.Length,
+                            ResourceType = ManifestFile.EResourceType.image,
+                            ResourceId = resourceId,
+                            MimeType = $"image/{_package.GetImageType(stimulusId)}",
+                            Content = memStream.ToArray()
+                        });
+                    }
+                    else if (stimulus is TextStimulus textStimulus)
                     {
-                        Path = $"image{idDictionary.Count}.{_package.GetImageType(stimulusId)}",
-                        Size = memStream.Length,
-                        ResourceType = ManifestFile.EResourceType.image,
-                        ResourceId = idDictionary.Count,
-                        MimeType = $"image/{_package.GetImageType(stimulusId)}",
-                        Content = memStream.ToArray()
-                    });
-                } else if (stimulus is TextStimulus textStimulus)
-                {
-                    bmp =_imageService.RenderTextToBitmap(textStimulus);
-                    encoder.Frames.Add(BitmapFrame.Create(bmp));
-                    memStream.Dispose(); memStream = new MemoryStream();
-                    encoder.Save(memStream);
-                    imageData = memStream.ToArray();
-                    manifest.Contents.Add(new ManifestFile()
-                    {
-                        Path = $"image{idDictionary.Count}.png",
-                        Size = imageData.Length,
-                        ResourceType = ManifestFile.EResourceType.image,
-                        ResourceId = idDictionary.Count,
-                        MimeType = $"image/png",
-                        Content = imageData
-                    });
+                        bmp = _imageService.RenderTextToBitmap(textStimulus);
+                        width = bmp.PixelWidth;
+                        height = bmp.PixelHeight;
+                        x = (int)(rects.Stimulus.Width - width) / 2;
+                        y = (int)(rects.Stimulus.Height - height) / 2;
+                        filename = $"image{idDictionary.Count}.png";
+                        pngEncoder.Frames.Clear();
+                        pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
+                        memStream.Dispose(); memStream = new MemoryStream();
+                        pngEncoder.Save(memStream);
+                        imageData = memStream.ToArray();
+                        _testPackage.FileManifest.Contents.Add(new ManifestFile()
+                        {
+                            Path = filename,
+                            Size = imageData.Length,
+                            ResourceType = ManifestFile.EResourceType.image,
+                            ResourceId = resourceId,
+                            MimeType = $"image/png",
+                            Content = imageData
+                        });
+                    }
                 }
+                var iatTrial = new ConfigFile.Trial()
+                {
+                    StimulusDisplayID = resourceId,
+                    KeyedDir = trial?.KeyedDirection ?? KeyedDirection.None,
+                    BlockNum = block.BlockNumber,
+                    OriginatingBlock = (resourceId == idDictionary.Count) ? block.BlockNumber : 
+                        _testPackage.Events.Where(e => e.EventType == EventType.Trial).Cast<ConfigFile.Trial>().Where(e => e.StimulusDisplayID == resourceId).Select(e => e.BlockNum).FirstOrDefault(),
+                    ItemNum = _testPackage.Events.Where(e => e.EventType == EventType.Trial).Count()
+                };
+                var displayItem = new DisplayItem()
+                {
+                    Id = resourceId,
+                    X = x,
+                    Y = y,
+                    Width = width,
+                    Height = height
+                };
+                _testPackage.Events.Add(iatTrial);
+                _testPackage.DisplayItems.Add(displayItem);
             }
         }
 
@@ -203,7 +269,7 @@ namespace IAT.Core.Services
                 ProcessBlock(block, manifest, idDictionary);
         }
 
-
+        private ManifestFile GenerateItemSlide()
 
         public ConfigFile.IATConfigFile MapToServerConfig(IatTest iat)
         {

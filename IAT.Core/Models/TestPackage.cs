@@ -8,10 +8,10 @@ namespace IAT.Core.Models
 {
     internal class TestPackage
     {
-        public IATConfigFile ConfigFile { get; set; } = new IATConfigFile();
-        public Manifest FileManifest { get; set; } = new Manifest();
-        public Manifest SlideManifest { get; set; } = new Manifest();
-        public byte[] FileData { get; set; }
-        public byte[] SlideData { get; set; }
+        public IATConfigFile ConfigFile { get; set; } = new();
+        public Manifest FileManifest { get; set; } = new();
+        public Manifest SlideManifest { get; set; } = new();
+        public List<Event> Events { get; set; } = new();
+        public List<DisplayItem> DisplayItems { get; set; } = new();
     }
 }

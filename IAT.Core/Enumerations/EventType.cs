@@ -28,7 +28,7 @@ public abstract record EventType(String Name)
     /// <summary>
     /// Represents the event type for an IAT (Implicit Association Test) item.
     /// </summary>
-    public static readonly EventType IATItem = new _IATItem();
+    public static readonly EventType Trial = new _Trial();
 
     /// <summary>
     /// Represents the event type that marks the beginning of an instruction block.
@@ -77,7 +77,7 @@ public abstract record EventType(String Name)
     /// </summary>
     /// <remarks>This type is used to identify events related to IAT items within the event system. It is
     /// intended for internal use and is not intended to be instantiated directly by consumers.</remarks>
-    private sealed record _IATItem() : EventType("IATItem");
+    private sealed record _Trial() : EventType("Trial");
 
     /// <summary>
     /// Represents an event type that marks the beginning of an instruction block.
