@@ -58,6 +58,9 @@ namespace IAT_Design_WPF
             services.AddSingleton<IGetItemSlidesService, GetItemSlidesService>();
             services.AddSingleton<IResendEmailVerificationService, ResendEmailVerificationService>();
             services.AddSingleton<IResultRetrievalService, ResultRetrievalService>();
+            services.AddSingleton<ITestDeploymentService, TestDeploymentService>();
+            services.AddSingleton<TestPackage>();
+
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
             Services = services.BuildServiceProvider();

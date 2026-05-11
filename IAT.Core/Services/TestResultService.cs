@@ -19,7 +19,7 @@ namespace IAT.Core.Services
     /// in assessment or survey applications.</remarks>
     public class TestResultService
     {
-        private readonly IWebSocketService _webSocketService;
+        private readonly IResultRetrievalService _resultRetrievalService;
         private readonly ILocalStorageService _localStorageService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
         private ConfigFile.IATConfigFile? ConfigFile { get; set; } = null;
@@ -55,14 +55,14 @@ namespace IAT.Core.Services
         /// <exception cref="NullReferenceException">Thrown if the configuration or result data cannot be deserialized from the response.</exception>
         public void Retrieve(String iatName, String password)
         {
-            _ = _webSocketService.GetResults(iatName, password, _localStorageService[Field.ProductKey]).ContinueWith(t =>
+            _ = _resultRetrievalService.GetResults(iatName, password, _localStorageService[Field.ProductKey]).ContinueWith(t =>
             {
                 var xDoc = t.Result;
                 var ser = new XmlSerializer(typeof(ConfigFile.IATConfigFile), new XmlRootAttribute("ConfigFile"));
                 ConfigFile = ser.Deserialize(xDoc.CreateReader()) as ConfigFile.IATConfigFile ?? throw new NullReferenceException();
                 ser = new XmlSerializer(typeof(List<ResultPacket>), new XmlRootAttribute("ResultSet"));
                 Results = ser.Deserialize(xDoc.CreateReader()) as List<ResultPacket> ?? throw new NullReferenceException();
-                var rsa = RSA.Create(_webSocketService.RSA.GetRSAParameters());
+                var rsa = RSA.Create(_resultRetrievalService.RSA.GetRSAParameters());
                 foreach (var resultPacket in Results)
                 {
                     var resultBytes = Convert.FromBase64String(resultPacket.ResultData);

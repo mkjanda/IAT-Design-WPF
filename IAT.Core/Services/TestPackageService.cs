@@ -582,7 +582,7 @@ namespace IAT.Core.Services
             });
 
             var instructions = _iat.GetFormattedTextById(block.BlockInstructionsId);
-            bmp = _imageService.RenderTextToBitmap(instructions);
+            bmp = _imageService.RenderTextToBitmap(instructions ?? throw new ArgumentNullException());
             pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
             pngEncoder.Save(memStream);
             if (!idDictionary.ContainsKey(block.BlockInstructionsId)) idDictionary[block.BlockInstructionsId] = idDictionary.Count + 1;
@@ -760,7 +760,7 @@ namespace IAT.Core.Services
                 }
             };
             Dictionary<Guid, int> idDictionary = new Dictionary<Guid, int>();
-            foreach (var block in iat.Blocks.OrderBy<Block, int>(b => b.BlockNumber))
+            foreach (var block in _iat.Blocks.OrderBy<Block, int>(b => b.BlockNumber))
             {
                 var beginBlock = new BeginIATBlock()
                 {

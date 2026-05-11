@@ -27,11 +27,9 @@ namespace IAT.Core.Services
             { typeof(Block).Name, typeof(Block) }, { typeof(Handshake).Name, typeof(Handshake) },
             { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
             { "SurveyResults", typeof(SurveyResponse) }, 
-          //  { typeof(Key).Name, typeof(Key)  },
             { typeof(IatTest).Name, typeof(IatTest)  },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
-            { typeof(Trial).Name, typeof(Trial) },
-            { typeof(Serializable.Version).Name, typeof(Serializable.Version) }
+            { typeof(Trial).Name, typeof(Trial) }, { "DeploymentStatusUpdate", typeof(DeploymentUpdate) }
         };
 
         /// <summary>

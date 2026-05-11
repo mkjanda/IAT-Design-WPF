@@ -26,13 +26,33 @@ namespace IAT.Core.Services.Network
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
+
+        /// <summary>
+        /// The constructor initializes the ActivationService with the necessary dependencies, including the WebSocket service 
+        /// for communication and the transaction state to manage the activation process. It also sets up the command handler 
+        /// for processing activation requests.
+        /// </summary>
+        /// <param name="webSocketService">The WebSocket service used for communication with the server.</param>
+        /// <param name="transactionState">The transaction state object used to manage the activation process.</param>
         public ActivationService(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
+            _transactionState.Clear();
             _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionActivationCommand(request);
         }
 
+        /// <summary>
+        /// Initiates the activation process for a product using the specified product key and user information.
+        /// </summary>
+        /// <remarks>This method establishes a connection to the activation service and waits for the
+        /// activation process to complete before returning the result. The method blocks until the activation response
+        /// is received. Ensure that the calling context allows for potential blocking behavior.</remarks>
+        /// <param name="productKey">The unique key identifying the product to activate. Cannot be null or empty.</param>
+        /// <param name="userName">The name of the user requesting activation. Cannot be null or empty.</param>
+        /// <param name="email">The email address associated with the user. Cannot be null or empty.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
+        /// the outcome of the activation request.</returns>
         public async Task<TransactionResult> ActivateProduct(string productKey, string userName, string email)
         {
             _webSocketService.Start();

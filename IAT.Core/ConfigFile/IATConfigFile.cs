@@ -203,7 +203,7 @@ public class IATConfigFile
     public List<DisplayItem> DisplayItemList { get; set; } = new List<DisplayItem>();
 
     /// <summary>
-    /// 
+    /// Gets or sets the upload time in milliseconds since the Unix epoch.  
     /// </summary>
-    public IATConfigFile() { }
+    public long UploadTimeMillis { get; set; } = 0;
 }

@@ -21,11 +21,26 @@ namespace IAT.Core.Handlers
         private static readonly int TagBytes = 16;
         private readonly IWebSocketService _wss;
 
+        /// <summary>
+        /// The constructor initializes the HandshakeHandler with the necessary dependencies, including the WebSocket service for managing the connection. This setup 
+        /// allows the handler to effectively manage the handshake process by performing encryption and communication tasks required for establishing a secure 
+        /// connection with the server. The handler will use AES-GCM encryption to securely exchange information during the handshake process, ensuring that sensitive 
+        /// data is protected during transmission.
+        /// </summary>
+        /// <param name="wss">The WebSocket service used to manage the connection.</param>
         public HandshakeHandler(IWebSocketService wss)
         {
             _wss = wss;
         }
 
+        /// <summary>
+        /// Processes a handshake command by decrypting the provided message and sending the result over the WebSocket
+        /// connection.
+        /// </summary>
+        /// <param name="request">The handshake command containing the encrypted message to be processed. Cannot be null.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
+        /// the outcome of the handshake processing.</returns>
         public async Task<TransactionResult> Handle(HandshakeCommand request, CancellationToken cancellationToken)
         {
             var aes = new AesGcm(AesKeyBytes, 16);

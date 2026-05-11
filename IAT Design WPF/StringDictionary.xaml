@@ -7,5 +7,8 @@
     <sys:String x:Key="HandshakePlaintext">A cigarette is the perfect type of perfect pleasure. It is exquisite and utter unsatisfying.</sys:String>
     <sys:String x:Key="ResultsDownloadUrl">http://127.0.0.1/IATServer/ResultsDownload</sys:String>
     <sys:String x:Key="DeploymentIATExists">An IAT with that name already exists on the server. You may attempt to deploy this test atop it. In that event a backup of your test and data will be made on the server for the duration of the redeployment process. It is possible for this process too fail and recommended that you download your results before attempting it.</sys:String>
+    <sys:String x:Key="IATBeingDeployef">An IAT with this name is currently in a state of deployment. If you have recently tried to upload a test with this name, likely that deployment has been suspended. You may only upload this test if you abandon the previous deployment. Do you wish to do so?"</sys:String>
+    <sys:String x:Key="IATBeingDeployedTitle">IAT Being Deployed</sys:String>
     <sys:String x:Key="InvalidPassword">Invalid Password</sys:String>
+    <sys:String x:Key="DeploymentUploaUrl">https://iatsoftware.net/IAT/DeploymentUpload/DeploymentFiles</sys:String>
 </ResourceDictionary>    

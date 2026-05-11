@@ -21,8 +21,10 @@ namespace IAT.Core.Services.Network
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
+            _webSocketService.TransactionCommands[TransactionType.IATExists] = (request) => new IATExistsRetrievalCommand(request);
             _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionRetrieveResultsCommand(request);
             _webSocketService.TransactionCommands[TransactionType.PasswordValid] = (request) => new PasswordValidResultsCommand(request);
+            _webSocketService.TransactionCommands[TransactionType.NoSuchIAT] = (request) => new NoSuchIATResultRetrievalCommand(request);
         }
 
         public async Task<XDocument> GetResults(string productKey, string iatName, string password)

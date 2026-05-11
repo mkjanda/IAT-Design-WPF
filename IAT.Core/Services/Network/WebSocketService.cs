@@ -105,16 +105,21 @@ namespace IAT.Core.Services.Network
                 { TransactionType.AbortTransaction, (request) => new AbortTransactionCommand(request) },
                 { TransactionType.ClientDeleted, (request) => new ClientDeletedCommand(request)  },
                 { TransactionType.ClientFrozen, (request) => new ClientFrozenCommand(request) },
+                { TransactionType.DeploymentFileManifestReceived, (request) => new DeploymentManifestReceivedCommand(request) },
                 { TransactionType.EMailAlreadyVerified, (request) => new EMailAlreadyVerifiedCommand(request) },
+                { TransactionType.EncryptionKeyReceived, (request) => new EncryptionKeyReceivedCommand(request) },
+                { TransactionType.IATBeingDeployed, (request) => new IATBeingDeployedCommand(request) },
                 { TransactionType.PasswordInvalid, (request) => new InvalidPasswordCommand(request) },
                 { TransactionType.ItemSlideDownloadReady, (request) => new ItemSlidesReadyCommand(request) },
                 { TransactionType.NoActivationsRemain, (request) => new NoActivationsCommand(request) },
                 { TransactionType.NoSuchClient, (request) => new NoSuchClientCommand(request) },
-                { TransactionType.NoSuchIAT, (request) => new NoSuchIATCommand(request) },
+                { TransactionType.PasswordInvalid, (request) => new InvalidPasswordCommand(request) },
+                { TransactionType.PasswordValid, (request) => new PasswordValidResultsCommand(request)  },
+                { TransactionType.RequestIATUpload, (request) => new RequestIATUploadCommand(request) },
                 { TransactionType.ResultsReady, (request) => new ResultsReadyCommand(request) },
                 { TransactionType.TransactionFail, (request) => new TransactionFailCommand(request) },
-                { TransactionType.VerifyPassword, (request) => new VerifyPasswordCommand(request) },
-                { TransactionType.TransactionSuccess, (request) => new TransactionSuccessCommand(request) }
+                { TransactionType.TransactionSuccess, (request) => new TransactionSuccessCommand(request) },
+                { TransactionType.VerifyPassword, (request) => new VerifyPasswordCommand(request) }
             };
         }
 

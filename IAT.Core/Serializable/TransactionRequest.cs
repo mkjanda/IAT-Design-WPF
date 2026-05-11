@@ -78,6 +78,11 @@ namespace IAT.Core.Serializable
         RequestEncryptionKey,
 
         /// <summary>
+        /// Gets or sets the encryption key that was received.
+        /// </summary>
+        EncryptionKeyReceived,
+
+        /// <summary>
         /// Represents a request to verify a user's password.
         /// </summary>
         RequestPasswordVerification,
@@ -296,7 +301,12 @@ namespace IAT.Core.Serializable
         /// Represents an error condition where the provided email address does not match the expected value during
         /// verification.
         /// </summary>
-        EmailVerificationMismatch
+        EmailVerificationMismatch,
+
+        /// <summary>
+        /// Represents an entity that is currently in the process of being deployed.
+        /// </summary>
+        IATBeingDeployed
     };
 
 

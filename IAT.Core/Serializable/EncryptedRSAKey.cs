@@ -222,8 +222,8 @@ public class EncryptedRSAKey
         cStream.Write(memStream.ToArray(), 0, (int)memStream.Length);
         cStream.FlushFinalBlock();
         EncryptedKey = Convert.ToBase64String(encryptedKeyBytes.ToArray());
-        NString = Convert.ToBase64String(rsaParams.Modulus);
-        EString = Convert.ToBase64String(rsaParams.Exponent);
+        NString = Convert.ToBase64String(rsaParams.Modulus ?? throw new ArgumentNullException(nameof(rsaParams.Modulus)));
+        EString = Convert.ToBase64String(rsaParams.Exponent ?? throw new ArgumentNullException(nameof(rsaParams.Exponent)));
     }
 
 

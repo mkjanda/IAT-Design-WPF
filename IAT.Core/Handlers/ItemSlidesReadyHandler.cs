@@ -20,6 +20,18 @@ namespace IAT.Core.Handlers
         private readonly IDialogService _dialogService;
         private readonly TransactionState _transactionState;
 
+        /// <summary>
+        /// The constructor initializes the ItemSlidesReadyHandler with the necessary dependencies, including the WebSocket service 
+        /// for communication, the string resource service for accessing string resources, the dialog service for displaying notifications, 
+        /// and the transaction state for managing the transaction process. This setup allows the handler to effectively manage the item 
+        /// slides ready scenario by downloading the item slide data, processing it, and providing user feedback through notifications if 
+        /// any errors occur during the download process. The handler is designed to ensure that the WebSocket connection is properly 
+        /// closed in case of errors, and that the user is informed of any issues that arise during the item slide data retrieval process.
+        /// </summary>
+        /// <param name="webSocketService">The WebSocket service used to manage the connection.</param>
+        /// <param name="stringResourceService">The string resource service used to retrieve localized messages.</param>
+        /// <param name="dialogService">The dialog service used to show notifications to the user.</param>
+        /// <param name="transactionState">The transaction state used to manage the transaction process.</param>
         public ItemSlidesReadyHandler(IWebSocketService webSocketService, IStringResourceService stringResourceService,
             IDialogService dialogService, TransactionState transactionState)
         {
@@ -29,11 +41,22 @@ namespace IAT.Core.Handlers
             _transactionState = transactionState;
         }   
      
+        /// <summary>
+        /// Handles the ItemSlidesReadyCommand by downloading item slide data and updating the transaction state
+        /// accordingly.
+        /// </summary>
+        /// <remarks>If an error occurs during the download process, a notification is displayed to the
+        /// user and the WebSocket connection is closed before returning a failure result. On success, the slide data is
+        /// processed and the WebSocket connection is closed.</remarks>
+        /// <param name="request">The command containing information required to process the item slides readiness operation.</param>
+        /// <param name="cancellationToken">A token that can be used to request cancellation of the asynchronous operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
+        /// the outcome of the operation.</returns>
         public async Task<TransactionResult> Handle(ItemSlidesReadyCommand request, CancellationToken cancellationToken)
         {
 
             using var httpClient = new HttpClient();
-            return await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")).ContinueWith(async t =>
+            var retVal =  await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")).ContinueWith(async t =>
             {
                 if (t.IsFaulted)
                 {
@@ -57,6 +80,9 @@ namespace IAT.Core.Handlers
                     return TransactionResult.Success;
                 }
             }).Result;
+            _transactionState.Result = retVal;
+            _transactionState.Event.Set();
+            return retVal;
         }
     }
 }
