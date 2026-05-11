@@ -13,15 +13,37 @@ using IAT.Core.Extensions;
 using com.sun.xml.@internal.messaging.saaj.soap;
 using java.util.function;
 using javax.imageio.plugins.bmp;
+using System.Windows;
 
 namespace IAT.Core.Services
 {
+    /// <summary>
+    /// Provides functionality to map IatTest data to a TestPackage configuration, including generating required
+    /// resources and organizing them for execution on the server.
+    /// </summary>
+    /// <remarks>Implementations of this interface are responsible for transforming the logical structure and
+    /// assets of an IatTest into a format suitable for server-side execution. This includes creating files for stimuli
+    /// and instructions, and ensuring all necessary resources are included in the resulting TestPackage.</remarks>
     public interface ITestPackageService
     {
-        IATConfigFile MapToServerConfig(IatTest iat);
+        /// <summary>
+        /// Maps the IatTest data to the TestPackage configuration, including creating necessary files for stimuli and instructions, and populating the events and 
+        /// display items in the TestPackage. This method processes the blocks, trials, stimuli, and instructions defined in the IatTest, generating the appropriate 
+        /// image files for text and image stimuli, and organizing them into the TestPackage structure for use in running the IAT. It ensures that all necessary 
+        /// resources are included in the TestPackage and that the configuration is properly set up for execution on the server.
+        /// </summary>
+        void MapToServerConfig();
     }
 
-    internal class TestPackageService
+    /// <summary>
+    /// Provides services for generating and packaging test assets, including images and configuration files, for an IAT
+    /// (Implicit Association Test) test package.
+    /// </summary>
+    /// <remarks>This class coordinates the creation of image resources, slide manifests, and configuration
+    /// mappings required to prepare a test package for deployment or server upload. It relies on several supporting
+    /// services for image generation, layout calculation, and project packaging. The class is intended for internal use
+    /// and is not thread-safe.</remarks>
+    internal class TestPackageService : ITestPackageService
     {
         private readonly IatTest _iat;
         private readonly TestPackage _testPackage;
@@ -29,6 +51,14 @@ namespace IAT.Core.Services
         private readonly IProjectPackageService _package;
         private readonly ILayoutCalculatorService _layout;
 
+        /// <summary>
+        /// Initializes a new instance of the TestPackageService class with the specified dependencies.
+        /// </summary>
+        /// <param name="iat">The IatTest instance used to provide test-related functionality.</param>
+        /// <param name="testPackage">The TestPackage instance representing the test package to be managed.</param>
+        /// <param name="imageService">The image generation service used for creating or processing images within the test package.</param>
+        /// <param name="package">The project package service responsible for handling project package operations.</param>
+        /// <param name="layout">The layout calculator service used to compute layout information for the test package.</param>
         public TestPackageService(IatTest iat, TestPackage testPackage, IImageGenerationService imageService,
             IProjectPackageService package, ILayoutCalculatorService layout)
         {
@@ -39,18 +69,144 @@ namespace IAT.Core.Services
             _layout = layout;
         }
 
+        /// <summary>
+        /// Generates and renders item slide images for each trial in all blocks, adding the resulting JPEG files to the
+        /// test package manifest.
+        /// </summary>
+        /// <remarks>This method processes all blocks and their associated trials, rendering visual
+        /// representations that include stimuli and response options. Each slide is saved as a JPEG image and
+        /// registered in the test package manifest. The method assumes that all referenced resources are present and
+        /// accessible; missing resources will result in exceptions.</remarks>
+        /// <exception cref="KeyNotFoundException">Thrown if a required trial, stimulus, or formatted text resource cannot be found by its identifier.</exception>
+        private void ProcessItemSlides()
+        {
+            var rects = _layout.GetFinalRects(_iat.Layout);
+            var ar = rects.Interior.Width / rects.Interior.Height;
+            var width = 500;
+            var height = (int)(500 / ar);
+            foreach (var block in _iat.Blocks.OrderBy(e => e.BlockNumber))
+            {
+                foreach (var trialId in block.TrialIds)
+                {
+                    var trial = _iat.GetTrialById(trialId) ?? throw new KeyNotFoundException("No trial found with ID " + trialId);
+                    var visual = new DrawingVisual();
+                    using (var dc = visual.RenderOpen())
+                    {
+                        dc.DrawRectangle(Brushes.Black, null, rects.Interior);
+                        if (trial.StimulusId != Guid.Empty)
+                        {
+                            var stimulus = _iat.GetStimulusById(trial.StimulusId) ?? throw new KeyNotFoundException("No stimulus found with ID " + trial.StimulusId);
+                            if (stimulus is ImageStimulus imageStimulus)
+                            {
+                                BitmapImage stimulusBmp = new BitmapImage();
+                                var imageData = _package.GetImageBytes(imageStimulus.Id);
+                                var imageStream = new MemoryStream(imageData);
+                                stimulusBmp.BeginInit();
+                                stimulusBmp.StreamSource = imageStream;
+                                stimulusBmp.CacheOption = BitmapCacheOption.OnLoad;
+                                stimulusBmp.EndInit();
+                                stimulusBmp.Freeze();
+                                double arImage = stimulusBmp.PixelWidth / (double)stimulusBmp.PixelHeight;
+                                int renderWidth, renderHeight;
+                                if (arImage > ar)
+                                {
+                                    renderWidth = (int)(rects.Interior.Width);
+                                    renderHeight = (int)(rects.Interior.Width / arImage);
+                                }
+                                else
+                                {
+                                    renderHeight = (int)(rects.Interior.Height);
+                                    renderWidth = (int)(rects.Interior.Height * arImage);
+                                }
+                                dc.DrawImage(stimulusBmp, rects.Stimulus);
+                            }
+                            else if (stimulus is TextStimulus textStimulus)
+                            {
+                                BitmapSource stimulusBmp = _imageService.RenderTextToBitmap(textStimulus);
+                                dc.DrawImage(stimulusBmp, rects.Stimulus);
+                            }
+                        }
+
+                        var leftResponseId = block.LeftResponseId;
+                        var leftResponse = _iat.GetFormattedTextById(leftResponseId) ?? throw new KeyNotFoundException("No formatted text found with ID " + leftResponseId);
+                        var leftResponseBmp = _imageService.RenderTextToBitmap(leftResponse);
+                        dc.DrawImage(leftResponseBmp, rects.LeftKey);
+
+                        var rightResponseId = block.RightResponseId;
+                        var rightResponse = _iat.GetFormattedTextById(rightResponseId) ?? throw new KeyNotFoundException("No formatted text found with ID " + rightResponseId);
+                        var rightResponseBmp = _imageService.RenderTextToBitmap(rightResponse);
+                        dc.DrawImage(rightResponseBmp, rects.RightKey);
+
+                        var blockInstructionsId = block.BlockInstructionsId;
+                        var blockInstructions = _iat.GetFormattedTextById(blockInstructionsId) ?? throw new KeyNotFoundException("No formatted text found with ID " + blockInstructionsId);
+                        var blockInstructionsBmp = _imageService.RenderTextToBitmap(blockInstructions);
+                        dc.DrawImage(blockInstructionsBmp, rects.BlockInstructions);
+
+                        if (trial.KeyedDirection == KeyedDirection.Left)
+                        {
+                            var outlineBmp = _imageService.RenderKeyOutline();
+                            dc.DrawImage(outlineBmp, rects.LeftKey);
+                        }
+                        else if (trial.KeyedDirection == KeyedDirection.Right)
+                        {
+                            var outlineBmp = _imageService.RenderKeyOutline();
+                            dc.DrawImage(outlineBmp, rects.RightKey);
+                        }
+                    }
+                    var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+                    RenderTargetBitmap renderedBmp = new RenderTargetBitmap((int)rects.Interior.Width, (int)rects.Interior.Height, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+                    renderedBmp.Render(visual);
+                    renderedBmp.Freeze();
+                    var slideBmp = _imageService.GetResizedBitmap(renderedBmp, width, height);
+                    JpegBitmapEncoder encoder = new JpegBitmapEncoder()
+                    {
+                        QualityLevel = 90
+                    };
+                    using var memStream = new MemoryStream();
+                    encoder.Frames.Add(BitmapFrame.Create(slideBmp));
+                    _testPackage.SlideManifest.AddFile(new ManifestFile()
+                    {
+                        Path = $"slide{_testPackage.SlideManifest.Contents.Count + 1}.jpg",
+                        Size = memStream.Length,
+                        ResourceType = ManifestFile.EResourceType.itemSlide,
+                        ResourceId = _testPackage.SlideManifest.Contents.Count + 1,
+                        MimeType = "image/jpeg",
+                        Content = memStream.ToArray()
+                    });
+                }
+            }
+        }
+
+        /// <summary>
+        /// Processes the specified formatted text and adds its rendered image to the file manifest if it has not
+        /// already been processed.
+        /// </summary>
+        /// <remarks>This method ensures that each unique formatted text is rendered to an image only
+        /// once. If the text has not been processed, it is rendered, encoded as a PNG, and added to the file manifest.
+        /// Subsequent calls with the same text identifier will not re-render or add duplicate images.</remarks>
+        /// <param name="text">The formatted text to be rendered and added to the manifest. Cannot be null.</param>
+        /// <param name="idDictionary">A dictionary mapping unique text identifiers to resource IDs. Used to track which texts have already been
+        /// processed. Cannot be null.</param>
         private void ProcessFormattedText(IFormattedText text, Dictionary<Guid, int> idDictionary)
         {
             if (!idDictionary.ContainsKey(text.Id))
             {
                 idDictionary[text.Id] = idDictionary.Count + 1;
                 var bmp = _imageService.RenderTextToBitmap(text);
-
+                var visual = new DrawingVisual();
+                using(var dc = visual.RenderOpen())
+                {
+                    dc.DrawImage(bmp, new System.Windows.Rect(0, 0, bmp.PixelWidth, bmp.PixelHeight));
+                }
+                var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+                var renderedBmp = new RenderTargetBitmap(bmp.PixelWidth, bmp.PixelHeight, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);    
+                renderedBmp.Render(visual);
+                renderedBmp.Freeze();
                 PngBitmapEncoder pngEncoder = new PngBitmapEncoder()
                 {
                     Interlace = PngInterlaceOption.On
                 };
-                pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
+                pngEncoder.Frames.Add(BitmapFrame.Create(renderedBmp));
                 using var memStream = new MemoryStream();
                 pngEncoder.Save(memStream);
                 _testPackage.FileManifest.AddFile(new ManifestFile()
@@ -65,6 +221,21 @@ namespace IAT.Core.Services
             }
         }
 
+        /// <summary>
+        /// Processes a block of instruction screens, generating display items and events for each instruction and its
+        /// associated responses.
+        /// </summary>
+        /// <remarks>This method updates the test package by adding display items and events corresponding
+        /// to each instruction screen and its related components. The method modifies the provided <paramref
+        /// name="idDictionary"/> to include any new display item IDs generated during processing.</remarks>
+        /// <param name="instructionIds">A list of unique identifiers representing the instruction screens to process. The order of IDs determines
+        /// the sequence in which instructions are handled.</param>
+        /// <param name="idDictionary">A dictionary mapping unique identifiers to display item IDs. This dictionary is updated with new mappings as
+        /// additional display items are created during processing.</param>
+        /// <exception cref="ArgumentException">Thrown if an instruction screen or stimulus cannot be found for a specified identifier in <paramref
+        /// name="instructionIds"/>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if a required formatted text or response key cannot be found when processing a keyed or mock item
+        /// instruction screen.</exception>
         private void ProcessInstructionBlock(List<Guid> instructionIds, Dictionary<Guid, int> idDictionary)
         {
             var rects = _layout.GetFinalRects(_iat.Layout);
@@ -190,7 +361,18 @@ namespace IAT.Core.Services
             }
         }
 
-        public void ProcessImageStimulus(ImageStimulus stimulus, Dictionary<Guid, int> idDictionary)
+        /// <summary>
+        /// Processes an image stimulus by generating a resized bitmap, assigning a unique resource identifier, and
+        /// adding the image to the test package manifest if it has not already been processed.
+        /// </summary>
+        /// <remarks>This method ensures that each image stimulus is only processed and added to the
+        /// manifest once. The image is resized to fit the designated stimulus area while maintaining its aspect ratio.
+        /// The resulting image is encoded as either JPEG or PNG based on its type and added to the file manifest with
+        /// the appropriate metadata.</remarks>
+        /// <param name="stimulus">The image stimulus to process and include in the test package manifest.</param>
+        /// <param name="idDictionary">A dictionary mapping stimulus identifiers to unique resource IDs. This dictionary is updated with new
+        /// entries for unprocessed stimuli.</param>
+        private void ProcessImageStimulus(ImageStimulus stimulus, Dictionary<Guid, int> idDictionary)
         {
             var stimulusId = stimulus.Id;
             var resourceId = 0;
@@ -263,7 +445,17 @@ namespace IAT.Core.Services
             }
         }
 
-        public void ProcessTextStimulus(TextStimulus stimulus, Dictionary<Guid, int> idDictionary)
+        /// <summary>
+        /// Processes a text stimulus by rendering it to an image, assigning a unique resource identifier, and adding
+        /// the resulting image and display information to the test package if it has not already been processed.
+        /// </summary>
+        /// <remarks>If the specified stimulus has already been processed and exists in the dictionary,
+        /// this method does not perform any additional actions. The method ensures that each text stimulus is rendered
+        /// and added only once to the test package.</remarks>
+        /// <param name="stimulus">The text stimulus to be rendered and added to the test package. Cannot be null.</param>
+        /// <param name="idDictionary">A dictionary mapping stimulus identifiers to unique resource IDs. Used to track and assign resource IDs for
+        /// each stimulus. Cannot be null.</param>
+        private void ProcessTextStimulus(TextStimulus stimulus, Dictionary<Guid, int> idDictionary)
         {
             var stimulusId = stimulus.Id;
             var resourceId = 0;
@@ -307,6 +499,18 @@ namespace IAT.Core.Services
             }
         }
 
+        /// <summary>
+        /// Processes the specified block by rendering associated images and instructions, updating the file manifest,
+        /// and adding display items and events to the test package.
+        /// </summary>
+        /// <remarks>This method generates image resources for block responses and instructions, updates
+        /// the file manifest and display items, and processes all trials within the block. The idDictionary parameter
+        /// is modified to include any new resource IDs encountered during processing.</remarks>
+        /// <param name="block">The block to process, containing instructions, response identifiers, and trial information to be rendered
+        /// and added to the test package.</param>
+        /// <param name="idDictionary">A dictionary mapping unique resource identifiers to integer IDs. This dictionary is updated with new
+        /// resources as they are processed.</param>
+        /// <exception cref="ArgumentException">Thrown if a trial referenced by the block does not exist in the test data.</exception>
         private void ProcessBlock(Block block, Dictionary<Guid, int> idDictionary)
         {
             int x = 0, y = 0, width = 0, height = 0;
@@ -437,6 +641,13 @@ namespace IAT.Core.Services
             _testPackage.Events.Add(new EndIATBlock());
         }
 
+        /// <summary>
+        /// Generates and adds test image files and display items to the test package for use in IAT test scenarios.
+        /// </summary>
+        /// <remarks>This method creates image resources such as error marks and key outlines, encodes
+        /// them as PNG files, and registers them in the test package's manifest and display item collections. The
+        /// generated files are intended for use during test execution and visualization.</remarks>
+        /// <param name="iat">The IAT test instance for which the test files and display items are created. Cannot be null.</param>
         public void CreateFilesForTest(IatTest iat)
         {
             var rects = _layout.GetFinalRects(_iat.Layout);
@@ -521,13 +732,22 @@ namespace IAT.Core.Services
             memoryStream.Dispose();
         }
 
-        public void MapToServerConfig(IatTest iat)
+        /// <summary>
+        /// Maps the current IAT configuration and layout to the server configuration format, preparing all necessary
+        /// files and data structures for server deployment.
+        /// </summary>
+        /// <remarks>Call this method before deploying the IAT to the server to ensure that all
+        /// configuration files and layout data are correctly generated. The method processes all blocks and items, and
+        /// prepares the configuration required for server-side operation.</remarks>
+        /// <exception cref="Exception">Thrown if an invalid block number is encountered during the mapping process.</exception>
+        public void MapToServerConfig()
         {
+            CreateFilesForTest(_iat);
             var rects = _layout.GetFinalRects(_iat.Layout);
             var configFile = new IATConfigFile()
             {
-                Name = iat.Name,
-                NumIATItems = iat.Trials.Count,
+                Name = _iat.Name,
+                NumIATItems = _iat.Trials.Count,
                 ErrorMarkID = 1000,
                 LeftKeyOutlineID = 1001,
                 RightKeyOutlineID = 1002,
@@ -571,6 +791,7 @@ namespace IAT.Core.Services
                 };
                 ProcessBlock(block, idDictionary);
             }
+            ProcessItemSlides();
         }
     }
 }
