@@ -58,7 +58,7 @@ public partial class IatTest : ObservableObject
     /// <summary>
     /// Gets the collection of instruction screens displayed to the user.
     /// </summary>
-    public ObservableCollection<InstructionsScreen> InstructionScreens { get; } = new();
+    public ObservableCollection<InstructionScreen> InstructionScreens { get; } = new();
 
     /// <summary>
     /// Gets the collection of keys managed by this instance.
@@ -124,7 +124,7 @@ public partial class IatTest : ObservableObject
     /// <param name="id">The unique identifier of the instruction screen to retrieve.</param>
     /// <returns>The instruction screen corresponding to the specified identifier, or null if no matching instruction screen
     /// is found.</returns>
-    public InstructionsScreen? GetInstructionScreenById(Guid id) => _instructionCache.TryGetValue(id, out var instruction) ? instruction : null;
+    public InstructionScreen? GetInstructionScreenById(Guid id) => _instructionCache.TryGetValue(id, out var instruction) ? instruction : null;
 
     /// <summary>
     /// Retrieves a block with the specified unique identifier, if it exists.
@@ -152,6 +152,6 @@ public partial class IatTest : ObservableObject
     private readonly Dictionary<Guid, Block> _blockCache = new();
     private readonly Dictionary<Guid, Stimulus> _stimulusCache = new();
     private readonly Dictionary<Guid, Trial> _trialCache = new();
-    private readonly Dictionary<Guid, InstructionsScreen> _instructionCache = new();
+    private readonly Dictionary<Guid, InstructionScreen> _instructionCache = new();
     private readonly Dictionary<Guid, Key> _keyCache = new();
 }

@@ -29,7 +29,7 @@ public class TextInstructionScreen : Event
     /// <remarks>A value of -1 indicates that no key code is assigned. Set this property to the ASCII code of
     /// the desired key to enable the 'Continue' action via keyboard input.</remarks>
     [XmlElement("ContinueASCIIKeyCode", Form = XmlSchemaForm.Unqualified)]
-    public int ContinueASCIIKeyCode { get; set; } = -1;
+    public int ContinueASCIIKeyCode { get; set; } = 32;
 
     /// <summary>
     /// Gets or sets the identifier used to display continue instructions.
@@ -43,8 +43,4 @@ public class TextInstructionScreen : Event
     [XmlElement("InstructionsDisplayID", Form = XmlSchemaForm.Unqualified)] 
     public int InstructionsDisplayID { get; set; } = -1;
 
-    /// <summary>
-    /// Initializes a new instance of the TextInstructionScreen class.
-    /// </summary>
-    public TextInstructionScreen() { }
 }

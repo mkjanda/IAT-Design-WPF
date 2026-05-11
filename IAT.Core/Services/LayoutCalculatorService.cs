@@ -250,4 +250,27 @@ public record LayoutRects
     public Rect KeyedInstructions { get; init; }
     public Rect TextInstructions { get; init; }
     public Rect ContinueInstructions { get; init; }
+
+    /// <summary>
+    /// Returns the rectangle corresponding to the specified layout item. This method provides a convenient way to access
+    /// the rectangle for a given layout item without directly referencing the properties.
+    /// </summary>
+    /// <param name="layoutItem">The layout item for which to retrieve the rectangle.</param>
+    /// <returns>The rectangle corresponding to the specified layout item.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public Rect GetRectByLayoutItem(LayoutItem layoutItem) => layoutItem switch
+    {
+        LayoutItem.Interior => Interior,
+        LayoutItem.Stimulus => Stimulus,
+        LayoutItem.LeftKey => LeftKey,
+        LayoutItem.RightKey => RightKey,
+        LayoutItem.ErrorMark => ErrorMark,
+        LayoutItem.BlockInstructions => BlockInstructions,
+        LayoutItem.MockItemInstructions => MockItemInstructions,
+        LayoutItem.KeyedInstructions => KeyedInstructions,
+        LayoutItem.TextInstructions => TextInstructions,
+        LayoutItem.ContinueInstructions => ContinueInstructions,
+        _ => throw new ArgumentOutOfRangeException(nameof(layoutItem), $"Unsupported layout item: {layoutItem}")
+    };
+
 }

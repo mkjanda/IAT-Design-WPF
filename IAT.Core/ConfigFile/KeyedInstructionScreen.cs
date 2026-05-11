@@ -4,19 +4,20 @@ using System.Text;
 using System.Web;
 using System.Xml.Serialization;
 using System.Xml.Schema;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.ConfigFile;
 
 /// <summary>
 /// KeyedInstructionScreen represents a specific type of instruction screen that includes key-based responses for user interaction.
 /// </summary>
-public sealed class KeyedInstructionScreen
+public sealed class KeyedInstructionScreen : Event
 {
     /// <summary>
     /// Gets or sets the ASCII key code that represents the 'Continue' action.
     /// </summary>
     [XmlElement("ContinueASCIIKeyCode", Form = XmlSchemaForm.Unqualified)]
-    public int ContinueASCIIKeyCode { get; set; } = -1;
+    public int ContinueASCIIKeyCode { get; set; } = 32;
 
     /// <summary>
     /// Gets or sets the display identifier for the continue instructions.
@@ -41,6 +42,11 @@ public sealed class KeyedInstructionScreen
     /// </summary>
     [XmlElement("InstructionsDisplayID", Form = XmlSchemaForm.Unqualified)]
     public int InstructionsDisplayID { get; set; } = -1;
+
+    /// <summary>
+    /// The type of event this class represents,
+    /// </summary>
+    public override EventType EventType { get; } = EventType.KeyedInstructionScreen;
 
     /// <summary>
     /// Initializes a new instance of the KeyedInstructionScreen class.

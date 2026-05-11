@@ -15,13 +15,13 @@ public sealed class Layout {
     /// The interior width represents the interior width of the test window
     /// </summary>
     [XmlElement("InteriorWidth", Form = XmlSchemaForm.Unqualified)]
-    public int InteriorWidth { get; set; }
+    public int InteriorWidth { get; set; } = 500;
 
     /// <summary>
     /// The interior height represents the interior width of the test window
     /// </summary>
     [XmlElement("InteriorHeight", Form = XmlSchemaForm.Unqualified)]
-    public int InteriorHeight { get; set; } = 0;
+    public int InteriorHeight { get; set; } = 500;
 
     /// <summary>
     /// The border width is the width of the border around the test window. If the border width is 0, then there is no border
@@ -33,37 +33,37 @@ public sealed class Layout {
     /// The response wiidth represents the width of the response area. If the response width is 0, then there is no response area
     /// </summary>
     [XmlElement("ResponseWidth", Form = XmlSchemaForm.Unqualified)]
-    public int ResponseWidth { get; set; } = 0;
+    public int ResponseWidth { get; set; } = 1000;
 
     /// <summary>
     /// The response height represents the height of the response area. If the response height is 0, then there is no response area
     /// </summary>
     [XmlElement("ResponseHeight", Form = XmlSchemaForm.Unqualified)]
-    public int ResponseHeight { get; set; } = 0;
+    public int ResponseHeight { get; set; } = 1000;
 
     /// <summary>
     /// Gets or sets the color used to draw the border.
     /// </summary>
     [XmlIgnore]
-    public Color BorderColor { get; set; } = Colors.Black;
+    public Color BorderColor { get; set; } = Colors.White;
 
     /// <summary>
     /// Gets or sets the background color for the control.
     /// </summary>
     [XmlIgnore]
-    public Color BackColor { get; set; } = Colors.White;
+    public Color BackColor { get; set; } = Colors.Black;
 
     /// <summary>
     /// Gets or sets the color used to draw the outline.
     /// </summary>
     [XmlIgnore]
-    public Color OutlineColor { get; set; } = Colors.Black;
+    public Color OutlineColor { get; set; } = Colors.LimeGreen;
 
     /// <summary>
     /// Gets or sets the background color of the page.
     /// </summary>
     [XmlIgnore]
-    public Color PageBackColor { get; set; } = Colors.White;
+    public Color PageBackColor { get; set; } = Colors.Black;
 
     /// <summary>
     /// Gets or sets the red component of the border color as a two-digit hexadecimal string.

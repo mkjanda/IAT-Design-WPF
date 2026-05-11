@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
 using System.Xml.Schema;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.ConfigFile;
 
@@ -10,7 +11,7 @@ namespace IAT.Core.ConfigFile;
 /// Represents a mock item instruction screen, which is used for testing purposes to simulate the behavior of an instruction screen in the application.
 /// </summary>
 [XmlRoot("MockItemInstructionScreen")]
-public class MockItemInstructionScreen 
+public class MockItemInstructionScreen : Event
 {
     /// <summary>
     /// THe key the user must depress to continue past the instruction screen. This is used to test the functionality of 
@@ -68,6 +69,13 @@ public class MockItemInstructionScreen
     /// </summary>
     [XmlElement("OutlineRightResponse", Form = XmlSchemaForm.Unqualified)]
     public bool OutlineRightResponse { get; set; } = false;
+
+    /// <summary>
+    /// The type of event associated with this instruction screen, which is used to identify the specific behavior and handling 
+    /// logic for this type of screen within the application. This property is essential for ensuring that the correct processing 
+    /// occurs when this event is triggered during testing scenarios.
+    /// </summary>
+    public override EventType EventType { get; } = EventType.MockItemInstructionScreen;
 
     /// <summary>
     /// Initializes a new instance of the MockItemInstructionScreen class.

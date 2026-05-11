@@ -80,13 +80,13 @@ namespace IAT.Core.Enumerations
         private sealed record _IATBlock() : ContentsItemType("IATBlock", "A block containing trials for an Implicit Association Test.", true, true, typeof(Block));
         private sealed record _Trial() : ContentsItemType("Trial", "A single trial within a block, representing a stimulus presentation and response.", false, false, typeof(Trial));
         private sealed record _BlankInstructionScreen() : ContentsItemType("BlankInstructionScreen", "An instruction screen with no content, used for pacing or breaks.", false, false, 
-            typeof(InstructionsScreen));
+            typeof(InstructionScreen));
         private sealed record _TextInstructionScreen() : ContentsItemType("TextInstructionScreen", "An instruction screen containing text content for participant guidance.", false, false, 
-            typeof(TextInstructionsScreen));
+            typeof(TextInstructionScreen));
         private sealed record _KeyedInstructionSreen() : ContentsItemType("KeyedInstructionScreen", "An instruction screen that includes response key information for participant guidance.", false, false,
-            typeof(KeyedInstructionsScreen));
+            typeof(KeyedInstructionScreen));
         private sealed record _MockItemInstructionScreen() : ContentsItemType("MockItemInstructionScreen", "An instruction screen that simulates a trial item to demonstrate the task to participants.", false, false,
-            typeof(MockItemInstructionsScreen));
+            typeof(MockItemInstructionScreen));
         private sealed record _Survey() : ContentsItemType("Survey", "A survey item used to collect participant responses or demographic information.", true, false,
             typeof(Survey));
     }

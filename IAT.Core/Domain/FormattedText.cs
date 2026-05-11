@@ -39,6 +39,6 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets the layout item associated with this instance.
         /// </summary>
-        public LayoutItem LayoutItem { get; set; }
+        public LayoutItem LayoutItem { get; init; }
     }
 }

@@ -4,52 +4,42 @@ using System.Collections.Generic;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using IAT.Core.Enumerations;
+using IAT.Core.Models;
+
+
 namespace IAT.Core.Domain
 {
     /// <summary>
     /// Defined an instruction screen with a response key in the uppper corners and a blockof text taking upthe remainder of the
     /// test box
     /// </summary>
-    internal sealed partial class KeyedInstructionsScreen : InstructionsScreen
+    public class KeyedInstructionScreen : InstructionScreen, IFormattedText
     {
         /// <summary>
         /// Gets or sets the unique identifier for the response key.
         /// </summary>
-        [ObservableProperty]
-        private Guid _responseKeyId;
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
-        /// Gets or sets the instructions associated with the current context.
+        /// Gets or sets the unique identifier for the left response.
         /// </summary>
-        [ObservableProperty]
-        private string _instructions = string.Empty;
+        public Guid LeftResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
-        /// Gets or sets the font family used to display instructions.
+        /// Gets or sets the unique identifier of the right response.
         /// </summary>
-        [ObservableProperty]
-        private string _instructionsFontFamily = "Arial";     // default that always exists
+        public Guid RightResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
-        /// Gets or sets the size, in bytes, of the instructions area.
+        /// Gets the layout item associated with keyed instructions.
         /// </summary>
-        /// <remarks>This property typically represents the size of the Import Address Table (IAT) or a
-        /// similar instructions region. Adjust this value if the instructions area size differs from the
-        /// default.</remarks>
-        [ObservableProperty]
-        private double _instructionsSize = 48.0;          // typical IAT size   
+        public override LayoutItem LayoutItem { get; init; } = LayoutItem.KeyedInstructions;
 
         /// <summary>
-        /// Gets or sets the color of the instructions as a hexadecimal string.
+        ///  Validates the current object and returns the result of the validation.
         /// </summary>
-        [ObservableProperty]
-        private string _instructionsColorHex = "#FFFFFF";     // or use Color struct if you prefer
-
-        /// <summary>
-        /// Initializes a new instance of the KeyedInstructionsScreen class.
-        /// </summary>
-        public KeyedInstructionsScreen() { }
-
+        /// <returns>A <see cref="ValidationResult"/> containing any validation errors found. The result will include errors if
+        /// <c>ResponseKeyId</c> is not set to a valid <see cref="Guid"/> or if <c>Instructions</c> is empty.</returns>
         public override ValidationResult Validate()
         {
             var result = base.Validate();

@@ -29,5 +29,10 @@ namespace IAT.Core.Models
         /// Gets or sets the text style applied to the content.
         /// </summary>
         TextStyle Style { get; set; }
+
+        /// <summary>
+        /// Gets or sets the unique identifier for the entity.
+        /// </summary>
+        Guid Id { get; set; }
     }
 }

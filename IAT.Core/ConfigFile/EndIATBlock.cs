@@ -11,11 +11,11 @@ namespace IAT.Core.ConfigFile;
 /// identification and handling of this event type in the application. This class serves as a marker for the end of an IAT block, enabling appropriate 
 /// processing and logic related to the completion of blocks within the test structure.
 /// </summary>
-public sealed class EndIATBlock
+public sealed class EndIATBlock : Event
 {
     /// <summary>
     /// The type of event that is being represented. This is used to determine how to process the event and what properties it may have. 
     /// For this class, it is set to EventType.EndIATBlock.
     /// </summary>
-    public EventType EventType => EventType.EndIATBlock;
+    public override EventType EventType => EventType.EndIATBlock;
 }
