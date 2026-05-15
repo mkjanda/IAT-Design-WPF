@@ -27,12 +27,12 @@ namespace IAT.Core.Domain
         /// <summary>
         /// The guid of the left response key associated with the stimulus on this instruction screen.
         /// </summary>
-        public Guid LeftResponseKeyId { get; set; } = Guid.Empty;
+        public Guid LeftResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Gets or sets the unique identifier for the right response key.
         /// </summary>
-        public Guid RightResponseKeyId { get; set; } = Guid.Empty;
+        public Guid RightResponseId { get; set; } = Guid.Empty;
 
         /// <summary>
         /// A value that indicates whether an error mark should be displayed on the instruction screen. This property is used to 
@@ -73,10 +73,10 @@ namespace IAT.Core.Domain
             var result = base.Validate();
             if (StimulusId == Guid.Empty)
                 result.AddError("StimulusId must be set to a valid Guid.");
-            if (LeftResponseKeyId == Guid.Empty)
-                result.AddError("LeftResponseKeyId must be set to a valid Guid.");
-            if (RightResponseKeyId == Guid.Empty)
-                result.AddError("RightResponseKeyId must be set to a valid Guid.");
+            if (LeftResponseId == Guid.Empty)
+                result.AddError("LeftResponseId must be set to a valid Guid.");
+            if (RightResponseId == Guid.Empty)
+                result.AddError("RightResponseId must be set to a valid Guid.");
             if (Text == string.Empty)
                 result.AddError("Text cannot be empty.");
             return result;

@@ -20,60 +20,59 @@ namespace IAT.Core.Domain
         /// automatically generated when a new instance of LayoutConfiguration is created, ensuring that each layout can be uniquely identified and 
         /// associated with specific tests or configurations as needed.
         /// </summary>
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; } = Guid.NewGuid();
 
         /// <summary>
         /// Gets or sets the rectangle that defines the interior area available for content layout.
         /// </summary>
-        public Rect InteriorRect { get; set; } = _defaultInteriorRect;
+        public Rect InteriorRect { get; } = _defaultInteriorRect;
 
         /// <summary>
         /// Gets or sets the rectangular area in which the stimulus is displayed.
         /// </summary>
-        public Rect StimulusRect { get; set; } = _defaultStimulusRect;
+        public Rect StimulusRect { get; } = _defaultStimulusRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for the left key area.
         /// </summary>
-        public Rect LeftKeyRect { get; set; } = _defaultLeftKeyRect;
+        public Rect LeftKeyRect { get; } = _defaultLeftKeyRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for the right key area.
         /// </summary>
-        public Rect RightKeyRect { get; set; } = _defaultRightKeyRect;
+        public Rect RightKeyRect { get; } = _defaultRightKeyRect;
 
         /// <summary>
         /// Gets or sets the rectangle that defines the area used to display an error mark.
         /// </summary>
-        public Rect ErrorMarkRect { get; set; } = _defaultErrorMarkRect;
+        public Rect ErrorMarkRect { get; } = _defaultErrorMarkRect;
 
         /// <summary>
         /// Gets  or sets the rectangle that defines the area for displaying block instructions.
         /// </summary>
-        public Rect BlockInstructionsRect { get; set; } = _defaultBlockInstructionsRect;
+        public Rect BlockInstructionsRect { get; } = _defaultBlockInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for displaying mock item instructions.
         /// </summary>
-        public Rect MockItemInstructionsRect { get; set; } = _defaultMockItemInstructionsRect;
+        public Rect MockItemInstructionsRect { get; } = _defaultMockItemInstructionsRect;
 
         /// <summary>
         /// Gets or sets the rectangular region used for displaying keyed instructions.
         /// </summary>
-        public Rect KeyedInstructionsRect { get; set; } = _defaultKeyedInstructionsRect;
+        public Rect KeyedInstructionsRect { get; } = _defaultKeyedInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle that defines the area for displaying text instructions.
         /// </summary>
-        public Rect TextInstructionsRect { get; set; } = _defaultTextInstructionsRect;
+        public Rect TextInstructionsRect { get; } = _defaultTextInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for displaying continue instructions.
         /// </summary>
-        public Rect ContinueInstructionsRect { get; set; } = _defaultContinueInstructionsRect;
+        public Rect ContinueInstructionsRect { get; } = _defaultContinueInstructionsRect;
 
-        TextStyle DefaultKeyStyle { get; set; } = new TextStyle { FontFamily = "Segoe UI", FontSize = 24, FontColor = Colors.Black };
-
+        TextStyle DefaultKeyStyle { get; } = new TextStyle { FontFamily = "Segoe UI", FontSize = 24, FontColor = Colors.Black };
 
         /// <summary>
         /// Contains the user overrides of the sizes of the various layout elements. The keys in the dictionary represent the layout items 
@@ -93,7 +92,7 @@ namespace IAT.Core.Domain
         private static readonly Rect _defaultKeyedInstructionsRect = new Rect(15, 135, 570, 410);
         private static readonly Rect _defaultTextInstructionsRect = new Rect(15, 15, 570, 530);
         private static readonly Rect _defaultContinueInstructionsRect = new Rect(15, 570, 570, 30);
-
+/*
         /// <summary>
         /// Restores all configurable rectangles to their default values.
         /// </summary>
@@ -112,6 +111,6 @@ namespace IAT.Core.Domain
             KeyedInstructionsRect = _defaultKeyedInstructionsRect;
             TextInstructionsRect = _defaultTextInstructionsRect;
             ContinueInstructionsRect = _defaultContinueInstructionsRect;
-        }
+        }*/
     }
 }

@@ -78,7 +78,7 @@ namespace IAT.Core.Services.Network
         private readonly ArraySegment<byte> ReceiveBuffer = new();
         private readonly TransactionState _transactionState;
         private readonly IDialogService _dialogService;
-        private readonly IStringResourceService _stringResourceService;
+        private readonly StringResourceService _stringResourceService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
         public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
         private readonly IMediator _mediator;
@@ -93,7 +93,7 @@ namespace IAT.Core.Services.Network
         /// <param name="transactionState">The state object used to manage transaction state.</param>
         /// <param name="mediator">The mediator used for handling requests and notifications.</param>
         /// <param name="dialogService">The service used to display dialog notifications to the user.</param>
-        public WebSocketService(IStringResourceService stringResourceService, IXmlDeserializationService xmlDeserializationService, 
+        public WebSocketService(StringResourceService stringResourceService, IXmlDeserializationService xmlDeserializationService, 
             TransactionState transactionState, IMediator mediator, IDialogService dialogService)
         {
             _stringResourceService = stringResourceService;

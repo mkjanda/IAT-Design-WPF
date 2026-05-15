@@ -13,7 +13,7 @@ namespace IAT_Design_WPF.Services
     /// <remarks>This service offers a consistent way to obtain localized strings from application resources.
     /// If a resource key is not found, a fallback string indicating the missing resource is returned instead of
     /// throwing an exception. This behavior helps prevent application crashes due to missing resources.</remarks>
-    public sealed class StringResourceService : IStringResourceService
+    public sealed class StringResourceService : IAT.Core.Services.IStringResourceService
     {
         /// <summary>
         /// Retrieves the localized string resource associated with the specified resource key.

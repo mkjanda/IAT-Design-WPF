@@ -10,7 +10,7 @@ namespace IAT.Core.Services;
 /// <summary>
 /// Defines a service for handling image stimuli within a package, including importing images and retrieving resized bitmaps for display.
 /// </summary>
-public interface IImagePackageService
+public interface ImagePackageService
 {
     /// <summary>
     /// Imports the specified text stimulus into the given package asynchronously.
@@ -54,7 +54,7 @@ public interface IImagePackageService
 /// image data within the package. Methods in this service may throw exceptions if validation fails or if required
 /// stimulus properties are not set. Thread safety is not guaranteed; callers should ensure appropriate synchronization
 /// if accessing the service from multiple threads.</remarks>
-public class ImagePackageService : IImagePackageService
+public class ImagePackageService : ImagePackageService
 {
     /// <summary>
     /// Initializes a new instance of the ImagePackageService class.

@@ -16,7 +16,7 @@ namespace IAT.Core.Handlers
     public class ItemSlidesReadyHandler : IRequestHandler<ItemSlidesReadyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
-        private readonly IStringResourceService _stringResourceService;
+        private readonly StringResourceService _stringResourceService;
         private readonly IDialogService _dialogService;
         private readonly TransactionState _transactionState;
 
@@ -32,7 +32,7 @@ namespace IAT.Core.Handlers
         /// <param name="stringResourceService">The string resource service used to retrieve localized messages.</param>
         /// <param name="dialogService">The dialog service used to show notifications to the user.</param>
         /// <param name="transactionState">The transaction state used to manage the transaction process.</param>
-        public ItemSlidesReadyHandler(IWebSocketService webSocketService, IStringResourceService stringResourceService,
+        public ItemSlidesReadyHandler(IWebSocketService webSocketService, StringResourceService stringResourceService,
             IDialogService dialogService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;

@@ -97,7 +97,7 @@ public class ImageGenerationService : IImageGenerationService
     private readonly ILayoutCalculatorService _layout;
     private readonly IatTest _iat;
     private readonly IKeyService _keyService;
-    private readonly IProjectPackageService _packageService;
+    private readonly ProjectPackageService _packageService;
 
     /// <summary>
     /// Initializes a new instance of the ImageGenerationService class with the specified dependencies.
@@ -106,7 +106,7 @@ public class ImageGenerationService : IImageGenerationService
     /// <param name="iat">The IatTest instance that provides test configuration and data. Cannot be null.</param>
     /// <param name="keyService">The service responsible for key management and related operations. Cannot be null.</param>
     /// <param name="packageService">The service used to manage project packages required for image generation. Cannot be null.</param>
-    public ImageGenerationService(ILayoutCalculatorService layoutCalculatorService, IatTest iat, IKeyService keyService, IProjectPackageService packageService)
+    public ImageGenerationService(ILayoutCalculatorService layoutCalculatorService, IatTest iat, IKeyService keyService, ProjectPackageService packageService)
     {
         _layout = layoutCalculatorService;
         _iat = iat;

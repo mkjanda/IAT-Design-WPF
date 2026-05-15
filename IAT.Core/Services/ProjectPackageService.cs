@@ -1,5 +1,4 @@
-﻿using com.sun.tools.corba.se.idl;
-using IAT.Core.Domain;
+﻿using IAT.Core.Domain;
 using IAT.Core.Exceptions;
 using System.IO;
 using System.IO.Packaging;
@@ -77,14 +76,14 @@ public class ProjectPackageService : IProjectPackageService
     };
     private readonly Dictionary<Guid, byte[]> _imageCache = new();
     private readonly Dictionary<Guid, string> _imageTypes = new();
-    private readonly IImagePackageService _imagePackageService;
+    private readonly ImagePackageService _imagePackageService;
     private readonly Dictionary<Guid, string> _originalNames = new();   
 
     /// <summary>
     /// Initializes a new instance of the ProjectPackageService class with the specified image package service.
     /// </summary>
     /// <param name="imagePackageService">The image package service to be used by this instance. Cannot be null.</param>
-    public ProjectPackageService(IImagePackageService imagePackageService) => _imagePackageService = imagePackageService;
+    public ProjectPackageService(ImagePackageService imagePackageService) => _imagePackageService = imagePackageService;
 
     /// <summary>
     /// Asynchronously saves the specified IAT test to a file at the given path.

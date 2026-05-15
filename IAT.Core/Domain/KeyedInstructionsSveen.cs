@@ -16,11 +16,6 @@ namespace IAT.Core.Domain
     public class KeyedInstructionScreen : InstructionScreen, IFormattedText
     {
         /// <summary>
-        /// Gets or sets the unique identifier for the response key.
-        /// </summary>
-        public Guid Id { get; set; } = Guid.NewGuid();
-
-        /// <summary>
         /// Gets or sets the unique identifier for the left response.
         /// </summary>
         public Guid LeftResponseId { get; set; } = Guid.Empty;
@@ -43,9 +38,11 @@ namespace IAT.Core.Domain
         public override ValidationResult Validate()
         {
             var result = base.Validate();
-            if (ResponseKeyId == Guid.Empty)
-                result.AddError("ResponseKeyId must be set to a valid Guid.");
-            if (Instructions == string.Empty)
+            if (LeftResponseId == Guid.Empty)
+                result.AddError("LeftResponseId must be set to a valid Guid.");
+            if (RightResponseId == Guid.Empty)
+                result.AddError("RightResponseId must be set to a valid Guid.");
+            if (Text == string.Empty)
                 result.AddError("Instructions cannot be empty.");
             return result;
         }

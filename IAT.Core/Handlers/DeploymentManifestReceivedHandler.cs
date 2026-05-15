@@ -17,11 +17,11 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
-        private readonly IStringResourceService _stringResourceService;
+        private readonly StringResourceService _stringResourceService;
         private readonly TestPackage _test;        
         
         public DeploymentManifestReceivedHandler(IWebSocketService webSocketService, TransactionState state, 
-            IStringResourceService stringResourceService, TestPackage test)
+            StringResourceService stringResourceService, TestPackage test)
         {
             _webSocketService = webSocketService;
             _transactionState = state;

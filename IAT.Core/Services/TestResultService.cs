@@ -22,6 +22,7 @@ namespace IAT.Core.Services
         private readonly IResultRetrievalService _resultRetrievalService;
         private readonly ILocalStorageService _localStorageService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
+        private readonly TransactionState _state;
         private ConfigFile.IATConfigFile? ConfigFile { get; set; } = null;
         private List<ResultPacket> Results { get; set; } = new();
 
@@ -31,15 +32,17 @@ namespace IAT.Core.Services
         /// <summary>
         /// Initializes a new instance of the TestResultService class with the specified dependencies.
         /// </summary>
-        /// <param name="webSocketService">The service used to manage WebSocket communication for real-time updates.</param>
         /// <param name="localStorageService">The service used to access and manage local storage for persisting data.</param>
+        /// <param name="resultRetrievalService">The service responsible for retrieving test results from a remote source, such as a web socket.</param>
         /// <param name="xmlDeserializationService">The service used to deserialize XML data into application objects.</param>
-        public TestResultService(IWebSocketService webSocketService, ILocalStorageService localStorageService,
-            IXmlDeserializationService xmlDeserializationService)
+        /// <param name="state">The transaction state object that tracks the current state of transactions.</param>
+        public TestResultService(ILocalStorageService localStorageService, IResultRetrievalService resultRetrievalService,
+            IXmlDeserializationService xmlDeserializationService, TransactionState state)
         {
-            _webSocketService = webSocketService;
             _localStorageService = localStorageService;
             _xmlDeserializationService = xmlDeserializationService;
+            _resultRetrievalService = resultRetrievalService;
+            _state = state;
         }
 
         /// <summary>
@@ -62,7 +65,7 @@ namespace IAT.Core.Services
                 ConfigFile = ser.Deserialize(xDoc.CreateReader()) as ConfigFile.IATConfigFile ?? throw new NullReferenceException();
                 ser = new XmlSerializer(typeof(List<ResultPacket>), new XmlRootAttribute("ResultSet"));
                 Results = ser.Deserialize(xDoc.CreateReader()) as List<ResultPacket> ?? throw new NullReferenceException();
-                var rsa = RSA.Create(_resultRetrievalService.RSA.GetRSAParameters());
+                var rsa = RSA.Create(_state.RSA.GetRSAParameters());
                 foreach (var resultPacket in Results)
                 {
                     var resultBytes = Convert.FromBase64String(resultPacket.ResultData);

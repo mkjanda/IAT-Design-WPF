@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 
-
 namespace IAT.Core.Domain;
 
 /// <summary>
@@ -32,12 +31,42 @@ public partial class IatTest : ObservableObject
     public Layout Layout { get; set; } = new Layout();
 
     /// <summary>
+    /// A read-only collection of all trials in the test. This property provides a snapshot of the current trials, allowing clients to access the trial data without
+    /// directly modifying the underlying collection.
+    /// </summary>
+    public IReadOnlyList<Trial> AllTrials => Trials.ToList().AsReadOnly();
+
+    /// <summary>
+    /// A read-only list of block objects representing the structure of the test. Each block contains a 
+    /// collection of trials, and this property provides a way to access all blocks without allowing direct 
+    /// modification of the underlying collection.
+    /// </summary>
+    public IReadOnlyList<Block> AllBlocks => Blocks.ToList().AsReadOnly();
+
+    /// <summary>
+    /// Gets a read-only list of all stimuli.
+    /// </summary>
+    public IReadOnlyList<Stimulus> AllStimuli => Stimuli.ToList().AsReadOnly();
+
+    /// <summary>
+    /// Gets a read-only list of all instruction screens.
+    /// </summary>
+    public IReadOnlyList<InstructionScreen> AllInstructionScreens => InstructionScreens.ToList().AsReadOnly();
+
+    /// <summary>
+    /// Gets a read-only list of all keys used in the test. This collection provides access to the key 
+    /// configurations without allowing direct modifications, ensuring that any changes to the keys are 
+    /// managed through controlled methods or properties.
+    /// </summary>
+    public IReadOnlyList<Key> AllKeys => Keys.ToList().AsReadOnly();
+
+    /// <summary>
     /// Gets the collection of trials associated with this instance.
     /// </summary>
     /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
     /// additions or removals of trials. Modifying the collection will not automatically persist changes unless
     /// explicitly handled elsewhere.</remarks>
-    public ObservableCollection<Trial> Trials { get; } = new();
+    private ObservableCollection<Trial> Trials { get; } = new();
 
     /// <summary>
     /// Gets the collection of blocks contained in the document.
@@ -45,7 +74,7 @@ public partial class IatTest : ObservableObject
     /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
     /// additions or removals of blocks. Modifying the collection will update the document's structure
     /// accordingly.</remarks>
-    public ObservableCollection<Block> Blocks { get; } = new();
+    private ObservableCollection<Block> Blocks { get; } = new();
 
     /// <summary>
     /// Gets the collection of stimuli associated with this instance.
@@ -53,19 +82,19 @@ public partial class IatTest : ObservableObject
     /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
     /// additions or removals of stimuli. Modifications to the collection will be reflected in any data bindings or
     /// observers.</remarks>
-    public ObservableCollection<Stimulus> Stimuli { get; } = new();
+    private ObservableCollection<Stimulus> Stimuli { get; } = new();
 
     /// <summary>
     /// Gets the collection of instruction screens displayed to the user.
     /// </summary>
-    public ObservableCollection<InstructionScreen> InstructionScreens { get; } = new();
+    private ObservableCollection<InstructionScreen> InstructionScreens { get; } = new();
 
     /// <summary>
     /// Gets the collection of keys managed by this instance.
     /// </summary>
     /// <remarks>The returned collection is observable. Changes to the collection, such as adding or removing
     /// keys, will raise collection change notifications. This property never returns null.</remarks>
-    public ObservableCollection<Key> Keys { get; } = new();
+    private ObservableCollection<Key> Keys { get; } = new();
 
 
     /// <summary>
@@ -112,7 +141,8 @@ public partial class IatTest : ObservableObject
     public Stimulus? GetStimulusById(Guid id) => _stimulusCache.TryGetValue(id, out var stimulus) ? stimulus : null;
 
     /// <summary>
-    /// Returns the trial with the specified ID, or null if not found. This is useful for validation and other operations that need to look up trials by their unique identifier.
+    /// Returns the trial with the specified ID, or null if not found. This is useful for validation and other 
+    /// operations that need to look up trials by their unique identifier.
     /// </summary>
     /// <param name="id">The unique identifier of the trial.</param>
     /// <returns>The trial if found; otherwise, null.</returns>
@@ -144,9 +174,31 @@ public partial class IatTest : ObservableObject
     /// Retrieves the formatted text associated with the specified identifier, if it exists.
     /// </summary>
     /// <param name="id">The unique identifier of the formatted text to retrieve.</param>
-    /// <returns>The formatted text associated with the specified identifier, or null if no such entry exists.</returns>
+    /// <returns>The formatted text associated with the specified identifier, or null if 
+    /// no such entry exists.</returns>
     public FormattedText? GetFormattedTextById(Guid id) => _formattedTextCache.TryGetValue(id, out var formattedText) ? formattedText : null;
 
+    /// <summary>
+    /// Clears and rebuilds all internal caches from their respective source collections.
+    /// </summary>
+    public void RebuildCaches()
+    {
+        _stimulusCache.Clear();
+        foreach (var stimulus in Stimuli)
+            _stimulusCache[stimulus.Id] = stimulus;
+        _trialCache.Clear();
+        foreach (var trial in Trials)
+            _trialCache[trial.Id] = trial;
+        _instructionCache.Clear();
+        foreach (var instruction in InstructionScreens)
+            _instructionCache[instruction.Id] = instruction;
+        _blockCache.Clear();
+        foreach (var block in Blocks)
+            _blockCache[block.Id] = block;
+        _keyCache.Clear();
+        foreach (var key in Keys)
+            _keyCache[key.Id] = key;
+    }
 
     private readonly Dictionary<Guid, FormattedText> _formattedTextCache = new();
     private readonly Dictionary<Guid, Block> _blockCache = new();

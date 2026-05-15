@@ -19,7 +19,7 @@ namespace IAT.Core.Handlers
     public class ResultsReadyHandler : IRequestHandler<ResultsReadyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
-        private readonly IStringResourceService _stringResourceService;
+        private readonly StringResourceService _stringResourceService;
         private readonly TransactionState _transactionState;
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace IAT.Core.Handlers
         /// <param name="webSocketService">The WebSocket service used for communication with the server.</param>
         /// <param name="stringResourceService">The string resource service used to access configuration values.</param>
         /// <param name="transactionState">The transaction state that tracks the current status and data of the ongoing transaction.</param>
-        public ResultsReadyHandler(IWebSocketService webSocketService, IStringResourceService stringResourceService, TransactionState transactionState)
+        public ResultsReadyHandler(IWebSocketService webSocketService, StringResourceService stringResourceService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
             _stringResourceService = stringResourceService;

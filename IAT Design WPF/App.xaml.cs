@@ -11,6 +11,9 @@ using IAT.Core.Serializable;
 using IAT.Core.Handlers;
 using IAT.ViewModels;
 using IAT.Core.Services.Network;
+using IAT.Core.Services.Export;
+using IAT.Core.Domain;
+using IAT.Core.Validation;
 
 namespace IAT_Design_WPF
 {
@@ -48,7 +51,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
             services.AddSingleton<IStringResourceService, StringResourceService>();
-            services.AddSingleton<IUserNotificationService, UserNotificationService>(); 
+            services.AddSingleton<UserNotificationService, UserNotificationService>(); 
             services.AddSingleton<IWebSocketService, WebSocketService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<ILayoutCalculatorService, LayoutCalculatorService>();
@@ -59,6 +62,17 @@ namespace IAT_Design_WPF
             services.AddSingleton<IResendEmailVerificationService, ResendEmailVerificationService>();
             services.AddSingleton<IResultRetrievalService, ResultRetrievalService>();
             services.AddSingleton<ITestDeploymentService, TestDeploymentService>();
+            services.AddSingleton<IBlockExportProcessor, BlockExportProcessor>();
+            services.AddSingleton<IStimulusExportProcessor, StimulusExportProcessor>();
+            services.AddSingleton<ITestExportService, TestExportService>(); 
+            services.AddSingleton<ITextExportProcessor, TextExportProcessor>();
+            services.AddSingleton<IFileManifestBuilder, FileManifestBuilder>();
+            services.AddSingleton<IValidator<IatTest>, IatTestValidator>();
+            services.AddSingleton<IValidator<Block>, BlockValidator>();
+            services.AddSingleton<IValidator<Stimulus>, StimulusValidator>();
+            services.AddSingleton<IValidator<InstructionScreen>, InstructionScreenValidator>();
+            services.AddSingleton<IValidator<Trial>, TrialValidator>();
+
             services.AddSingleton<TestPackage>();
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());

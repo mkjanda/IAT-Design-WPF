@@ -10,7 +10,48 @@ using MediatR;
 
 namespace IAT.Core.Serializable
 {
+    /// <summary>
+    /// Specifies the types of resources that can be managed or referenced within the application.
+    /// </summary>
+    /// <remarks>Use this enumeration to indicate the kind of resource being handled, such as slides,
+    /// configuration settings, files, images, error markers, or key outlines. The meaning and usage of each value
+    /// depend on the application context where the resource is required.</remarks>
+    public enum FileResourceType { 
+        /// <summary>
+        /// Gets or sets the slide item associated with this instance.
+        /// </summary>
+        itemSlide, 
 
+        /// <summary>
+        /// Gets or sets the test configuration settings used by the application.
+        /// </summary>
+        testConfiguration, 
+
+        /// <summary>
+        /// Updates the contents of a file with new data.
+        /// </summary>
+        updateFile, 
+
+        /// <summary>
+        /// Gets or sets the image associated with this instance.
+        /// </summary>
+        image, 
+
+        /// <summary>
+        /// Gets or sets the error marker associated with the current operation.
+        /// </summary>
+        errorMark, 
+
+        /// <summary>
+        /// Gets or sets the outline of the key, typically used to define the visual shape or border of a key element.
+        /// </summary>
+        keyOutline 
+    };
+
+    /// <summary>
+    /// Represents a request to execute a manifest operation and obtain a transaction result.
+    /// </summary>
+    /// <param name="manifest">The manifest to be executed as part of the transaction. Cannot be null.</param>
     public record ManifestCommand(Manifest manifest) : IRequest<TransactionResult>;
 
     /// <summary>
@@ -62,7 +103,6 @@ namespace IAT.Core.Serializable
     /// functionality.</remarks>
     public class ManifestFile : FileEntity
     {
-        public enum EResourceType { itemSlide, testConfiguration, updateFile, image, errorMark, keyOutline };
 
         /// <summary>
         /// Gets or sets the type of the file entity.
@@ -72,8 +112,8 @@ namespace IAT.Core.Serializable
         /// <summary>
         /// Gets or sets the type of resource represented by this instance.
         /// </summary>
-        [XmlElement("ResourceType", Form = XmlSchemaForm.Unqualified, Type = typeof(EResourceType))]
-        public EResourceType ResourceType { get; set; }
+        [XmlElement("ResourceType", Form = XmlSchemaForm.Unqualified, Type = typeof(FileResourceType))]
+        public FileResourceType ResourceType { get; set; }
 
         /// <summary>
         /// Gets or sets the unique identifier for the associated resource.

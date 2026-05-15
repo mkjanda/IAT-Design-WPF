@@ -19,7 +19,7 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;
-        private readonly IStringResourceService _stringResourceService;
+        private readonly StringResourceService _stringResourceService;
         private readonly TransactionState _transactionState;
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace IAT.Core.Handlers
         /// <param name="dialogService">The dialog service used to show confirmation dialogs to the user.</param>
         /// <param name="stringResourceService">The string resource service used to retrieve localized messages.</param>
         /// <param name="transactionState">The transaction state used to manage the transaction process.</param>
-        public IATExistsDeploymentHandler(IWebSocketService webSocketService, IDialogService dialogService, IStringResourceService stringResourceService, 
+        public IATExistsDeploymentHandler(IWebSocketService webSocketService, IDialogService dialogService, StringResourceService stringResourceService, 
             TransactionState transactionState)
         {
             _webSocketService = webSocketService;

@@ -7,7 +7,7 @@ using IAT.Core.Services;
 
 namespace IAT_Design_WPF.Services
 {
-    public class UserNotificationService : IUserNotificationService
+    public class UserNotificationService : IAT.Core.Services.IUserNotificationService
     {
         public void ShowError(ErrorNotificationMessage messsage)
         {

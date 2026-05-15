@@ -14,7 +14,7 @@ namespace IAT.ViewModels
     /// </summary>
     public partial class TestDesignerViewModel : ObservableObject
     {
-        private readonly IProjectPackageService _packageService;
+        private readonly ProjectPackageService _packageService;
 
         [ObservableProperty]
         private ObservableCollection<Core.Domain.Block> blocks = new();
@@ -23,7 +23,7 @@ namespace IAT.ViewModels
         private Core.Domain.Block? selectedBlock;
 
 
-        public TestDesignerViewModel(IProjectPackageService packageService)
+        public TestDesignerViewModel(ProjectPackageService packageService)
         {
             _packageService = packageService;
         }

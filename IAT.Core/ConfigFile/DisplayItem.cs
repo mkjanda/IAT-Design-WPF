@@ -22,6 +22,12 @@ public sealed class DisplayItem
     public int Id { get; set; } = -1;
 
     /// <summary>
+    /// Gets or sets the unique identifier for the object.
+    /// </summary>
+    [XmlIgnore]
+    public Guid Guid { get; set; } = Guid.Empty;
+
+    /// <summary>
     /// Gets or sets the name of the file associated with this instance.
     /// </summary>
     [XmlElement("Filename", Form = XmlSchemaForm.Unqualified)]
