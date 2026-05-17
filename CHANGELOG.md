@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Product activation added to ensure that users have a valid product key and verified email address before they can access certain features of the application, such as uploading images to the server for display in the IAT test. 
 - Added preparation of the test for deployment, including the generation of necessary files and resources, as well as the packaging of the test configuration and associated data for deployment to the server. 
 - Added a collection of services in IAT.Core.Services.Export to replace the TestPackage and TestExportService "god objects." These services are responsible for handling the export of test configurations and associated data in a modular and maintainable way, allowing for better separation of concerns and improved code organization. The services may include functionality for generating the necessary files and resources for deployment, as well as packaging the test configuration and associated data into a format that can be easily deployed to the server.
+- Added generation of item slides to the test preparation process, which can be used to create the necessary slides for the IAT test based on the test configuration and associated data. 
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 
@@ -50,6 +51,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed the old layout system, which was based on WinForms patterns and was not well-suited to the needs of the application. 
 - The old TestPackage and TestExportService "god objects" have been removed and replaced with a collection of services in IAT.Core.Services.Export that handle the export of test configurations and associated data in a modular and maintainable way.
 ### Fixed
+- Repaired the IAT.Core.Services.ImageGenerationService following a reworking of data flow surroundning test packaaging.
 ### Security
 - Enhanced the security of product activation to a public/private AES key exchange. Product activation is necessitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.
 - Altered the handshaking algorithm with the server. It is now limited to a challenge/response exchange revolving around the AES encryption of a random string. This eliminates a web socket transaction from the process, and cuts "security for the sake of security."

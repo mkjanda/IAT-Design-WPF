@@ -9,11 +9,25 @@ using IAT.Core.Serializable;
 
 namespace IAT.Core.Services.Export
 {
+    /// <summary>
+    /// An interface defining the contract for processing blocks during the export of an IAT test. This includes handling the 
+    /// instructions, trials, and associated stimuli for each block, and adding the appropriate events to the export context 
+    /// that will be used to build the final configuration file for the IAT software.
+    /// </summary>
     public interface IBlockExportProcessor
     {
+        /// <summary>
+        /// Processes a block using the specified export context.
+        /// </summary>
+        /// <param name="block">The block to process.</param>
+        /// <param name="exportContext">The context for the export operation.</param>
         public void ProcessBlock(Block block, ExportContext exportContext);
     }
 
+    /// <summary>
+    /// Processes blocks and their instruction screens, trials, and stimuli for export by coordinating text, stimulus,
+    /// and image generation services.
+    /// </summary>
     public class BlockExportProcessor : IBlockExportProcessor
     {
         private readonly ImageGenerationService _imageGenerationService;
@@ -22,6 +36,14 @@ namespace IAT.Core.Services.Export
         private readonly IStimulusExportProcessor _stimulusExportProcessor;
         private readonly IProjectPackageService _projectPackageService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlockExportProcessor"/> class.
+        /// </summary>
+        /// <param name="imageGenerationService">Service for generating images.</param>
+        /// <param name="fileManifestBuilder">Builder for creating file manifests.</param>
+        /// <param name="textExportProcessor">Processor for exporting text content.</param>
+        /// <param name="stimulusExportProcessor">Processor for exporting stimulus content.</param>
+        /// <param name="projectPackageService">Service for managing project packages.</param>
         public BlockExportProcessor(ImageGenerationService imageGenerationService, IFileManifestBuilder fileManifestBuilder, 
             ITextExportProcessor textExportProcessor, IStimulusExportProcessor stimulusExportProcessor,
             IProjectPackageService projectPackageService)
@@ -33,6 +55,12 @@ namespace IAT.Core.Services.Export
             _projectPackageService = projectPackageService;
         }
 
+        /// <summary>
+        /// Processes a text instruction screen for export by handling text content and adding the corresponding event
+        /// to the export context.
+        /// </summary>
+        /// <param name="screen">The text instruction screen to process.</param>
+        /// <param name="exportContext">The export context containing layout rectangles, display items, and events collection.</param>
         private void ProcessTextInstructionScreen(Domain.TextInstructionScreen screen, ExportContext exportContext)
         {
             _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.TextInstructions, exportContext);
@@ -45,6 +73,12 @@ namespace IAT.Core.Services.Export
             });
         }
 
+        /// <summary>
+        /// Processes a keyed instruction screen for export by handling text content and adding the corresponding event
+        /// to the export context.
+        /// </summary>
+        /// <param name="screen">The keyed instruction screen to process.</param>
+        /// <param name="exportContext">The export context containing layout rectangles, display items, and events collection.</param>
         private void ProcessKeyedInstructionsScreen(Domain.KeyedInstructionScreen screen, ExportContext exportContext)
         {
             _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.KeyedInstructions, exportContext);
@@ -63,6 +97,14 @@ namespace IAT.Core.Services.Export
             });
         }
 
+        /// <summary>
+        /// Processes a mock item instruction screen for export, including text elements, stimulus, and event
+        /// configuration.
+        /// </summary>
+        /// <param name="screen">The mock item instruction screen to process.</param>
+        /// <param name="exportContext">The export context containing layout rectangles, test data, and event collection.</param>
+        /// <exception cref="ArgumentException">Thrown when the formatted text for the left or right response ID cannot be found.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the stimulus for the specified ID cannot be found.</exception>
         private void ProcessMockItemInstructionScreen(Domain.MockItemInstructionScreen screen, ExportContext exportContext)
         {
             _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.MockItemInstructions, exportContext);
@@ -83,6 +125,13 @@ namespace IAT.Core.Services.Export
             });
         }
 
+        /// <summary>
+        /// Processes an IAT block by handling instruction screens, formatting response and instruction text, and
+        /// generating events for each trial in the block.
+        /// </summary>
+        /// <param name="block">The block containing instruction screens, response identifiers, and trial identifiers to process.</param>
+        /// <param name="exportContext">The export context containing test data, layout information, and event collections.</param>
+        /// <exception cref="ArgumentNullException">Thrown when a required formatted text or trial cannot be found by identifier.</exception>
         public void ProcessBlock(Block block, ExportContext exportContext)
         {
             if (block.InstructionsIds.Count > 0)

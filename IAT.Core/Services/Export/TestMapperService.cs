@@ -9,23 +9,44 @@ using IAT.Core.Models;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
 using System.Windows.Media;
+using sun.nio.cs.ext;
 
 namespace IAT.Core.Services.Export
 {
+    /// <summary>
+    /// A interface defining the contract for mapping IAT test domain objects to configuration files suitable for the IAT software. This includes 
+    /// the generation of required image resources and the construction of a configuration file that represents the test structure and content in 
+    /// a format that can be serialized to JSON and consumed by the IAT software.
+    /// </summary>
     public interface ITestMapperService
     {
+        /// <summary>
+        /// Builds a configuration file from the specified test and export context.
+        /// </summary>
+        /// <param name="test">The IAT test to build the configuration file from.</param>
+        /// <param name="exportContext">The export context containing settings for the configuration file.</param>
+        /// <returns>A configuration file built from the test and export context.</returns>
         IATConfigFile BuildConfigFile(IatTest test, ExportContext exportContext);    
     }
 
+    /// <summary>
+    /// Maps IAT test domain objects to configuration files suitable for the IAT software, including generation of
+    /// required image resources.
+    /// </summary>
     public class TestMapperService : ITestMapperService
     {
         private readonly IImageGenerationService _imageGenerationService;
         private readonly IFileManifestBuilder _fileManifestBuilder;
-              
+
+        /// <summary>
+        /// Consttructs a new instance of the TestMapperService with the specified image generation service and file manifest builder.
+        /// </summary>
+        /// <param name="imageGenerationService">The service used to generate images for the test. Cannot be null.</param>
+        /// <param name="fileManifestBuilder">The builder used to create file manifests for the export process. Cannot be null.</param>
         public TestMapperService(IImageGenerationService imageGenerationService, IFileManifestBuilder fileManifestBuilder)
         {
-            _imageGenerationService = imageGenerationService;
-            _fileManifestBuilder = fileManifestBuilder;
+            _imageGenerationService = imageGenerationService ?? throw new ArgumentNullException(nameof(imageGenerationService));
+            _fileManifestBuilder = fileManifestBuilder ?? throw new ArgumentNullException(nameof(fileManifestBuilder));
         }
 
         /// <summary>
@@ -73,9 +94,12 @@ namespace IAT.Core.Services.Export
             var visual = new DrawingVisual();
             using (var dc = visual.RenderOpen())
             {
-                dc.DrawRectangle(null, new Pen(Brushes.LimeGreen, 2), new Rect(exportContext.LayoutRects.LeftKey.X, exportContext.LayoutRects.LeftKey.Y, exportContext.LayoutRects.LeftKey.Width, exportContext.LayoutRects.LeftKey.Height));
+                dc.DrawRectangle(null, new Pen(Brushes.LimeGreen, 2), new Rect(exportContext.LayoutRects.LeftKey.X, exportContext.LayoutRects.LeftKey.Y, 
+                    exportContext.LayoutRects.LeftKey.Width, exportContext.LayoutRects.LeftKey.Height));
             }
-            var renderBmp = new RenderTargetBitmap((int)exportContext.LayoutRects.LeftKey.Width + 4, (int)exportContext.LayoutRects.LeftKey.Height + 4, 96, 96, PixelFormats.Pbgra32);
+            var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+            var renderBmp = new RenderTargetBitmap((int)exportContext.LayoutRects.LeftKey.Width + 4, (int)exportContext.LayoutRects.LeftKey.Height + 4, 
+                dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
             renderBmp.Render(visual);
             memStream.Dispose(); memStream = new MemoryStream();
             encoder.Frames.Clear();

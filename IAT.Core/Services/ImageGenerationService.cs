@@ -1,13 +1,9 @@
 ﻿using IAT.Core.Domain;
 using IAT.Core.Enumerations;
+using IAT.Core.Extensions;
 using IAT.Core.Models;
-using IAT.Core.Serializable;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Packaging;
-using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -27,9 +23,9 @@ public interface IImageGenerationService
     /// Renders the visual representation of the specified key as a bitmap image.
     /// </summary>
     /// <param name="keyId">The unique identifier of the key to render. This value must correspond to a valid key in the system.</param>
-    /// <returns>A BitmapSource containing the rendered image of the key. Returns null if the key does not exist or cannot be
+    /// <returns>A RenderTargetBitmap containing the rendered image of the key. Returns null if the key does not exist or cannot be
     /// rendered.</returns>
-    BitmapSource RenderKeyToBitmap(Guid keyId);
+//    RenderTargetBitmap RenderKeyToBitmap(Guid keyId, Rect boundingRect);
 
     /// <summary>
     /// Renders the specified formatted text as a bitmap image.
@@ -37,9 +33,10 @@ public interface IImageGenerationService
     /// <remarks>The returned bitmap reflects the formatting and layout specified in the input text. The
     /// caller is responsible for managing the lifetime of the resulting BitmapSource as appropriate for their
     /// application.</remarks>
-    /// <param name="text"></param>
+    /// <param name="text">The formatted text to render. Cannot be null.</param>
+    /// <param name="boundingRect">The bounding rectangle that defines the size and position for rendering the text. Must not be null.</param>
     /// <returns>A BitmapSource containing the rendered text as an image.</returns>
-    BitmapSource RenderTextToBitmap(IFormattedText text);
+    BitmapSource RenderTextToBitmap(IFormattedText text, Rect boundingRect);
     /// <summary>
     /// Creates a BitmapSource from the specified byte array containing image data.
     /// </summary>
@@ -60,14 +57,15 @@ public interface IImageGenerationService
     /// <param name="test">The IatTest instance containing the slide data. Cannot be null.</param>
     /// <param name="blockId">The unique identifier of the block containing the slide. Must correspond to a valid block in the test.</param>
     /// <param name="trialId">The unique identifier of the trial containing the slide. Must correspond to a valid trial in the block.</param>
+    /// <param name="rects">The layout rectangles defining the positions and sizes of the slide elements. Must not be null.</param>
     /// <returns>A BitmapSource representing the rendered slide. Returns null if the slide cannot be rendered.</returns>
-    BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId);
+    BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId, LayoutRects rects);
 
     /// <summary>
     /// Renders an outline image of the key and returns it as a bitmap source.
     /// </summary>
     /// <returns>A <see cref="BitmapSource"/> representing the rendered outline of the key.</returns>
-    BitmapSource RenderKeyOutline();
+  //  BitmapSource RenderKeyOutline();
 
     /// <summary>
     /// Returns a new bitmap that is a resized version of the specified source bitmap, using the given target width and
@@ -94,24 +92,18 @@ public interface IImageGenerationService
 /// safety.</remarks>
 public class ImageGenerationService : IImageGenerationService
 {
-    private readonly ILayoutCalculatorService _layout;
-    private readonly IatTest _iat;
     private readonly IKeyService _keyService;
-    private readonly ProjectPackageService _packageService;
+    private readonly IProjectPackageService _packageService;
 
     /// <summary>
     /// Initializes a new instance of the ImageGenerationService class with the specified dependencies.
     /// </summary>
-    /// <param name="layoutCalculatorService">The service used to calculate layout information for image generation. Cannot be null.</param>
-    /// <param name="iat">The IatTest instance that provides test configuration and data. Cannot be null.</param>
     /// <param name="keyService">The service responsible for key management and related operations. Cannot be null.</param>
     /// <param name="packageService">The service used to manage project packages required for image generation. Cannot be null.</param>
-    public ImageGenerationService(ILayoutCalculatorService layoutCalculatorService, IatTest iat, IKeyService keyService, ProjectPackageService packageService)
+    public ImageGenerationService(IKeyService keyService, IProjectPackageService packageService)
     {
-        _layout = layoutCalculatorService;
-        _iat = iat;
-        _keyService = keyService;
-        _packageService = packageService;
+        _keyService = keyService ?? throw new ArgumentNullException(nameof(keyService));
+        _packageService = packageService ?? throw new ArgumentNullException(nameof(packageService));
     }
 
     /// <summary>
@@ -120,24 +112,28 @@ public class ImageGenerationService : IImageGenerationService
     /// <remarks>The resulting bitmap uses a pixel format of Pbgra32 and a DPI of 96. The text is centered
     /// within the bounds defined by the layout item.</remarks>
     /// <param name="formattedText">The formatted text to render onto the bitmap. Must not be null.</param>
-    /// <param name="layoutItem">The layout item that defines the positioning and size for rendering the text.</param>
-    /// <returns>A BitmapSource containing the rendered text, sized and positioned according to the layout item.</returns>
-    private BitmapSource RenderFormattedTextToBitmap(System.Windows.Media.FormattedText formattedText, LayoutItem layoutItem)
+    /// <param name="boundingRect">The bounding rectangle that defines the size and position for rendering the text. Must not be null.</param>
+    /// <returns>A RenderTargetBitmap containing the rendered text, sized and positioned according to the bounding rectangle.</returns>
+    private RenderTargetBitmap RenderFormattedTextToBitmap(System.Windows.Media.FormattedText formattedText, Rect boundingRect)
     {
+        if (formattedText == null) throw new ArgumentNullException(nameof(formattedText));
+
         // Create the target bitmap (size based on measured text)
-        var boundingRect = _layout.GetFinalRect(_iat.Layout, layoutItem);
         var width = boundingRect.Width;
         var height = boundingRect.Height;
-        var bmp = new RenderTargetBitmap((int)boundingRect.Width, (int)boundingRect.Height, 96, 96, PixelFormats.Pbgra32);
+        var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
+        var bmp = new RenderTargetBitmap((int)width, (int)height, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
         { 
             dc.DrawText(formattedText, new Point((int)((width - formattedText.Width) / 2), (int)((height - formattedText.Height) / 2)));  // offset for crisp edges
         }
         bmp.Render(visual);
+        bmp.Freeze();
         return bmp;
     }
 
+    /*
     /// <summary>
     /// Renders the visual representation of the specified key as a bitmap image.
     /// </summary>
@@ -145,24 +141,24 @@ public class ImageGenerationService : IImageGenerationService
     /// text contains multiple words and is marked as combined, the words are rendered on separate lines. The bitmap
     /// is suitable for display in WPF user interfaces.</remarks>
     /// <param name="keyId">The unique identifier of the key to render. Must correspond to a valid key in the key service.</param>
-    /// <returns>A BitmapSource containing the rendered image of the key. The bitmap reflects the key's text, font, color,
+    /// <param name="boundingRect">The bounding rectangle that defines the size and position for rendering the key. Must not be null.</param>
+    /// <returns>A RenderTargetBitmap containing the rendered image of the key. The bitmap reflects the key's text, font, color,
     /// and layout settings.</returns>
-    public BitmapSource RenderKeyToBitmap(Guid keyId)
+    public RenderTargetBitmap RenderKeyToBitmap(Key key, Rect boundingRect)
     {
-        var key = _keyService.GetResolvedKey(_iat, keyId);
         var foreground = new SolidColorBrush(key.FontColor);
         var typeface = new Typeface(new FontFamily(key.FontFamily), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         var formattedText = new System.Windows.Media.FormattedText(
-            key.IsCombined ? string.Join("\r\n", key.Text.Split(" ")) : key.Text,
+            key.IsCombined ? string.Join("\r\n", key.Text.Split(" ")) : _keyService.GetResolvedDisplayText(_iat, key.Id),
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
             typeface,
             key.FontSize * 96.0 / 72.0,   // convert from points to DIPs   
             foreground,
             VisualTreeHelper.GetDpi(new Window()).PixelsPerDip);  // critical for crisp rendering
-        return RenderFormattedTextToBitmap(formattedText, key.LayoutItem);
+        return RenderFormattedTextToBitmap(formattedText, boundingRect);
     }
-
+*/
     /// <summary>
     /// Renders the specified formatted text as a bitmap image using the provided text style and layout information.
     /// </summary>
@@ -173,7 +169,7 @@ public class ImageGenerationService : IImageGenerationService
     /// <param name="text">An object that defines the text content, style, and layout to be rendered as a bitmap. Cannot be null.</param>
     /// <returns>A BitmapSource containing the rendered text image. The bitmap reflects the specified font, color, and
     /// layout.</returns>
-    public BitmapSource RenderTextToBitmap(IFormattedText text)
+    public BitmapSource RenderTextToBitmap(IFormattedText text, Rect boundingRect)
     {
         var foreground = new SolidColorBrush(text.Style.FontColor);
         var typeface = new Typeface(new FontFamily(text.Style.FontFamily), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
@@ -185,7 +181,7 @@ public class ImageGenerationService : IImageGenerationService
             text.Style.FontSize * 96.0 / 72.0,   // convert from points to DIPs   
             foreground,
             VisualTreeHelper.GetDpi(new Window()).PixelsPerDip);  // critical for crisp rendering
-        return RenderFormattedTextToBitmap(formattedText, text.LayoutItem);
+        return RenderFormattedTextToBitmap(formattedText, boundingRect);
     }
 
     /// <summary>
@@ -258,17 +254,17 @@ public class ImageGenerationService : IImageGenerationService
     /// <param name="test">The test instance containing the blocks, trials, and layout information to be rendered.</param>
     /// <param name="blockId">The unique identifier of the block to render. Specifies which block's instructions and response keys to display.</param>
     /// <param name="trialId">The unique identifier of the trial to render. Specifies which stimulus to display on the slide.</param>
+    /// <param name="rects">The layout rectangles defining the positions and sizes of the slide elements. Must not be null.</param>
     /// <returns>A frozen BitmapSource representing the rendered slide, including instructions, response keys, and stimulus
     /// content.</returns>
     /// <exception cref="ArgumentException">Thrown if the specified block does not contain a valid instruction.</exception>
-    public BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId)
+    public BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId, LayoutRects rects)
     {
         var block = test.GetBlockById(blockId) ?? new Block();
         var trial = test.GetTrialById(trialId) ?? new Trial();
         var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
         double dpiX = dpi.PixelsPerInchX;
         double dpiY = dpi.PixelsPerInchY;
-        var rects = _layout.GetFinalRects(test.Layout);
         var bmp = new RenderTargetBitmap((int)rects.Interior.Width, (int)rects.Interior.Height, dpiX, dpiY, PixelFormats.Pbgra32);
 
         var visual = new DrawingVisual();
@@ -277,10 +273,11 @@ public class ImageGenerationService : IImageGenerationService
             dc.DrawRectangle(Brushes.Black, null, rects.Interior);
             if (block.LeftResponseId != Guid.Empty && block.RightResponseId != Guid.Empty)
             {
-                dc.DrawImage(RenderKeyToBitmap(block.LeftResponseId), rects.LeftKey);
-                dc.DrawImage(RenderKeyToBitmap(block.RightResponseId), rects.RightKey);
+                dc.DrawImage(RenderTextToBitmap(_keyService.GetResolvedKey(test, block.LeftResponseId), rects.LeftKey), rects.LeftKey);
+                dc.DrawImage(RenderTextToBitmap(_keyService.GetResolvedKey(test, block.RightResponseId), rects.RightKey), rects.RightKey);
             }
-            dc.DrawImage(RenderTextToBitmap(test.GetFormattedTextById(block.BlockInstructionsId) ?? throw new ArgumentException("Block does not contain a valid instruction")), 
+            dc.DrawImage(RenderTextToBitmap(test.GetFormattedTextById(block.BlockInstructionsId) ?? 
+                throw new ArgumentException("Block does not contain a valid instruction"), rects.BlockInstructions), 
                 rects.BlockInstructions);
             if (trial.StimulusId != Guid.Empty)
             {
@@ -293,7 +290,7 @@ public class ImageGenerationService : IImageGenerationService
                 }
                 else if (stimulus is TextStimulus textStimulus)
                 {
-                    dc.DrawImage(RenderTextToBitmap(textStimulus), rects.Stimulus);
+                    dc.DrawImage(RenderTextToBitmap(textStimulus, rects.Stimulus), rects.Stimulus);
                 }
             }
         }
@@ -326,7 +323,7 @@ public class ImageGenerationService : IImageGenerationService
         bmpDest.Freeze();
         return bmpDest;
     }
-
+    /*
     /// <summary>
     /// Renders a visual outline of the key area defined in the layout as a bitmap image. The outline is drawn with a lime green border 
     /// and is sized according to the layout's left key rectangle. This method is useful for debugging or visualizing the key area within 
@@ -346,5 +343,5 @@ public class ImageGenerationService : IImageGenerationService
         bmp.Render(visual);
         bmp.Freeze();
         return bmp;
-    }
+    }*/
 }

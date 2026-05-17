@@ -56,12 +56,12 @@ namespace IAT.Core.Services
         /// the key is not found.</returns>
         public string GetResolvedDisplayText(IatTest test, Guid keyId)
         {
-            var key = test.Keys.FirstOrDefault(k => k.Id == keyId);
+            var key = test.AllKeys.FirstOrDefault(k => k.Id == keyId);
             if (key == null || !key.IsCombined)
                 return key?.Text ?? string.Empty;
 
             var parts = key.ComponentIds
-                .Select(id => test.Keys.FirstOrDefault(k => k.Id == id)?.Text ?? "")
+                .Select(id => test.AllKeys.FirstOrDefault(k => k.Id == id)?.Text ?? "")
                 .Where(t => !string.IsNullOrEmpty(t))
                 .ToList();
 
@@ -82,7 +82,7 @@ namespace IAT.Core.Services
         /// with the specified keyId and an empty text is returned.</returns>
         public Key GetResolvedKey(IatTest test, Guid keyId)
         {
-            var key = test.Keys.FirstOrDefault(k => k.Id == keyId);
+            var key = test.AllKeys.FirstOrDefault(k => k.Id == keyId);
             if (key == null || !key.IsCombined)
                 return key ?? new Key { Id = keyId, Text = "" };
             var resolvedKey = new Key
@@ -90,7 +90,7 @@ namespace IAT.Core.Services
                 Id = key.Id,
                 IsCombined = false,
                 Text = string.Join(key.Separator, 
-                    key.ComponentIds.Select(id => test.Keys.FirstOrDefault(k => k.Id == id)?.Text ?? ""))
+                    key.ComponentIds.Select(id => test.AllKeys.FirstOrDefault(k => k.Id == id)?.Text ?? ""))
             };
             return resolvedKey;
         }

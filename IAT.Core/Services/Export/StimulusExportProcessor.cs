@@ -8,7 +8,6 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using IAT.Core.Enumerations;
 using System.Windows;
-using com.sun.org.apache.xml.@internal.resolver.helpers;
 
 namespace IAT.Core.Services.Export
 {

@@ -31,9 +31,15 @@ namespace IAT.Core.Services.Export
         public Manifest FileManifest { get; } = new Manifest();
 
         /// <summary>
+        /// Gets the slide manifest.
+        /// </summary>
+        public Manifest SlideManifest { get; } = new Manifest();
+
+        /// <summary>
         /// Maps unique identifiers to integer values.
         /// </summary>
         public Dictionary<Guid, int> IdDictionary { get; } = new Dictionary<Guid, int>();
+
 
         /// <summary>
         /// Gets or initializes the IAT test.

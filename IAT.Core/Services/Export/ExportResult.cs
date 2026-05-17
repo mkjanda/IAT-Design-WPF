@@ -21,16 +21,24 @@ namespace IAT.Core.Services.Export
         public Manifest FileManifest { get; init; }
 
         /// <summary>
+        /// The file maniifest for the item slides, represented as a Manifest object. This manifest specifically tracks the slide 
+        /// images that are generated for the test's stimuli.
+        /// </summary>
+        public Manifest SlideManifest { get; init; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ExportResult"/> class with the specified configuration file and
         /// file manifest.
         /// </summary>
         /// <param name="configFile">The configuration file for the export operation.</param>
         /// <param name="fileManifest">The manifest containing the exported files.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="configFile"/> or <paramref name="fileManifest"/> is <see langword="null"/>.</exception>
-        public ExportResult(IATConfigFile configFile, Manifest fileManifest)
+        /// <param name="slideManifest">The manifest containing the exported slide images.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="configFile"/>, <paramref name="fileManifest"/>, or <paramref name="slideManifest    "/> is <see langword="null"/>.</exception>
+        public ExportResult(IATConfigFile configFile, Manifest fileManifest, Manifest slideManifest)
         {
             ConfigFile = configFile ?? throw new ArgumentNullException(nameof(configFile));
             FileManifest = fileManifest ?? throw new ArgumentNullException(nameof(fileManifest));
+            SlideManifest = slideManifest ?? throw new ArgumentNullException(nameof(slideManifest));
         }
     }
 }
