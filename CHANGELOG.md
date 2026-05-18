@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added generation of item slides to the test preparation process, which can be used to create the necessary slides for the IAT test based on the test configuration and associated data. 
 - Added initial views for block design and stimulus editing, which can be used to provide a user-friendly interface for designing the blocks and stimuli used in the IAT test. 
 - Added view models for block design and stimulus editing, which can be used to manage the data and state of the block design and stimulus editing views. These view models will handle the logic and functionality needed to support the block design and stimulus editing features, including managing user input, updating the views based on changes to the data, and coordinating with other components and services as needed.
+- Added item slide retrieval to the test result retrieval process.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 
