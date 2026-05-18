@@ -29,7 +29,7 @@ public class Trial : Event, IEqualityComparer<Trial>
     /// Returns the event type associated with this instance, which is used to identify the specific type of event being represented. 
     /// In this case, it returns EventType.Trial, indicating that this class represents a trial event in the IAT application.
     /// </summary>
-    [XmlElement("EventType", Form = XmlSchemaForm.Unqualified)])]
+    [XmlElement("EventType", Form = XmlSchemaForm.Unqualified)]
     public override EventType EventType => EventType.Trial;
 
     /// <summary>

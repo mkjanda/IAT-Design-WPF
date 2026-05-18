@@ -9,13 +9,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj" />
+    <Page Remove="Resources\styles.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj">
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\IAT.VIewModels\IAT.ViewModels.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Templates\" />
-    <Folder Include="Resources\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\styles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Resource>
   </ItemGroup>
 
 </Project>

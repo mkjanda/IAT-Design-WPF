@@ -22,6 +22,7 @@ namespace IAT.Core.Services
         private readonly IResultRetrievalService _resultRetrievalService;
         private readonly ILocalStorageService _localStorageService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
+        private readonly IItemSlideRetriever _itemSlideRetriever;
         private readonly TransactionState _state;
         private ConfigFile.IATConfigFile? ConfigFile { get; set; } = null;
         private List<ResultPacket> Results { get; set; } = new();
@@ -35,13 +36,15 @@ namespace IAT.Core.Services
         /// <param name="localStorageService">The service used to access and manage local storage for persisting data.</param>
         /// <param name="resultRetrievalService">The service responsible for retrieving test results from a remote source, such as a web socket.</param>
         /// <param name="xmlDeserializationService">The service used to deserialize XML data into application objects.</param>
+        /// <param name="itemSlideRetriever">The service used to retrieve item slides for the test results.</param>
         /// <param name="state">The transaction state object that tracks the current state of transactions.</param>
         public TestResultService(ILocalStorageService localStorageService, IResultRetrievalService resultRetrievalService,
-            IXmlDeserializationService xmlDeserializationService, TransactionState state)
+            IXmlDeserializationService xmlDeserializationService, IItemSlideRetriever itemSlideRetriever, TransactionState state)
         {
             _localStorageService = localStorageService;
             _xmlDeserializationService = xmlDeserializationService;
             _resultRetrievalService = resultRetrievalService;
+            _itemSlideRetriever = itemSlideRetriever;
             _state = state;
         }
 
@@ -91,7 +94,7 @@ namespace IAT.Core.Services
                             SurveyResponses.Add(resultElem as SurveyResponse);
                     }
                 }
-            }).ContinueWith(t => _webSocketService.GetItemSlides(iatName, password, _localStorageService[Field.ProductKey]));
+            }).ContinueWith(t => _itemSlideRetriever.GetItemSlides(iatName, password, _localStorageService[Field.ProductKey]));
         }
     }
 }

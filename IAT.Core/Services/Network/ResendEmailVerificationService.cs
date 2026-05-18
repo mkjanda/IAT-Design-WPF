@@ -1,17 +1,25 @@
 ﻿using IAT.Core.Enumerations;
 using IAT.Core.Handlers;
 using IAT.Core.Models;
-using IAT.Core.Serializable
+using IAT.Core.Serializable;
 
-using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IAT.Core.Services.Network
 {
+    /// <summary>
+    /// The interface for the service responsible for resending email verification messages. It defines a method that takes a product 
+    /// key and an email address, and returns a transaction result indicating the success or failure of the resend operation. This service 
+    /// is typically used in scenarios where a user needs to have their email verification message resent, such as when they did not receive 
+    /// the initial email or if they need to verify their email address again for any reason.
+    /// </summary>
     public interface IResendEmailVerificationService
     {
+        /// <summary>
+        /// Resends an email verification message.
+        /// </summary>
+        /// <param name="productKey">The product key.</param>
+        /// <param name="email">The email address to send the verification message to.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the transaction result.</returns>
         Task<TransactionResult> ResendEmailVerification(string productKey, string email);
     }
 
@@ -25,6 +33,11 @@ namespace IAT.Core.Services.Network
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResendEmailVerificationService"/> class.
+        /// </summary>
+        /// <param name="webSocketService">The web socket service used for communication.</param>
+        /// <param name="transactionState">The transaction state.</param>
         public ResendEmailVerificationService(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
@@ -32,6 +45,12 @@ namespace IAT.Core.Services.Network
             _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionResendEMailCommand(request);
         }
 
+        /// <summary>
+        /// Resends an email verification for the specified product key and email address.
+        /// </summary>
+        /// <param name="productKey">The product key associated with the verification request.</param>
+        /// <param name="email">The email address to send the verification to.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the transaction result.</returns>
         public async Task<TransactionResult> ResendEmailVerification(string productKey, string email)
         {
             _webSocketService.Start();

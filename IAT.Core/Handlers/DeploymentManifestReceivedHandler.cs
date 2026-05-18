@@ -8,8 +8,10 @@ using IAT.Core.Serializable;
 using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using System.IO;
+using System.Xml.Serialization; 
 using System.Net.Http;
 using System.Security.AccessControl;
+using IAT.Core.ConfigFile;
 
 namespace IAT.Core.Handlers
 {
@@ -17,29 +19,31 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
-        private readonly StringResourceService _stringResourceService;
-        private readonly TestPackage _test;        
+        private readonly IStringResourceService _stringResourceService;
         
         public DeploymentManifestReceivedHandler(IWebSocketService webSocketService, TransactionState state, 
-            StringResourceService stringResourceService, TestPackage test)
+            IStringResourceService stringResourceService)
         {
             _webSocketService = webSocketService;
             _transactionState = state;
             _stringResourceService = stringResourceService;
-            _test = test;
         }
 
         public async Task<TransactionResult> Handle(DeploymentManifestReceivedCommand request, CancellationToken cancellationToken)
         {
             HttpClient http = new HttpClient();
-            var content = new ByteArrayContent(_test.ConfigFileStream.ToArray());
+
+            var ser = new XmlSerializer(typeof(IATConfigFile));
+            var memStream = new MemoryStream();
+            ser.Serialize(memStream, _transactionState.ConfigFile);
+            var content = new ByteArrayContent(memStream.ToArray());
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/xml");
             var response = await http.PostAsync($"{_stringResourceService.GetString("DeploymentUploadUrl")}/configuration", content);
             response.EnsureSuccessStatusCode();
 
-            var memStream = new MemoryStream();
-            _test.FileManifest.Contents.Cast<ManifestFile>().Where(m => m.ResourceType == ManifestFile.EResourceType.errorMark || 
-                m.ResourceType == ManifestFile.EResourceType.keyOutline || m.ResourceType == ManifestFile.EResourceType.image).ToList()
+            memStream.Dispose(); memStream = new MemoryStream();
+            _transactionState.FileManifest.Contents.Cast<ManifestFile>().Where(m => m.ResourceType == FileResourceType.errorMark || 
+                m.ResourceType == FileResourceType.keyOutline || m.ResourceType == FileResourceType.image).ToList()
                 .ForEach(ManifestFile => memStream.Write(ManifestFile.Content));
             content = new ByteArrayContent(memStream.ToArray());
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/xml");
@@ -47,7 +51,7 @@ namespace IAT.Core.Handlers
             response.EnsureSuccessStatusCode();
 
             memStream.Dispose(); memStream = new MemoryStream();
-            _test.FileManifest.Contents.Cast<ManifestFile>().Where(m => m.ResourceType == ManifestFile.EResourceType.itemSlide).ToList()
+            _transactionState.SlideManifest.Contents.Cast<ManifestFile>().ToList()
                 .ForEach(ManifestFile => memStream.Write(ManifestFile.Content));
             content = new ByteArrayContent(memStream.ToArray());
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/xml");

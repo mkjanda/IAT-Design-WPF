@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Xml.Linq;
+using IAT.Core.ConfigFile;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
 using sun.reflect.generics.tree;
@@ -47,6 +48,19 @@ namespace IAT.Core.Models
         /// Gets or sets the XML document that contains the test results.
         /// </summary>
         public XDocument TestResultsDocument { get; set; } = new();
+
+        /// <summary>
+        /// The configuragtion file for the test being deployed. This property is set during the deployment 
+        /// process and contains the necessary configuration details for the test, such as stimuli, instructions, 
+        /// and other relevant settings. The ConfigFile is typically used to initialize the test environment and 
+        /// ensure that the test is configured correctly according to the specifications defined in the configuration file.
+        /// </summary>
+        public IATConfigFile ConfigFile { get; set; } = null;
+
+        /// <summary>
+        /// THe manifest of deployment files.
+        /// </summary>
+        public Manifest FileManifest { get; set; } = null;
 
         /// <summary>
         /// Gets or sets the manifest that defines the structure and metadata for the slide.

@@ -75,7 +75,7 @@ namespace IAT.Core.Services.Export
                 },
                 LayoutItem = LayoutItem.ErrorMark
             };
-            var bmp = _imageGenerationService.RenderTextToBitmap(errorMark);
+            var bmp = _imageGenerationService.RenderTextToBitmap(errorMark, exportContext.LayoutRects.ErrorMark);
             var memStream = new MemoryStream();
             encoder.Frames.Add(BitmapFrame.Create(bmp));
             encoder.Save(memStream);
@@ -84,7 +84,7 @@ namespace IAT.Core.Services.Export
             {
                 Filename = "ErrorMark.png",
                 Id = 1000,
-                Guid = Guid.Empty,
+                Guid = errorMark.Id,
                 X = (int)exportContext.LayoutRects.ErrorMark.X,
                 Y = (int)exportContext.LayoutRects.ErrorMark.Y,
                 Width = (int)exportContext.LayoutRects.ErrorMark.Width,

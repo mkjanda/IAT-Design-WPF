@@ -113,7 +113,7 @@ public class ProjectPackageService : IProjectPackageService
         }
 
         // Import stimuli (images and text) into separate parts
-        foreach (var block in test.Blocks)
+        foreach (var block in test.AllBlocks)
         {
             foreach (var trialId in block.TrialIds)
             {
@@ -189,7 +189,7 @@ public class ProjectPackageService : IProjectPackageService
     /// <param name="stimulusId">The unique identifier of the stimulus whose image data is to be retrieved.</param>
     /// <returns>A read-only memory region containing the image bytes for the specified stimulus. Returns an empty memory region
     /// if no image is found for the given identifier.</returns>
-    public byte[] GetImageBytes(Guid stimulusId) => _imageCache.GetValueOrDefault(stimulusId);
+    public byte[] GetImageBytes(Guid stimulusId) => _imageCache.GetValueOrDefault(stimulusId) ?? Array.Empty<byte>();
 
     /// <summary>
     /// Retrieves the image type associated with the specified stimulus identifier.

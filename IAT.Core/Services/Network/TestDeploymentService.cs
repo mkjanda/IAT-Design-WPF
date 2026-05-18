@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Transactions;
 using org.omg.CORBA;
+using IAT.Core.Services.Export;
 
 namespace IAT.Core.Services.Network
 {
@@ -19,7 +20,14 @@ namespace IAT.Core.Services.Network
     /// </summary>
     public interface ITestDeploymentService
     {
-        Task<TransactionResult> Deploy(string name, string password);
+        /// <summary>
+        /// Initiates the deployment of an IAT.
+        /// </summary>
+        /// <param name="name">The name of the IAT to be deployed.</param>
+        /// <param name="password">The password required to authenticate the deployment operation.</param>
+        /// <param name="exportResult">The result of the export operation to be used in the deployment.</param>
+        /// <returns>A task that represents the asynchronous deployment operation. The task result contains the outcome of the deployment.</returns>
+        Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult);
     }
 
     /// <summary>
@@ -43,8 +51,7 @@ namespace IAT.Core.Services.Network
         /// deployment workflow that relies on WebSocket-based communication.</remarks>
         /// <param name="webSocket">The WebSocket service used to handle deployment-related transaction commands.</param>
         /// <param name="state">The transaction state object that tracks the current state of the deployment process.</param>
-        /// <param name="testPackage">The test package containing the data and configuration required for deployment.</param>
-        public TestDeploymentService(IWebSocketService webSocket, TransactionState state, TestPackage testPackage)
+        public TestDeploymentService(IWebSocketService webSocket, TransactionState state)
         {
             _webSocket = webSocket;
             _state = state;
@@ -62,10 +69,14 @@ namespace IAT.Core.Services.Network
         /// operation finishes. Ensure that the calling context can tolerate potential blocking behavior.</remarks>
         /// <param name="name">The name to associate with the deployment operation. This value is used to identify the deployment session.</param>
         /// <param name="password">The password required to authenticate the deployment operation. Cannot be null.</param>
+        /// <param name="exportResult">The result of the export operation to be used in the deployment.</param>
         /// <returns>A task that represents the asynchronous deployment operation. The task result contains a TransactionResult
         /// indicating the outcome of the deployment.</returns>
-        public async Task<TransactionResult> Deploy(string name, string password)
+        public async Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult)
         {
+            _state.ConfigFile = exportResult.ConfigFile;
+            _state.FileManifest = exportResult.FileManifest;
+            _state.SlideManifest = exportResult.SlideManifest;
             var evt = _state.Event;
             _state.Password = password;
             _state.IATName = name;

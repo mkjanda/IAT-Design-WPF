@@ -44,7 +44,7 @@ namespace IAT.Core.Handlers
             _transactionState.SlideManifest = request.manifest;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.ItemSlideManifestReceived,
+                Transaction = TransactionType.RequestItemSlides,
                 IATName = _transactionState.IATName
             });
             return TransactionResult.Unset;

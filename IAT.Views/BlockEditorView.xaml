@@ -1,0 +1,163 @@
+﻿<UserControl x:Class="IAT.Views.BlockEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:IAT.ViewModels;assembly=IAT.ViewModels"
+             xmlns:controls="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1200">
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="280"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: Blocks sidebar -->
+        <Border Background="#1F1F1F" BorderBrush="#333" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <TextBlock Text="Blocks" FontSize="18" FontWeight="SemiBold" Foreground="White"
+                           Margin="16,12,16,8" DockPanel.Dock="Top"/>
+
+                <StackPanel Orientation="Horizontal" Margin="12,0,12,12" DockPanel.Dock="Bottom">
+                    <Button Content="+ Add Block" Command="{Binding AddBlockCommand}" 
+                            Style="{StaticResource AccentButton}" Height="36" Width="110"/>
+                    <Button Content="Delete" Margin="8,0,0,0" Height="36"/>
+                    <Button Content="↑" Width="36" Margin="8,0,0,0"/>
+                    <Button Content="↓" Width="36" Margin="4,0,0,0"/>
+                </StackPanel>
+
+                <ListBox ItemsSource="{Binding Blocks}" SelectedItem="{Binding SelectedBlock}"
+                         Background="Transparent" BorderThickness="0" Margin="8">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" Foreground="White" Margin="8"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- CENTER: Live Preview Canvas -->
+        <Grid Grid.Column="1" Margin="16">
+            <Border Background="White" CornerRadius="4" Padding="20" Effect="{StaticResource DropShadow}">
+                <Canvas x:Name="PreviewCanvas" Width="800" Height="600" Background="#F8F8F8">
+                    <!-- Block Instructions -->
+                    <Border Canvas.Left="{Binding LayoutViewModel.BlockInstructionsX}" 
+                            Canvas.Top="{Binding LayoutViewModel.BlockInstructionsY}"
+                            Width="{Binding LayoutViewModel.BlockInstructionsWidth}"
+                            Height="{Binding LayoutViewModel.BlockInstructionsHeight}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderThickness="2" CornerRadius="4">
+                        <TextBlock Text="Block Instructions" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="18" Foreground="#333"/>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLayoutEditMode}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#007ACC"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+
+                    <!-- Stimulus Area -->
+                    <Border Canvas.Left="{Binding LayoutViewModel.StimulusX}" 
+                            Canvas.Top="{Binding LayoutViewModel.StimulusY}"
+                            Width="{Binding LayoutViewModel.StimulusWidth}"
+                            Height="{Binding LayoutViewModel.StimulusHeight}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderThickness="3" CornerRadius="8">
+                        <TextBlock Text="Sample Stimulus" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   FontSize="28" FontWeight="Medium" Foreground="#555"/>
+                    </Border>
+
+                    <!-- Left Key -->
+                    <Border Canvas.Left="{Binding LayoutViewModel.LeftKeyX}" 
+                            Canvas.Top="{Binding LayoutViewModel.LeftKeyY}"
+                            Width="{Binding LayoutViewModel.LeftKeyWidth}"
+                            Height="{Binding LayoutViewModel.LeftKeyHeight}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderThickness="2">
+                        <TextBlock Text="Left Key (E)" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Right Key -->
+                    <Border Canvas.Left="{Binding LayoutViewModel.RightKeyX}" 
+                            Canvas.Top="{Binding LayoutViewModel.RightKeyY}"
+                            Width="{Binding LayoutViewModel.RightKeyWidth}"
+                            Height="{Binding LayoutViewModel.RightKeyHeight}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderThickness="2">
+                        <TextBlock Text="Right Key (I)" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Error Mark -->
+                    <Border Canvas.Left="{Binding LayoutViewModel.ErrorMarkX}" 
+                            Canvas.Top="{Binding LayoutViewModel.ErrorMarkY}"
+                            Width="{Binding LayoutViewModel.ErrorMarkWidth}"
+                            Height="{Binding LayoutViewModel.ErrorMarkHeight}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderThickness="2">
+                        <TextBlock Text="X" Foreground="Red" FontSize="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Continue Instructions -->
+                    <Border Canvas.Left="{Binding LayoutViewModel.ContinueInstructionsX}" 
+                            Canvas.Top="{Binding LayoutViewModel.ContinueInstructionsY}"
+                            Width="{Binding LayoutViewModel.ContinueInstructionsWidth}"
+                            Height="{Binding LayoutViewModel.ContinueInstructionsHeight}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderThickness="2">
+                        <TextBlock Text="Press SPACE to continue" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Resize Thumbs - only visible in edit mode -->
+                    <ItemsControl ItemsSource="{Binding LayoutItems}" Visibility="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
+                        <!-- Thumb logic would be expanded here with DragDelta handlers calling LayoutViewModel methods -->
+                    </ItemsControl>
+                </Canvas>
+            </Border>
+        </Grid>
+
+        <!-- RIGHT: Properties -->
+        <Border Grid.Column="2" Background="#1F1F1F" Padding="16">
+            <StackPanel>
+                <TextBlock Text="Block Properties" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,16"/>
+                <Label Content="Name" Foreground="White"/>
+                <TextBox Text="{Binding SelectedBlock.Name}" Style="{StaticResource DarkTextBox}"/>
+                <Label Content="Number of Trials" Foreground="White" Margin="0,12,0,0"/>
+                <TextBox Text="{Binding SelectedBlock.TrialIds.Count}" IsReadOnly="True"/>
+                <Label Content="Instructions Text" Foreground="White" Margin="0,12,0,0"/>
+                <TextBox Text="{Binding SelectedBlock.BlockInstructions}" AcceptsReturn="True" Height="80"/>
+
+                <!-- Layout Overrides section (collapsed by default) -->
+                <Expander Header="Layout Overrides" IsExpanded="{Binding IsLayoutEditMode}" Margin="0,20,0,0">
+                    <ContentControl Content="{Binding LayoutViewModel}"/>
+                </Expander>
+            </StackPanel>
+        </Border>
+
+        <!-- BOTTOM: Trials grid -->
+        <Grid Grid.Column="1" Grid.ColumnSpan="2" Margin="16,0,16,16" VerticalAlignment="Bottom" Height="180">
+            <Border Background="#1F1F1F" CornerRadius="4">
+                <DataGrid ItemsSource="{Binding SelectedBlock.Trials}" AutoGenerateColumns="False" 
+                          Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="#2A2A2A">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Trial #" Binding="{Binding ItemNum}"/>
+                        <DataGridTextColumn Header="Stimulus" Binding="{Binding Stimulus.Phrase}"/>
+                        <!-- Add more columns as needed -->
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+
+        <!-- Top toolbar toggle (placed in MainWindow or parent) -->
+        <ToggleButton Content="Customize Layout" IsChecked="{Binding IsLayoutEditMode}" 
+                      Command="{Binding ToggleLayoutEditModeCommand}" 
+                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20"/>
+    </Grid>
+</UserControl>

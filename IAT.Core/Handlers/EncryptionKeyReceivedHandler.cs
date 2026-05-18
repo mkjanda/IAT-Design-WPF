@@ -10,6 +10,7 @@ using IAT.Core.Models;
 using IAT.Core.Services.Network;
 using javax.xml.bind.annotation;
 using IAT.Core.Serializable;
+using IAT.Core.Extensions;
 
 namespace IAT.Core.Handlers
 {
@@ -20,7 +21,6 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
-        private readonly TestPackage _testPackage;
 
         /// <summary>
         /// Initializes a new instance of the EncryptionKeyReceivedHandler class with the specified WebSocket service,
@@ -29,12 +29,10 @@ namespace IAT.Core.Handlers
         /// <param name="webSocketService">The WebSocket service used to communicate with the client during the encryption key exchange process. Cannot
         /// be null.</param>
         /// <param name="transactionState">The current state of the transaction associated with the encryption key exchange. Cannot be null.</param>
-        /// <param name="testPackage">The test package containing relevant test data for the encryption key handling operation. Cannot be null.</param>
-        public EncryptionKeyReceivedHandler(IWebSocketService webSocketService, TransactionState transactionState, TestPackage testPackage)
+        public EncryptionKeyReceivedHandler(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _testPackage = testPackage;
         }
 
         /// <summary>
@@ -49,28 +47,28 @@ namespace IAT.Core.Handlers
         /// outcome of the transaction.</returns>
         public async Task<TransactionResult> Handle(EncryptionKeyReceivedCommand request, CancellationToken cancellationToken)
         {
-            _testPackage.ConfigFile.ClientID = _transactionState.ClientId;
-            _testPackage.ConfigFile.UploadTimeMillis = _transactionState.UploadTimeMillis;
-            _testPackage.ConfigFile.Name = _transactionState.IATName;
-            _testPackage.ConfigFile.EventList.AddRange(_testPackage.Events);
-            _testPackage.ConfigFile.DisplayItemList.AddRange(_testPackage.DisplayItems);
+            _transactionState.ConfigFile.ClientID = _transactionState.ClientId;
+            _transactionState.ConfigFile.UploadTimeMillis = _transactionState.UploadTimeMillis;
+            _transactionState.ConfigFile.Name = _transactionState.IATName;
             var ser = new XmlSerializer(typeof(ConfigFile.IATConfigFile));
-            ser.Serialize(_testPackage.ConfigFileStream, _testPackage.ConfigFile);
-            _testPackage.FileManifest.Contents.Insert(0, new ManifestFile()
+            var memoryStream = new MemoryStream();
+            ser.Serialize(memoryStream, _transactionState.ConfigFile);
+            Manifest manifest = new Manifest()
             {
-                ResourceType = ManifestFile.EResourceType.testConfiguration,
+                ClientId = _transactionState.ClientId,
+            };
+            manifest.AddFile(new ManifestFile()
+            {
+                Path = "CF.xml",
+                ResourceType = FileResourceType.testConfiguration,
                 ResourceId = 0,
                 MimeType = "application/xml",
-                Size = _testPackage.ConfigFileStream.Length,
+                Size = memoryStream.Length,
+                Content = memoryStream.ToArray()
             });
-            _testPackage.FileManifest.Contents.AddRange(_testPackage.SlideManifest.Contents.Select((slide, index) => new ManifestFile()
-            {
-                ResourceType = ManifestFile.EResourceType.itemSlide,
-                ResourceId = index,
-                MimeType = "application/xml",
-                Size = slide.Size,
-            }));
-            await _webSocketService.SendMessage(_testPackage.FileManifest);
+            manifest.AddFiles(_transactionState.FileManifest.Contents.Cast<ManifestFile>());
+            manifest.AddFiles(_transactionState.SlideManifest.Contents.Cast<ManifestFile>());
+            await _webSocketService.SendMessage(manifest);
             return TransactionResult.Unset;
         }
     }

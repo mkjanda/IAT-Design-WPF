@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using IAT.Core.Serializable;
 using CommunityToolkit.Mvvm.ComponentModel;
 using net.sf.saxon.style;
+using System.Text.Json.Serialization;
 
 namespace IAT.Core.Domain
 {
@@ -19,6 +20,17 @@ namespace IAT.Core.Domain
     /// synchronization is required for concurrent access.</remarks>
     public partial class Block 
     {
+
+        /// <summary>
+        /// The IAT test.
+        /// </summary>
+        [JsonIgnore]
+        public IatTest? IatTest { get; set; }
+
+        /// <summary>
+        /// The layout associated with the block, which defines the visual arrangement of stimuli and response options during the test.
+        /// </summary>
+        public Layout Layout => IatTest?.Layout ?? throw new InvalidOperationException("Block is not attached to an IatTest.");
 
         /// <summary>
         /// Gets or sets the unique identifier for the object.

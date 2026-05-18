@@ -13,16 +13,13 @@ public class IatTestValidationTests
         var test = new IatTest();
         var block = new Block(); // Assume Block has properties like Id, Trials
         block.Id = Guid.NewGuid();  // Valid
-        test.Blocks.Add(block);
+        test.AddBlock(block);
 
         var trial = new Trial();
         trial.Id = Guid.NewGuid();
         trial.StimulusId = Guid.Empty; // Invalid: empty stimulus ID
         block.TrialIds.Add(trial.Id);
 
-        // Assume Stimulus.Validate returns errors for invalid state
-        var invalidStimulus = new ImageStimulus { ImageId = Guid.Empty };  // Invalid
-        test.Stimuli.Add(invalidStimulus); // Assume test has a Stimuli collection
 
         // Act: Validate entire test
         var result = test.ValidateEntireTest(); // Implement this in IatTest to combine sub-results
@@ -39,13 +36,13 @@ public class IatTestValidationTests
         // Arrange: Build valid IatTest
         var test = new IatTest();
         var block = new Block { Id = Guid.NewGuid() };
-        test.Blocks.Add(block);
+        test.AddBlock(block);
 
         var trial = new Trial { Id = Guid.NewGuid(), StimulusId = Guid.NewGuid() };
         block.TrialIds.Add(trial.Id);
 
-        var stimulus = new ImageStimulus { ImageId = Guid.NewGuid() };  // Valid
-        test.Stimuli.Add(stimulus);
+        var stimulus = new ImageStimulus(); 
+        test.AddStimulus(stimulus);
 
         // Act
         var result = test.ValidateEntireTest();

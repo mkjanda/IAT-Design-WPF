@@ -10,7 +10,7 @@ namespace IAT.Core.Services;
 /// <summary>
 /// Defines a service for handling image stimuli within a package, including importing images and retrieving resized bitmaps for display.
 /// </summary>
-public interface ImagePackageService
+public interface IImagePackageService
 {
     /// <summary>
     /// Imports the specified text stimulus into the given package asynchronously.
@@ -54,7 +54,7 @@ public interface ImagePackageService
 /// image data within the package. Methods in this service may throw exceptions if validation fails or if required
 /// stimulus properties are not set. Thread safety is not guaranteed; callers should ensure appropriate synchronization
 /// if accessing the service from multiple threads.</remarks>
-public class ImagePackageService : ImagePackageService
+public class ImagePackageService : IImagePackageService
 {
     /// <summary>
     /// Initializes a new instance of the ImagePackageService class.
@@ -117,7 +117,7 @@ public class ImagePackageService : ImagePackageService
             ".gif" => "image/gif",
             _ => "image/png" // Default fallback
         };
-        Uri imagePartUri = PackUriHelper.CreatePartUri(new Uri($"images/{stimulus.ImageId}{extension}", UriKind.Relative));
+        Uri imagePartUri = PackUriHelper.CreatePartUri(new Uri($"images/{stimulus.Id}{extension}", UriKind.Relative));
 
         // Create the package part and copy the file
         PackagePart imagePart = package.CreatePart(imagePartUri, contentType);

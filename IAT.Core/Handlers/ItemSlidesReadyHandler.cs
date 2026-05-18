@@ -16,7 +16,7 @@ namespace IAT.Core.Handlers
     public class ItemSlidesReadyHandler : IRequestHandler<ItemSlidesReadyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
-        private readonly StringResourceService _stringResourceService;
+        private readonly IStringResourceService _stringResourceService;
         private readonly IDialogService _dialogService;
         private readonly TransactionState _transactionState;
 
@@ -32,15 +32,15 @@ namespace IAT.Core.Handlers
         /// <param name="stringResourceService">The string resource service used to retrieve localized messages.</param>
         /// <param name="dialogService">The dialog service used to show notifications to the user.</param>
         /// <param name="transactionState">The transaction state used to manage the transaction process.</param>
-        public ItemSlidesReadyHandler(IWebSocketService webSocketService, StringResourceService stringResourceService,
+        public ItemSlidesReadyHandler(IWebSocketService webSocketService, IStringResourceService stringResourceService,
             IDialogService dialogService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
             _stringResourceService = stringResourceService;
             _dialogService = dialogService;
             _transactionState = transactionState;
-        }   
-     
+        }
+
         /// <summary>
         /// Handles the ItemSlidesReadyCommand by downloading item slide data and updating the transaction state
         /// accordingly.
@@ -56,7 +56,9 @@ namespace IAT.Core.Handlers
         {
 
             using var httpClient = new HttpClient();
-            var retVal =  await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")).ContinueWith(async t =>
+            var retVal = await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")
+                    + $"IATName={_transactionState.IATName}&ClientID={_transactionState.ClientId}&DownloadKey={request.transaction.StringValues["DownloadKey"]}")
+                    .ContinueWith(async t =>
             {
                 if (t.IsFaulted)
                 {
@@ -69,8 +71,8 @@ namespace IAT.Core.Handlers
                 {
                     using var receipt = new MemoryStream(t.Result);
                     var slideData = new List<byte[]>();
-
-                    var fileList = _transactionState.SlideManifest.Contents.Where(fe => fe.FileEntityType == FileEntity.EFileEntityType.File).Cast<ManifestFile>().Where(mf => mf.ResourceType == ManifestFile.EResourceType.itemSlide).ToList();
+                    var fileList = _transactionState.SlideManifest.Contents.Where(fe => fe.FileEntityType == FileEntity.EFileEntityType.File).Cast<ManifestFile>()
+                        .Where(mf => mf.ResourceType == FileResourceType.itemSlide).ToList();
                     foreach (var file in fileList)
                     {
                         file.Content = new byte[file.Size];

@@ -69,7 +69,17 @@ namespace IAT.Core.Serializable
         /// <remarks>Use this enumeration to distinguish between files and directories when working with
         /// file system operations. This can help determine the appropriate handling or processing logic based on the
         /// entity type.</remarks>
-        public enum EFileEntityType { File, Directory };
+        public enum EFileEntityType { 
+            /// <summary>
+            /// The entity is a file
+            /// </summary>
+            File, 
+            
+            /// <summary>
+            /// The entity is a directory
+            /// </summary>
+            Directory 
+        };
 
         /// <summary>
         /// Gets or sets the size of the item in bytes.
@@ -82,9 +92,6 @@ namespace IAT.Core.Serializable
         /// </summary>
         [XmlElement("Path", Form = XmlSchemaForm.Unqualified)]
         public virtual string Path { get; set; } = string.Empty;
-
-        [XmlIgnore]
-        public string _Name = string.Empty;
 
         /// <summary>
         /// Gets the type of the file entity represented by this instance.
@@ -138,11 +145,6 @@ namespace IAT.Core.Serializable
         [XmlElement("MimeType", Form = XmlSchemaForm.Unqualified)]
         public String MimeType { get; set; } = "text/plain";
 
-        /// <summary>
-        /// Gets or sets the size of the content, in bytes.
-        /// </summary>
-        [XmlElement("Size", Form = XmlSchemaForm.Unqualified, Type = typeof(long))]
-        public long Size { get; set; } = 0;
 
         /// <summary>
         /// The byte array representing the content of the file. This property is ignored during XML serialization, as it may 
@@ -168,8 +170,17 @@ namespace IAT.Core.Serializable
         /// no file entities are present.</remarks>
         [XmlArray]
         [XmlArrayItem("FileEntity", Type = typeof(FileEntity))]
-        public List<FileEntity> Contents;
+        public List<FileEntity> Contents { get; set; } = new();
 
+        /// <summary>
+        /// Returns the FileEntity at the specified index in the Contents collection. This indexer provides 
+        /// convenient access to the file entities contained within the directory, allowing retrieval based 
+        /// on their position in the collection. Note that the index is zero-based, and an exception will be 
+        /// thrown if the index is out of range. Use this indexer to access specific file entities when iterating 
+        /// through the directory contents or when you know the position of the desired entity.
+        /// </summary>
+        /// <param name="ctr"></param>
+        /// <returns></returns>
         [XmlIgnore]        
         public FileEntity this[int ctr]
         {
@@ -180,6 +191,12 @@ namespace IAT.Core.Serializable
         }
 
         /// <summary>
+        /// Returns Directory as the file entity type.
+        /// </summary>
+        public override EFileEntityType FileEntityType => EFileEntityType.Directory;
+
+
+        /// <summary>
         /// Gets or sets the file system path associated with this instance.
         /// </summary>
         public override string Path { get; set; } = string.Empty;
@@ -187,7 +204,6 @@ namespace IAT.Core.Serializable
         /// <summary>
         /// The size in bytes of the directory, calculated as the sum of the sizes of all contained file entities. 
         /// </summary>
-        [XmlElement("Size", Form = XmlSchemaForm.Unqualified)]
         public override long Size
         {
             get
@@ -197,7 +213,6 @@ namespace IAT.Core.Serializable
                 Contents.Where(fe => fe.FileEntityType == EFileEntityType.File).Cast<ManifestFile>().ToList().ForEach(fe => totalSize += fe.Size);
                 return totalSize;
             }
-            set;
         }
     }
 

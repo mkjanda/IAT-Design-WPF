@@ -22,6 +22,13 @@ namespace IAT.Core.Services.Network
         Task<TransactionResult> ActivateProduct(string productKey, string userName, string email);
     }
 
+    /// <summary>
+    /// The activation service is responsible for managing the activation process of a product. It interacts with the WebSocket service 
+    /// to send activation requests and handles the transaction state to track the progress and outcome of the activation. The service 
+    /// provides a method to activate a product using a product key, user name, and email address, and it waits for the activation process 
+    /// to complete before returning the result. This service is essential for ensuring that products are activated correctly and that users 
+    /// receive appropriate feedback on the activation status.
+    /// </summary>
     public class ActivationService : IActivationService
     {
         private readonly IWebSocketService _webSocketService;

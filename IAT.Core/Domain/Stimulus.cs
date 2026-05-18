@@ -1,5 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using IAT.Core.Enumerations;
+﻿using IAT.Core.Enumerations;
+using System.Text.Json.Serialization;
 
 namespace IAT.Core.Domain;
 
@@ -7,31 +7,30 @@ namespace IAT.Core.Domain;
 /// Defines a base class for stimuli used in an IAT experiment, providing common 
 /// properties and abstract methods for validation and display preview.
 /// </summary>
-public abstract partial class Stimulus : ObservableObject
+public abstract partial class Stimulus
 {
+    /// <summary>
+    /// Gets or sets the IAT test.
+    /// </summary>
+    [JsonIgnore]
+    public IatTest IatTest { get; set; } = null!;
+
     /// <summary>
     /// The guid the stimulus will be identifiedby
     /// </summary>
-    [ObservableProperty]
-    private Guid _id = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>
-    /// Gets or sets the display order for the item.
-    /// </summary>
-    [ObservableProperty]
-    private int _displayOrder;
+
 
     /// <summary>
     /// Gets or sets the originating block for the stimulus.
     /// </summary>
-    [ObservableProperty]
-    private int _originatingBlock;
-    
+    public int OriginatingBlock { get; set; }
+
     /// <summary>
     /// Gets or sets the keyed direction for the stimulus.
     /// </summary>
-    [ObservableProperty]
-    private KeyedDirection _keyedDirection = KeyedDirection.None;
+    public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.None;
 
     // Pure domain behavior only
     public abstract ValidationResult Validate();

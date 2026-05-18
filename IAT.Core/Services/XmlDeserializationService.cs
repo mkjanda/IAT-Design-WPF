@@ -28,8 +28,7 @@ namespace IAT.Core.Services
             { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
             { "SurveyResults", typeof(SurveyResponse) }, 
             { typeof(IatTest).Name, typeof(IatTest)  },
-            { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
-            { typeof(Trial).Name, typeof(Trial) }, { "DeploymentStatusUpdate", typeof(DeploymentUpdate) }
+            { typeof(TransactionRequest).Name, typeof(TransactionRequest) }
         };
 
         /// <summary>

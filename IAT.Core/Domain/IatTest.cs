@@ -98,6 +98,54 @@ public partial class IatTest : ObservableObject
 
 
     /// <summary>
+    /// Add stimulus to the test and update the stimulus cache. This method ensures that 
+    /// the stimulus is properly associated with the test and that the cache is kept up to 
+    /// date for efficient retrieval.
+    /// </summary>
+    /// <param name="stimulus">The stimulus to add.</param>
+    public void AddStimulus(Stimulus stimulus)
+    {
+        Stimuli.Add(stimulus);
+        _stimulusCache[stimulus.Id] = stimulus;
+        stimulus.IatTest = this;
+    }
+
+    /// <summary>
+    /// Removes a stimulus from the collection and cache.
+    /// </summary>
+    /// <param name="stimulus">The stimulus to remove.</param>
+    /// <returns>The removed stimulus.</returns>
+    public Stimulus RemoveStimulus(Stimulus stimulus)
+    {
+        Stimuli.Remove(stimulus);
+        _stimulusCache.Remove(stimulus.Id);
+        return stimulus;
+    }
+
+    /// <summary>
+    /// Adds a block to the collection and cache, and associates it with this IAT test.
+    /// </summary>
+    /// <param name="block">The block to add.</param>
+    public void AddBlock(Block block)
+    {
+        Blocks.Add(block);
+        _blockCache[block.Id] = block;
+        block.IatTest = this;
+    }
+
+    /// <summary>
+    /// Removes a block from the collection and cache.
+    /// </summary>
+    /// <param name="block">The block to remove.</param>
+    /// <returns>The removed block.</returns>
+    public Block RemoveBlock(Block block)
+    {
+        Blocks.Remove(block);
+        _blockCache.Remove(block.Id);
+        return block;
+    }
+
+    /// <summary>
     /// Validates the entire test configuration, including all trials, stimuli, and instruction screens.
     /// </summary>
     /// <remarks>This method performs a comprehensive validation by checking that every trial is

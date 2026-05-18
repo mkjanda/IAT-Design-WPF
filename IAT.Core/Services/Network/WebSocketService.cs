@@ -1,14 +1,10 @@
-﻿using IAT.Core.ConfigFile;
+﻿using IAT.Core.Services;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Handlers;
 using MediatR;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Net.WebSockets;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
@@ -56,7 +52,7 @@ namespace IAT.Core.Services.Network
         /// The message is serialized to XML and transmitted as a binary WebSocket message.
         /// </summary>
         /// <param name="message">The message object to be sent over the WebSocket connection.</param>
-        Task SendMessage(object message);    
+        Task SendMessage(object message);           
     }
 
 
@@ -74,13 +70,18 @@ namespace IAT.Core.Services.Network
         /// Gets the result of the product activation attempt.
         /// </summary>
         private ClientWebSocket WebSocket = new();
+        /// <summary>
+        /// The dictionary that maps transaction types to their corresponding command handlers. Each entry in the dictionary associates a specific transaction type 
+        /// with a delegate that processes a transaction request and returns a transaction result. This allows for dynamic handling of different transaction types 
+        /// based on the incoming messages received over the WebSocket connection.
+        /// </summary>
+        public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
         private readonly CancellationToken AbortToken = new(false);
         private readonly ArraySegment<byte> ReceiveBuffer = new();
         private readonly TransactionState _transactionState;
         private readonly IDialogService _dialogService;
-        private readonly StringResourceService _stringResourceService;
+        private readonly IStringResourceService _stringResourceService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
-        public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
         private readonly IMediator _mediator;
         private readonly MemoryStream MessageBuffer = new();
 
@@ -93,7 +94,7 @@ namespace IAT.Core.Services.Network
         /// <param name="transactionState">The state object used to manage transaction state.</param>
         /// <param name="mediator">The mediator used for handling requests and notifications.</param>
         /// <param name="dialogService">The service used to display dialog notifications to the user.</param>
-        public WebSocketService(StringResourceService stringResourceService, IXmlDeserializationService xmlDeserializationService, 
+        public WebSocketService(IStringResourceService stringResourceService, IXmlDeserializationService xmlDeserializationService, 
             TransactionState transactionState, IMediator mediator, IDialogService dialogService)
         {
             _stringResourceService = stringResourceService;

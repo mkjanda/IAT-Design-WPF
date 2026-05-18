@@ -205,4 +205,10 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request containing the deployment manifest to be processed. Cannot be null.</param>
     public record DeploymentManifestReceivedCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to handle the retrieval of item slides for a transaction request, indicating that the item slides are ready for processing.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the item slide retrieval. Cannot be null.</param>
+    public record RequestTransmissionItemSlideRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 }

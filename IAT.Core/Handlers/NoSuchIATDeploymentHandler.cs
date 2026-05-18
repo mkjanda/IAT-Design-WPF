@@ -25,7 +25,7 @@ namespace IAT.Core.Handlers
         /// <param name="dialogService">The service used to display dialogs to the user. Cannot be null.</param>
         /// <param name="stringService">The service used to retrieve localized string resources. Cannot be null.</param>
         public NoSuchIATDeploymentHandler(IWebSocketService webSocketService, IDialogService dialogService, 
-            StringResourceService stringService)
+            IStringResourceService stringService)
         {
             _webSocketService = webSocketService;
         }   

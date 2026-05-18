@@ -7,6 +7,7 @@ using System.Text;
 using System.Xml.Linq;
 using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
+using System.Collections;
 
 namespace IAT.Core.Services
 {
@@ -53,8 +54,8 @@ namespace IAT.Core.Services
         private static readonly int NonceBytes = 12;
         private static readonly int TagBytes = 16;
 
-        private IWebSocketService _wss;
-        private XDocument? ActivationDocument { get; set; }
+        private IEmailVerificationService _emailVerificationService;
+        private readonly XDocument ActivationDocument;
         private Dictionary<string, string> ActivationFileContents = new();
 
         /// <summary>
@@ -65,9 +66,9 @@ namespace IAT.Core.Services
         /// activation data exists in the expected file location, it is loaded; otherwise, a new activation document is
         /// created and saved. This constructor ensures that the local storage is properly initialized for subsequent
         /// operations.</remarks>
-        public LocalStorageService(IWebSocketService webSocketService)
+        public LocalStorageService(IEmailVerificationService emailVerificationService)
         {
-            _wss = webSocketService;
+            _emailVerificationService = emailVerificationService ?? throw new ArgumentNullException(nameof(emailVerificationService));
             if (ActivationDataExists)
                 ActivationDocument = XDocument.Load(ActivationFilePath);
             else
@@ -118,10 +119,12 @@ namespace IAT.Core.Services
                     else
                         return ActivationStatus.NotActivated;
                 }
-                _wss.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail]);
-                if (_wss.ActivationKey != string.Empty)
+                var transResult = _emailVerificationService.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail]).Result;
+                if (transResult != TransactionResult.Success)
+                    return ActivationStatus.EMailNotVerified;
+                if (_emailVerificationService.ActivationKey != string.Empty)
                 {
-                    this[Field.ActivationKey] = _wss.ActivationKey;
+                    this[Field.ActivationKey] = _emailVerificationService.ActivationKey;
                     if (IsActivatedCode(this[Field.ProductKey], this[Field.ActivationKey]))
                         return ActivationStatus.Activated;
                     else
@@ -133,16 +136,22 @@ namespace IAT.Core.Services
 
 
         private object activationDocumentLockObj = new object();
-        public String this[Field key]
+
+        /// <summary>
+        /// Indexer on LocalStorageService to access and modify values associated with specific fields. 
+        /// The indexer allows for getting and setting string values based on the provided Field key.
+        /// </summary>
+        /// <param name="key">The field key to access or modify.</param>
+        /// <returns>The string value associated with the specified field key.</returns>
+        public string this[Field key]
         {
             get
             {
-                lock (activationDocumentLockObj)
-                {
 
                     String value;
-                    if ((value = ActivationDocument.Root.Elements().Where(elem => elem.Name == key.Name).Select(elem => elem.Value).FirstOrDefault()) == null)
-                        return null;
+                    value = ActivationDocument?.Root?.Elements()?.Where(elem => elem.Name == key.Name)?.Select(elem => elem.Value)?.FirstOrDefault() ?? string.Empty;
+                    if (value == string.Empty)
+                        return string.Empty; 
                     if (key.Encrypted)
                     {
                         var aes = new AesGcm(storageKey, 16);
@@ -152,18 +161,15 @@ namespace IAT.Core.Services
                         return Encoding.UTF8.GetString(plaintext);
                     }
                     return value;
-                }
             }
             set
             {
-                lock (activationDocumentLockObj)
-                {
                     if (value == null)
                     {
-                        var elems = ActivationDocument.Root.Elements().Where(elem => key.Name == elem.Name);
+                    var elems = ActivationDocument?.Root?.Elements().Where(elem => key.Name == elem.Name) ?? [];
                         foreach (var elem in elems)
                             elem.Remove();
-                        ActivationDocument.Save(ActivationFilePath);
+                        ActivationDocument?.Save(ActivationFilePath);
                         return;
                     }
                     String storedValue = value;
@@ -181,7 +187,6 @@ namespace IAT.Core.Services
                         ActivationDocument.Root.Add(new XElement(key.Name, storedValue));
                     ActivationDocument.Save(ActivationFilePath);
                 }
-            }
         }
 
         public string GetIATPassword(String IAT)

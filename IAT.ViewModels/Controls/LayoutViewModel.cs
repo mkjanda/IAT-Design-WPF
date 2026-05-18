@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using IAT.Core.Domain;
+using IAT.Core.Enumerations;
 using IAT.Core.Services;
 using System;
 using System.Collections.Generic;
@@ -72,92 +73,92 @@ namespace IAT.ViewModels
 
         partial void OnStimulusWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "Stimulus", new Size(value, StimulusHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(value, StimulusHeight));
         }
 
         partial void OnStimulusHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "Stimulus", new Size(StimulusWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(StimulusWidth, value));
         }
 
         partial void OnLeftKeyWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "LeftKey", new Size(value, LeftKeyHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(value, LeftKeyHeight));
         }
 
         partial void OnLeftKeyHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "LeftKey", new Size(LeftKeyWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(LeftKeyWidth, value));
         }
 
         partial void OnRightKeyWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "RightKey", new Size(value, RightKeyHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(value, RightKeyHeight));
         }
 
         partial void OnRightKeyHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "RightKey", new Size(RightKeyWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(RightKeyWidth, value));
         }
         
         partial void OnErrorMarkWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "ErrorMark", new Size(value, ErrorMarkHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(value, ErrorMarkHeight));
         }
 
         partial void OnErrorMarkHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "ErrorMark", new Size(ErrorMarkWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(ErrorMarkWidth, value));
         }
 
         partial void OnBlockInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "BlockInstructions", new Size(value, BlockInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(value, BlockInstructionsHeight));
         }
 
         partial void OnBlockInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "BlockInstructions", new Size(BlockInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(BlockInstructionsWidth, value));
         }
 
         partial void OnMockItemInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "MockItemInstructions", new Size(value, MockItemInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Size(value, MockItemInstructionsHeight));
         }
 
         partial void OnMockItemInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "MockItemInstructions", new Size(MockItemInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Size(MockItemInstructionsWidth, value));
         }
 
         partial void OnKeyedInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "KeyedInstructions", new Size(value, KeyedInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Size(value, KeyedInstructionsHeight));
         }
 
         partial void OnKeyedInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "KeyedInstructions", new Size(KeyedInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Size(KeyedInstructionsWidth, value));
         }
 
         partial void OnTextInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "TextInstructions", new Size(value, TextInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Size(value, TextInstructionsHeight));
         }
 
         partial void OnTextInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "TextInstructions", new Size(TextInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Size(TextInstructionsWidth, value));
         }
 
         partial void OnContinueInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "ContinueInstructions", new Size(value, ContinueInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Size(value, ContinueInstructionsHeight));
         }
 
         partial void OnContinueInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, "ContinueInstructions", new Size(ContinueInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Size(ContinueInstructionsWidth, value));
         }
     }
 }

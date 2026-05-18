@@ -72,6 +72,7 @@ namespace IAT.Core.Services.Export
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="stimulus"/> or <paramref name="exportContext"/> is null.</exception>
         public void ProcessStimulus(Stimulus stimulus, ExportContext exportContext)
         {
+            
             if (stimulus == null) throw new ArgumentNullException(nameof(stimulus));
             if (exportContext == null) throw new ArgumentNullException(nameof(exportContext));
 
@@ -91,7 +92,7 @@ namespace IAT.Core.Services.Export
 
                 if (stimulus is TextStimulus text)
                 {
-                    var bmp = _imageGenerationService.RenderTextToBitmap(text);
+                    var bmp = _imageGenerationService.RenderTextToBitmap(text, exportContext.LayoutRects.Stimulus);
                     pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
                     pngEncoder.Save(memStream);
                     filename = $"stimulus{exportContext.IdDictionary[stimulus.Id]}.png";

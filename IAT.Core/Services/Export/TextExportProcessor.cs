@@ -70,7 +70,7 @@ namespace IAT.Core.Services.Export
             if (!exportContext.IdDictionary.ContainsKey(text.Id))
             {
                 exportContext.IdDictionary[text.Id] = exportContext.IdDictionary.Count + 1;
-                var textBmp = _imageGenerationService.RenderTextToBitmap(text);
+                var textBmp = _imageGenerationService.RenderTextToBitmap(text, textRect);
                 var memStream = new MemoryStream();
                 encoder.Save(memStream);
                 filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";

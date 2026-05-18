@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using IAT.Core.Handlers;
+using System.Security.RightsManagement;
 
 namespace IAT.Core.Services.Network
 {
@@ -27,6 +28,11 @@ namespace IAT.Core.Services.Network
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification request.</returns>
         Task<TransactionResult> VerifyEmail(string productKey, string email);
+
+        /// <summary>
+        /// The activation key for the software
+        /// </summary>
+        public string ActivationKey { get; }
     }
 
     /// <summary>
@@ -69,7 +75,7 @@ namespace IAT.Core.Services.Network
         /// <param name="email">The email address to verify. Cannot be null or empty.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification process.</returns>
-        public async Task<TransactionResult> VerifyEmail(string productKey, string email)
+        async public Task<TransactionResult> VerifyEmail(string productKey, string email)
         {
             _webSocketService.Start();
             _transactionState.Email = email;
@@ -82,5 +88,10 @@ namespace IAT.Core.Services.Network
             _transactionState.Event.WaitOne();
             return _transactionState.Result;
         }
-    }
+        
+        /// <summary>
+        /// Gets the activation key for the software.
+        /// </summary>
+        public string ActivationKey => _transactionState.ActivationKey;
+    }   
 }

@@ -25,52 +25,52 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets or sets the rectangle that defines the interior area available for content layout.
         /// </summary>
-        public Rect InteriorRect { get; } = _defaultInteriorRect;
+        public Rect InteriorRect { get; private set; } = _defaultInteriorRect;
 
         /// <summary>
         /// Gets or sets the rectangular area in which the stimulus is displayed.
         /// </summary>
-        public Rect StimulusRect { get; } = _defaultStimulusRect;
+        public Rect StimulusRect { get; private set; } = _defaultStimulusRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for the left key area.
         /// </summary>
-        public Rect LeftKeyRect { get; } = _defaultLeftKeyRect;
+        public Rect LeftKeyRect { get; private set; } = _defaultLeftKeyRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for the right key area.
         /// </summary>
-        public Rect RightKeyRect { get; } = _defaultRightKeyRect;
+        public Rect RightKeyRect { get; private set; } = _defaultRightKeyRect;
 
         /// <summary>
         /// Gets or sets the rectangle that defines the area used to display an error mark.
         /// </summary>
-        public Rect ErrorMarkRect { get; } = _defaultErrorMarkRect;
+        public Rect ErrorMarkRect { get; private set; } = _defaultErrorMarkRect;
 
         /// <summary>
         /// Gets  or sets the rectangle that defines the area for displaying block instructions.
         /// </summary>
-        public Rect BlockInstructionsRect { get; } = _defaultBlockInstructionsRect;
+        public Rect BlockInstructionsRect { get; private set; } = _defaultBlockInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for displaying mock item instructions.
         /// </summary>
-        public Rect MockItemInstructionsRect { get; } = _defaultMockItemInstructionsRect;
+        public Rect MockItemInstructionsRect { get; private set; } = _defaultMockItemInstructionsRect;
 
         /// <summary>
         /// Gets or sets the rectangular region used for displaying keyed instructions.
         /// </summary>
-        public Rect KeyedInstructionsRect { get; } = _defaultKeyedInstructionsRect;
+        public Rect KeyedInstructionsRect { get; private set; } = _defaultKeyedInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle that defines the area for displaying text instructions.
         /// </summary>
-        public Rect TextInstructionsRect { get; } = _defaultTextInstructionsRect;
+        public Rect TextInstructionsRect { get; private set; } = _defaultTextInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for displaying continue instructions.
         /// </summary>
-        public Rect ContinueInstructionsRect { get; } = _defaultContinueInstructionsRect;
+        public Rect ContinueInstructionsRect { get; private set; } = _defaultContinueInstructionsRect;
 
         TextStyle DefaultKeyStyle { get; } = new TextStyle { FontFamily = "Segoe UI", FontSize = 24, FontColor = Colors.Black };
 
@@ -92,7 +92,7 @@ namespace IAT.Core.Domain
         private static readonly Rect _defaultKeyedInstructionsRect = new Rect(15, 135, 570, 410);
         private static readonly Rect _defaultTextInstructionsRect = new Rect(15, 15, 570, 530);
         private static readonly Rect _defaultContinueInstructionsRect = new Rect(15, 570, 570, 30);
-/*
+
         /// <summary>
         /// Restores all configurable rectangles to their default values.
         /// </summary>
@@ -111,6 +111,6 @@ namespace IAT.Core.Domain
             KeyedInstructionsRect = _defaultKeyedInstructionsRect;
             TextInstructionsRect = _defaultTextInstructionsRect;
             ContinueInstructionsRect = _defaultContinueInstructionsRect;
-        }*/
+        }
     }
 }

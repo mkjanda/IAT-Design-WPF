@@ -73,8 +73,6 @@ namespace IAT_Design_WPF
             services.AddSingleton<IValidator<InstructionScreen>, InstructionScreenValidator>();
             services.AddSingleton<IValidator<Trial>, TrialValidator>();
 
-            services.AddSingleton<TestPackage>();
-
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
             Services = services.BuildServiceProvider();

@@ -257,7 +257,7 @@ namespace IAT.Core.Extensions
             }
             else
                 mf.MimeType = "text/xml";
-            mf._Name = name;
+            mf.Path = name;
         }
 
         /// <summary>
@@ -267,7 +267,7 @@ namespace IAT.Core.Extensions
         /// <param name="mf">The manifest file to add</param>
         public static void AddFile(this ManifestDirectory md, ManifestFile mf)
         {
-            mf.Path = md.Path + Path.PathSeparator + mf._Name;
+            mf.Path = md.Path + Path.PathSeparator + mf.Path;
             md.Contents.Add(mf);
         }
 
@@ -294,7 +294,7 @@ namespace IAT.Core.Extensions
         /// must be set appropriately.</param>
         public static void AddDirectory(this ManifestDirectory parent, ManifestDirectory child)
         {
-            child.Path = parent.Path + Path.PathSeparator + child.Name;
+            child.Path = parent.Path + Path.PathSeparator + child.Path;
             parent.Contents.Add(child);
         }
 

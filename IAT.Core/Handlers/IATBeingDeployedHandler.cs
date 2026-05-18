@@ -23,7 +23,7 @@ namespace IAT.Core.Handlers
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;
         private readonly TransactionState _transactionState;
-        private readonly StringResourceService _stringService;
+        private readonly IStringResourceService _stringService;
 
         /// <summary>
         /// Initializes a new instance of the IATBeingDeployedHandler class with the specified services and transaction
@@ -33,7 +33,7 @@ namespace IAT.Core.Handlers
         /// <param name="dialogService">The service used to display dialogs and user notifications during deployment.</param>
         /// <param name="transactionState">The current state of the transaction associated with the deployment process.</param>
         /// <param name="stringService">The service used to retrieve localized string resources for user interface elements.</param>
-        public IATBeingDeployedHandler(IWebSocketService webSocketService, IDialogService dialogService, TransactionState transactionState, StringResourceService stringService)
+        public IATBeingDeployedHandler(IWebSocketService webSocketService, IDialogService dialogService, TransactionState transactionState, IStringResourceService stringService)
         {
             _webSocketService = webSocketService;
             _dialogService = dialogService;
