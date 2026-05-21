@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Page Remove="Resources\styles.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\IAT.Core\IAT.Core.csproj">
       <Private>True</Private>
     </ProjectReference>
@@ -21,12 +17,6 @@
 
   <ItemGroup>
     <Folder Include="Templates\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Resources\styles.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Resource>
   </ItemGroup>
 
 </Project>

@@ -14,6 +14,8 @@ using IAT.Core.Services.Network;
 using IAT.Core.Services.Export;
 using IAT.Core.Domain;
 using IAT.Core.Validation;
+using IAT.ViewModels.Controls;
+using com.sun.corba.se.spi.servicecontext;
 
 namespace IAT_Design_WPF
 {
@@ -21,26 +23,26 @@ namespace IAT_Design_WPF
     {
         public static IServiceProvider Services { get; private set; }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected async override void OnStartup(StartupEventArgs e)
         {
-            // 1. VelopackApp MUST run FIRST — this sets up the locator and is required
-            VelopackApp.Build()
-                .Run();
+            /*        // 1. VelopackApp MUST run FIRST — this sets up the locator and is required
+                    VelopackApp.Build()
+                        .Run();
 
-            // 2. Velopack update check (the correct modern API)
-            var updateManager = new UpdateManager("https://github.com/mkjanda/IAT-Design-WPF/releases/latest");
+                    // 2. Velopack update check (the correct modern API)
+                    var updateManager = new UpdateManager("https://github.com/mkjanda/IAT-Design-WPF/releases/latest");
 
-            var updateInfo = await updateManager.CheckForUpdatesAsync();
-            if (updateInfo != null)
-            {
-                // Optional: show a small "Updating..." window here later
-                await updateManager.DownloadUpdatesAsync(updateInfo);
+                    var updateInfo = await updateManager.CheckForUpdatesAsync();
+                    if (updateInfo != null)
+                    {
+                        // Optional: show a small "Updating..." window here later
+                        await updateManager.DownloadUpdatesAsync(updateInfo);
 
-                // This applies the update and restarts the app cleanly
-                updateManager.ApplyUpdatesAndRestart(updateInfo);
-                return;   // important — stop startup if we're restarting
-            }
-
+                        // This applies the update and restarts the app cleanly
+                        updateManager.ApplyUpdatesAndRestart(updateInfo);
+                        return;   // important — stop startup if we're restarting
+                    }
+            */
             // 3. Dependency Injection setup (the professional way)
             var services = new ServiceCollection();
 
@@ -56,6 +58,10 @@ namespace IAT_Design_WPF
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<ILayoutCalculatorService, LayoutCalculatorService>();
             services.AddSingleton<LayoutViewModel>();
+            services.AddSingleton<BlockEditViewModel>();
+            services.AddSingleton<TestDesignerViewModel>();
+            services.AddSingleton<IatTest>();
+            services.AddSingleton<IImagePackageService, ImagePackageService>();
             services.AddSingleton<IActivationService, ActivationService>();
             services.AddSingleton<IEmailVerificationService, EmailVerificationService>();
             services.AddSingleton<IGetItemSlidesService, GetItemSlidesService>();
@@ -66,6 +72,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<IStimulusExportProcessor, StimulusExportProcessor>();
             services.AddSingleton<ITestExportService, TestExportService>(); 
             services.AddSingleton<ITextExportProcessor, TextExportProcessor>();
+            services.AddSingleton<IProjectPackageService, ProjectPackageService>();
             services.AddSingleton<IFileManifestBuilder, FileManifestBuilder>();
             services.AddSingleton<IValidator<IatTest>, IatTestValidator>();
             services.AddSingleton<IValidator<Block>, BlockValidator>();

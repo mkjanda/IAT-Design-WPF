@@ -122,6 +122,16 @@ public partial class IatTest : ObservableObject
         return stimulus;
     }
 
+    public void UpdateStimulus(Stimulus stim)
+    {
+        if (Stimuli.Select(s => s.Id).Contains(stim.Id))
+        {
+            _stimulusCache[stim.Id] = stim;
+            Stimuli.Remove(Stimuli.Where(s => s.Id == stim.Id).First());
+            Stimuli.Add(stim);
+        }
+    }
+
     /// <summary>
     /// Adds a block to the collection and cache, and associates it with this IAT test.
     /// </summary>

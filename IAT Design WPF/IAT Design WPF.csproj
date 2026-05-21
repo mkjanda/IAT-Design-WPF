@@ -99,10 +99,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj" />
-    <ProjectReference Include="..\IAT.VIewModels\IAT.ViewModels.csproj" />
+    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj">
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\IAT.VIewModels\IAT.ViewModels.csproj">
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\IAT.Views\IAT.Views.csproj">
       <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
 
@@ -112,4 +117,7 @@
     <Folder Include="Utilities\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Include="App.xaml" />
+  </ItemGroup>
 </Project>

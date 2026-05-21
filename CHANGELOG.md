@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added initial views for block design and stimulus editing, which can be used to provide a user-friendly interface for designing the blocks and stimuli used in the IAT test. 
 - Added view models for block design and stimulus editing, which can be used to manage the data and state of the block design and stimulus editing views. These view models will handle the logic and functionality needed to support the block design and stimulus editing features, including managing user input, updating the views based on changes to the data, and coordinating with other components and services as needed.
 - Added item slide retrieval to the test result retrieval process.
+- Added a skeleton implementation of the block design view, which provides a basic structure and layout for the block design interface. This implementation can be further developed and enhanced to include additional features and functionality as needed.
+- Added properties to LayoutViewModel to databind computed values to BlockEditView.xaml.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 
@@ -43,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The way that result data is structured and managed has been updated, including the removal of versioning from the result data to conform to modern practices and to simplify the data structure. 
 - Changed the way that dialogs are handled within the application, including updates to the dialog service and the way that different types of dialogs are displayed and managed. 
 - Test deployment has been updated to include the generation of necessary files and resources, as well as the packaging of the test configuration and associated data for deployment to the server. 
+- Normalized the style dictionaries and XAML converter declaration.
+- Moved DataContext assigments in the XAML to the main window's Show function, which allows for better separation of concerns and makes the XAML files more focused on defining the user interface rather than managing the data context. 
 ### Deprecated
 ### Removed
 - Removed support for older versions of .NET, as the application now requires .NET 10.0 or later to take advantage of the latest features and improvements. 
@@ -55,6 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The old TestPackage and TestExportService "god objects" have been removed and replaced with a collection of services in IAT.Core.Services.Export that handle the export of test configurations and associated data in a modular and maintainable way.
 ### Fixed
 - Repaired the IAT.Core.Services.ImageGenerationService following a reworking of data flow surroundning test packaging.
+- Repaired an error that caused Page build actioned items to show up as duplicates.
+- Made a simple repair to App.xaml, setting its corresponding object's namespace correctly to IAT_Design_WPF. The previous entry had begun to block compilation. 
 ### Security
 - Enhanced the security of product activation to a public/private AES key exchange. Product activation is necessitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.
 - Altered the handshaking algorithm with the server. It is now limited to a challenge/response exchange revolving around the AES encryption of a random string. This eliminates a web socket transaction from the process, and cuts "security for the sake of security."

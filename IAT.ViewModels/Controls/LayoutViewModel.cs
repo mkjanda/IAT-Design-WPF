@@ -1,9 +1,11 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using com.sun.org.apache.xml.@internal.resolver.helpers;
+using CommunityToolkit.Mvvm.ComponentModel;
 using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using IAT.Core.Services;
 using System;
 using System.Collections.Generic;
+using System.Security.RightsManagement;
 using System.Text;
 using System.Windows;
 
@@ -18,10 +20,8 @@ namespace IAT.ViewModels
         [ObservableProperty] private double interiorHeight;
         [ObservableProperty] private double stimulusWidth;
         [ObservableProperty] private double stimulusHeight;
-        [ObservableProperty] private double leftKeyWidth;
-        [ObservableProperty] private double leftKeyHeight;
-        [ObservableProperty] private double rightKeyWidth;
-        [ObservableProperty] private double rightKeyHeight;
+        [ObservableProperty] private double keyWidth;
+        [ObservableProperty] private double keyHeight;
         [ObservableProperty] private double errorMarkWidth;
         [ObservableProperty] private double errorMarkHeight;
         [ObservableProperty] private double blockInstructionsWidth;
@@ -34,6 +34,25 @@ namespace IAT.ViewModels
         [ObservableProperty] private double textInstructionsHeight;
         [ObservableProperty] private double continueInstructionsWidth;
         [ObservableProperty] private double continueInstructionsHeight;
+
+        private double thickLayoutPadding => (InteriorHeight - KeyHeight - BlockInstructionsHeight - ErrorMarkHeight - StimulusHeight) / 3;
+        private double thinLayoutPadding => (InteriorHeight - BlockInstructionsHeight - ErrorMarkHeight - StimulusHeight) / 3;
+
+        public double StimulusX => InteriorWidth / 2 - StimulusWidth / 2;
+        public double StimulusY => (InteriorWidth - KeyWidth * 2 < 0) ? thickLayoutPadding + KeyHeight : thinLayoutPadding;
+
+        public double LeftKeyX => 0;
+
+        public double LeftKeyY => 0;
+
+        public double RightKeyX => InteriorWidth - KeyWidth;
+        public double RightKeyY => 0;
+        public double ErrorMarkX => InteriorWidth / 2 - ErrorMarkWidth / 2;
+        public double ErrorMarkY => (InteriorWidth - KeyWidth * 2 < 0) ? StimulusY + StimulusHeight + thickLayoutPadding
+            : StimulusY + StimulusHeight + thinLayoutPadding;
+
+        public double BlockInstructionsX => InteriorWidth / 2 - BlockInstructionsWidth / 2;
+        public double BlockInstructionsY => InteriorHeight - BlockInstructionsHeight;
 
         /// <summary>
         /// Constructs a new instance of the LayoutViewModel class, initializing layout properties based on the provided layout calculator 
@@ -53,10 +72,8 @@ namespace IAT.ViewModels
             InteriorHeight = rects.Interior.Height;
             StimulusWidth = rects.Stimulus.Width;
             StimulusHeight = rects.Stimulus.Height;
-            LeftKeyWidth = rects.LeftKey.Width;
-            LeftKeyHeight = rects.LeftKey.Height;
-            RightKeyWidth = rects.RightKey.Width;
-            RightKeyHeight = rects.RightKey.Height;
+            KeyWidth = rects.LeftKey.Width;
+            KeyHeight = rects.LeftKey.Height;
             ErrorMarkWidth = rects.ErrorMark.Width;
             ErrorMarkHeight = rects.ErrorMark.Height;
             BlockInstructionsWidth = rects.BlockInstructions.Width;
@@ -74,51 +91,58 @@ namespace IAT.ViewModels
         partial void OnStimulusWidthChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(value, StimulusHeight));
+            OnPropertyChanged(nameof(StimulusX));
         }
 
         partial void OnStimulusHeightChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(StimulusWidth, value));
+            OnPropertyChanged(nameof(StimulusY));
+            OnPropertyChanged(nameof(ErrorMarkY));
         }
 
-        partial void OnLeftKeyWidthChanged(double value)
+        partial void OnKeyWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(value, LeftKeyHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(value, KeyHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(value, KeyHeight));
+            OnPropertyChanged(nameof(StimulusY));
+            OnPropertyChanged(nameof(ErrorMarkY));
+            OnPropertyChanged(nameof(RightKeyX));
         }
 
-        partial void OnLeftKeyHeightChanged(double value)
+        partial void OnKeyHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(LeftKeyWidth, value));
-        }
-
-        partial void OnRightKeyWidthChanged(double value)
-        {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(value, RightKeyHeight));
-        }
-
-        partial void OnRightKeyHeightChanged(double value)
-        {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(RightKeyWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(KeyWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(KeyWidth, value));
+            OnPropertyChanged(nameof(StimulusY));
+            OnPropertyChanged(nameof(ErrorMarkY));
         }
         
         partial void OnErrorMarkWidthChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(value, ErrorMarkHeight));
+            OnPropertyChanged(nameof(ErrorMarkX));
         }
 
         partial void OnErrorMarkHeightChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(ErrorMarkWidth, value));
+            OnPropertyChanged(nameof(StimulusY));
+            OnPropertyChanged(nameof(ErrorMarkX));
         }
 
         partial void OnBlockInstructionsWidthChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(value, BlockInstructionsHeight));
+            OnPropertyChanged(nameof(BlockInstructionsX));
         }
 
         partial void OnBlockInstructionsHeightChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(BlockInstructionsWidth, value));
+            OnPropertyChanged(nameof(StimulusY));
+            OnPropertyChanged(nameof(ErrorMarkY));
+            OnPropertyChanged(nameof(BlockInstructionsY));
         }
 
         partial void OnMockItemInstructionsWidthChanged(double value)

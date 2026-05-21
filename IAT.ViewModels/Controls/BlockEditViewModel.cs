@@ -4,11 +4,12 @@ using IAT.Core.Domain;
 using IAT.Core.Models;
 using IAT.Core.Services;
 using IAT.ViewModels.Controls;
+using sun.security.x509;
 using System.Collections.ObjectModel;
 
 namespace IAT.ViewModels.Controls;
 
-public partial class TestDesignerViewModel : ObservableObject
+public partial class BlockEditViewModel : ObservableObject
 {
     private readonly IProjectPackageService _packageService;
     private readonly ILayoutCalculatorService _layoutCalculator;
@@ -18,6 +19,7 @@ public partial class TestDesignerViewModel : ObservableObject
     [ObservableProperty] private bool isLayoutEditMode;
     [ObservableProperty] private LayoutViewModel? layoutViewModel;
 
+
     /// <summary>
     /// The constructor for the test designer view model, which facilitates the creating of IAT blocks and the assignment of trials and 
     /// stimuli to those blocks. It takes in services for loading project packages and calculating layouts, which are essential for managing 
@@ -25,12 +27,14 @@ public partial class TestDesignerViewModel : ObservableObject
     /// </summary>
     /// <param name="packageService">The service responsible for loading project packages.</param>
     /// <param name="layoutCalculator">The service responsible for calculating layouts.</param>
-    public TestDesignerViewModel(IProjectPackageService packageService, ILayoutCalculatorService layoutCalculator)
+    public BlockEditViewModel(IProjectPackageService packageService, ILayoutCalculatorService layoutCalculator, 
+        LayoutViewModel _layoutViewModel)
     {
         _packageService = packageService;
         _layoutCalculator = layoutCalculator;
+        LayoutViewModel = _layoutViewModel;
     }
-
+    
     [RelayCommand]
     private async Task LoadTestAsync(string packagePath)
     {
