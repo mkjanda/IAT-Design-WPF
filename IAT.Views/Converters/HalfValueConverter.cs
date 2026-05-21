@@ -8,7 +8,7 @@ namespace IAT.Views.Converters
     /// <summary>
     /// Converts a boolean value to a BorderBrush color.    
     /// </summary>
-    public class BoolToBorderBrushConverter : IValueConverter
+    public class HalfValueConverter : IValueConverter
     {
         /// <summary>
         /// Converts a boolean edit mode value to a brush color.
@@ -17,13 +17,12 @@ namespace IAT.Views.Converters
         /// <param name="targetType">The type of the binding target property.</param>
         /// <param name="parameter">An optional parameter to be used in the conversion.</param>
         /// <param name="culture">The culture to use in the conversion.</param>
-        /// <returns>A <see cref="SolidColorBrush"/> with accent blue color (#007ACC) if in edit mode; otherwise, a transparent
-        /// brush.</returns>
+        /// <returns>A <see cref="double"/> representing half of the input value.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool b && b)
-                return new SolidColorBrush(Color.FromRgb(0, 122, 204)); // #007ACC  
-            return Brushes.Transparent;
+            if (value is double d)
+                return d / 2;
+            return 0.0;
         }
 
         /// <summary>

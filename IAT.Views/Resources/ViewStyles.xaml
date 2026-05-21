@@ -40,6 +40,7 @@
                       BlurRadius="12" 
                       RenderingBias="Performance"/>
     <converters:BoolToBorderBrushConverter x:Key="BoolToBorderBrushConverter"/>
+    <converters:HalfValueConverter x:Key="HalfValueConverter"/>
 
 
 </ResourceDictionary>       

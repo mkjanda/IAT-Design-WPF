@@ -14,48 +14,59 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="280"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
         <!-- LEFT: Blocks sidebar -->
-        <Border Background="#1F1F1F" BorderBrush="#333" BorderThickness="0,0,1,0">
-            <DockPanel>
-                <TextBlock Text="Blocks" FontSize="18" FontWeight="SemiBold" Foreground="White"
+        <Border Background="#1F1F1F" BorderBrush="#333" BorderThickness="0,0,1,0" Grid.Row="0" Grid.RowSpan="2">
+        <DockPanel>
+            <TextBlock Text="Blocks" FontSize="18" FontWeight="SemiBold" Foreground="White"
                            Margin="16,12,16,8" DockPanel.Dock="Top"/>
 
-                <StackPanel Orientation="Horizontal" Margin="12,0,12,12" DockPanel.Dock="Bottom">
-                    <Button Content="+ Add Block" Command="{Binding AddBlockCommand}" 
+            <StackPanel Orientation="Horizontal" Margin="12,0,12,12" DockPanel.Dock="Bottom">
+                <Button Content="+ Add Block" Command="{Binding AddBlockCommand}" 
                             Style="{StaticResource AccentButton}" Height="36" Width="110"/>
-                    <Button Content="Delete" Margin="8,0,0,0" Height="36"/>
-                    <Button Content="↑" Width="36" Margin="8,0,0,0"/>
-                    <Button Content="↓" Width="36" Margin="4,0,0,0"/>
-                </StackPanel>
+                <Button Content="Delete" Margin="8,0,0,0" Height="36"/>
+                <Button Content="↑" Width="36" Margin="8,0,0,0"/>
+                <Button Content="↓" Width="36" Margin="4,0,0,0"/>
+            </StackPanel>
 
-                <ListBox ItemsSource="{Binding Blocks}" SelectedItem="{Binding SelectedBlock}"
+            <ListBox ItemsSource="{Binding Blocks}" SelectedItem="{Binding SelectedBlock}"
                          Background="Transparent" BorderThickness="0" Margin="8">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Name}" Foreground="White" Margin="8"/>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Name}" Foreground="White" Margin="8"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
         </Border>
 
+
         <!-- CENTER: Live Preview Canvas -->
-        <Grid Grid.Column="1" Margin="16">
+        <Grid Grid.Column="1" Margin="16" Grid.Row="0" SizeChanged="OnPreviewHostSizeChanged">
+
             <Border Background="White" CornerRadius="4" Padding="20" Effect="{StaticResource DropShadow}">
 
                 <!-- This is the key: push LayoutViewModel down as the DataContext -->
                 <Grid DataContext="{Binding LayoutViewModel, TargetNullValue={x:Null}, FallbackValue={x:Null}}">
 
-                    <Canvas x:Name="PreviewCanvas" Background="#F8F8F8">
-
+                    <Canvas x:Name="PreviewCanvas" Background="#F8F8F8" Width="{Binding InteriorWidth}"
+                            Height="{Binding InteriorHeight}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Canvas.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding ScaleFactor}" ScaleY="{Binding ScaleFactor}"
+                                            CenterX="{Binding InteriorWidth, Converter={StaticResource HalfValueConverter}}"
+                                            CenterY="{Binding InteriorHeight, Converter={StaticResource HalfValueConverter}}" />
+                        </Canvas.RenderTransform>
                         <!-- Block Instructions -->
                         <Border Canvas.Left="{Binding BlockInstructionsX}" 
                         Canvas.Top="{Binding BlockInstructionsY}"
                         Width="{Binding BlockInstructionsWidth}"
                         Height="{Binding BlockInstructionsHeight}"
                         BorderThickness="2" CornerRadius="4"
-                        BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                        BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
                             <TextBlock Text="Block Instructions" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" Foreground="#000"/>
                         </Border>
 
@@ -65,7 +76,7 @@
                         Width="{Binding StimulusWidth}"
                         Height="{Binding StimulusHeight}" 
                         BorderThickness="3" CornerRadius="8"
-                        BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                        BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
                             <TextBlock Text="Sample Stimulus" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="28" FontWeight="Medium" Foreground="#555" />
                         </Border>
 
@@ -74,7 +85,7 @@
                         Canvas.Top="{Binding LeftKeyY}"
                         Width="{Binding KeyWidth}"
                         Height="{Binding KeyHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
                             <TextBlock Text="Left Key (E)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
                         </Border>
 
@@ -83,7 +94,7 @@
                         Canvas.Top="{Binding RightKeyY}"
                         Width="{Binding KeyWidth}"
                         Height="{Binding KeyHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
                             <TextBlock Text="Right Key (I)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
                         </Border>
 
@@ -92,7 +103,7 @@
                         Canvas.Top="{Binding ErrorMarkY}"
                         Width="{Binding ErrorMarkWidth}"
                         Height="{Binding ErrorMarkHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
                             <TextBlock Text="X" Foreground="Red" FontSize="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
 
@@ -130,7 +141,7 @@
         </Border>
 
         <!-- BOTTOM: Trials grid -->
-        <Grid Grid.Column="1" Grid.ColumnSpan="2" Margin="16,0,16,16" VerticalAlignment="Bottom" Height="180">
+        <Grid Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Margin="16,0,16,16" VerticalAlignment="Bottom" Height="200">
             <Border Background="#1F1F1F" CornerRadius="4">
                 <DataGrid ItemsSource="{Binding SelectedBlock.Trials}" AutoGenerateColumns="False" 
                           Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="#2A2A2A">
@@ -145,7 +156,7 @@
 
         <!-- Top toolbar toggle (placed in MainWindow or parent) -->
         <ToggleButton Content="Customize Layout" IsChecked="{Binding IsLayoutEditMode}" 
-                      Command="{Binding ToggleLayoutEditModeCommand}" Click="CustomizeLayoutClick"
+                      Command="{Binding ToggleLayoutEditModeCommand}"
                       HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20"/>
     </Grid>
 </UserControl>

@@ -1,5 +1,6 @@
 ﻿using com.sun.org.apache.xml.@internal.resolver.helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using IAT.Core.Services;
@@ -34,12 +35,29 @@ namespace IAT.ViewModels
         [ObservableProperty] private double textInstructionsHeight;
         [ObservableProperty] private double continueInstructionsWidth;
         [ObservableProperty] private double continueInstructionsHeight;
+        [ObservableProperty] private bool isLayoutEditMode;
+        [ObservableProperty] private double scaleFactor;
+
+        [RelayCommand]
+        public void FitToWindow(Size availableSize)
+        {
+            if (availableSize.Width <= 0 || availableSize.Height <= 0)
+                return;
+            
+            // Design size comes from your layout (you already have InteriorWidth/Height)
+            double scaleX = availableSize.Width / InteriorWidth;
+            double scaleY = availableSize.Height / InteriorHeight;
+
+            ScaleFactor = Math.Min(scaleX, scaleY) * 0.95; // 5% padding looks better
+            OnPropertyChanged(nameof(DesignHeight));
+            OnPropertyChanged(nameof(DesignWidth));
+        }
 
         private double thickLayoutPadding => (InteriorHeight - KeyHeight - BlockInstructionsHeight - ErrorMarkHeight - StimulusHeight) / 3;
         private double thinLayoutPadding => (InteriorHeight - BlockInstructionsHeight - ErrorMarkHeight - StimulusHeight) / 3;
 
         public double StimulusX => InteriorWidth / 2 - StimulusWidth / 2;
-        public double StimulusY => (InteriorWidth - KeyWidth * 2 < 0) ? thickLayoutPadding + KeyHeight : thinLayoutPadding;
+        public double StimulusY => (InteriorWidth - StimulusWidth - KeyWidth * 2 < 0) ? thickLayoutPadding + KeyHeight : thinLayoutPadding;
 
         public double LeftKeyX => 0;
 
@@ -48,11 +66,14 @@ namespace IAT.ViewModels
         public double RightKeyX => InteriorWidth - KeyWidth;
         public double RightKeyY => 0;
         public double ErrorMarkX => InteriorWidth / 2 - ErrorMarkWidth / 2;
-        public double ErrorMarkY => (InteriorWidth - KeyWidth * 2 < 0) ? StimulusY + StimulusHeight + thickLayoutPadding
+        public double ErrorMarkY => (InteriorWidth - StimulusWidth - KeyWidth * 2 < 0) ? StimulusY + StimulusHeight + thickLayoutPadding
             : StimulusY + StimulusHeight + thinLayoutPadding;
 
         public double BlockInstructionsX => InteriorWidth / 2 - BlockInstructionsWidth / 2;
         public double BlockInstructionsY => InteriorHeight - BlockInstructionsHeight;
+
+        public double DesignWidth => InteriorWidth * ScaleFactor;
+        public double DesignHeight => InteriorHeight * ScaleFactor;
 
         /// <summary>
         /// Constructs a new instance of the LayoutViewModel class, initializing layout properties based on the provided layout calculator 
@@ -184,5 +205,7 @@ namespace IAT.ViewModels
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Size(ContinueInstructionsWidth, value));
         }
+
+
     }
 }

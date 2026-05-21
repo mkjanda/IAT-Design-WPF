@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added item slide retrieval to the test result retrieval process.
 - Added a skeleton implementation of the block design view, which provides a basic structure and layout for the block design interface. This implementation can be further developed and enhanced to include additional features and functionality as needed.
 - Added properties to LayoutViewModel to databind computed values to BlockEditView.xaml.
+- Added layout resize rectangles to the block design view, which can be used to visually represent the layout of the blocks in the IAT test and allow for easy resizing.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 
@@ -61,6 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Repaired the IAT.Core.Services.ImageGenerationService following a reworking of data flow surroundning test packaging.
 - Repaired an error that caused Page build actioned items to show up as duplicates.
 - Made a simple repair to App.xaml, setting its corresponding object's namespace correctly to IAT_Design_WPF. The previous entry had begun to block compilation. 
+- The trial preview of the block design view no resizes correctly with the window.
 ### Security
 - Enhanced the security of product activation to a public/private AES key exchange. Product activation is necessitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.
 - Altered the handshaking algorithm with the server. It is now limited to a challenge/response exchange revolving around the AES encryption of a random string. This eliminates a web socket transaction from the process, and cuts "security for the sake of security."

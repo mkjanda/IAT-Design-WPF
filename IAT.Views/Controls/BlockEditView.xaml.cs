@@ -17,12 +17,12 @@ namespace IAT.Views.Controls
             InitializeComponent();
         }
 
-        public void CustomizeLayoutClick(object sender, RoutedEventArgs e)
+        private void OnPreviewHostSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            var vm = DataContext as BlockEditViewModel;
-           
-            // Placeholder for future layout customization logic
-            MessageBox.Show("Customize Layout clicked! (Functionality to be implemented)");
+            if (DataContext is BlockEditViewModel vm && vm.LayoutViewModel != null)
+            {
+                vm.LayoutViewModel.FitToWindowCommand.Execute(e.NewSize);
+            }
         }
     }
 }

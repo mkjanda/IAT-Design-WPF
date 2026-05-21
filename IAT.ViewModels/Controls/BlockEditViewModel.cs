@@ -16,7 +16,6 @@ public partial class BlockEditViewModel : ObservableObject
 
     [ObservableProperty] private ObservableCollection<Block> blocks = new();
     [ObservableProperty] private Block? selectedBlock;
-    [ObservableProperty] private bool isLayoutEditMode;
     [ObservableProperty] private LayoutViewModel? layoutViewModel;
 
 
@@ -58,6 +57,9 @@ public partial class BlockEditViewModel : ObservableObject
     [RelayCommand]
     private void ToggleLayoutEditMode()
     {
-        IsLayoutEditMode = !IsLayoutEditMode;
+        if (LayoutViewModel == null)
+            return;
+        LayoutViewModel.IsLayoutEditMode = !LayoutViewModel.IsLayoutEditMode;
     }
- }
+
+}
