@@ -41,7 +41,7 @@ namespace IAT.ViewModels.Controls
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="StimulusViewModel"/> class from a text stimulus domain object.
+        /// Initializes a new instance of the <see cref="StimulusEditViewModel"/> class from a text stimulus domain object.
         /// </summary>
         /// <param name="domainStimulus">The text stimulus domain object to map to the view model.</param>
         public StimulusEditViewModel(TextStimulus domainStimulus)

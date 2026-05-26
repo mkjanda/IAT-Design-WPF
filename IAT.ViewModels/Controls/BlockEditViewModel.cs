@@ -26,12 +26,13 @@ public partial class BlockEditViewModel : ObservableObject
     /// </summary>
     /// <param name="packageService">The service responsible for loading project packages.</param>
     /// <param name="layoutCalculator">The service responsible for calculating layouts.</param>
+    /// <param name="layoutViewModel">The initial layout view model, which can be null if no block is selected.</param>
     public BlockEditViewModel(IProjectPackageService packageService, ILayoutCalculatorService layoutCalculator, 
-        LayoutViewModel _layoutViewModel)
+        LayoutViewModel layoutViewModel)
     {
         _packageService = packageService;
         _layoutCalculator = layoutCalculator;
-        LayoutViewModel = _layoutViewModel;
+        LayoutViewModel = layoutViewModel;
     }
     
     [RelayCommand]
