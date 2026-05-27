@@ -68,7 +68,7 @@ public partial class StimuliManagerViewModel : ObservableObject
             Text = "New Text Stimulus"
         };
 
-        _currentTest.AllStimuli.Add(newStimulus);
+        _currentTest.AddStimulus(newStimulus);
         StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _imageGenService));
         SelectedItem = StimuliItems.Last();
     }
@@ -91,12 +91,10 @@ public partial class StimuliManagerViewModel : ObservableObject
 
             var newStimulus = new ImageStimulus
             {
-                Id = Guid.NewGuid(),
-                ImageId = imageId,
                 FileName = dialog.FileName
             };
 
-            _currentTest.AllStimuli.Add(newStimulus);
+            _currentTest.AddStimulus(newStimulus);
             StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _imageGenService));
             SelectedItem = StimuliItems.Last();
         }
@@ -113,7 +111,7 @@ public partial class StimuliManagerViewModel : ObservableObject
         if (item?.Stimulus == null) return;
 
         // TODO: Production check – is this stimulus used in any trial?
-        _currentTest.AllStimuli.Remove(item.Stimulus);
+        _currentTest.RemoveStimulus(item.Stimulus);
         StimuliItems.Remove(item);
     }
 }
