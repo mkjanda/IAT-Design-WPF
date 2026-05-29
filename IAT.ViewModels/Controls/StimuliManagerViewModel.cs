@@ -4,6 +4,7 @@ using IAT.Core.Domain;
 using IAT.Core.Services;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.IO;
 using System.Linq;
 using System.Windows.Media.Imaging;
@@ -11,11 +12,16 @@ using System.Windows.Media;
 
 namespace IAT.ViewModels.Controls;
 
+/// <summary>
+/// Manages the collection of stimuli for an IAT test, providing functionality to add, delete, and filter text and image
+/// stimuli.
+/// </summary>
 public partial class StimuliManagerViewModel : ObservableObject
 {
     private readonly IatTest _currentTest;
     private readonly ProjectPackageService _packageService;
     private readonly IImageGenerationService _imageGenService;
+    private readonly ILayoutCalculatorService _layoutCalculatorService;
 
     [ObservableProperty]
     private ObservableCollection<StimulusListItemViewModel> stimuliItems = new();
@@ -26,33 +32,45 @@ public partial class StimuliManagerViewModel : ObservableObject
     [ObservableProperty]
     private string searchText = string.Empty;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StimuliManagerViewModel"/> class.
+    /// </summary>
+    /// <param name="currentTest">The current IAT test.</param>
+    /// <param name="packageService">The service for managing project packages.</param>
+    /// <param name="imageGenService">The image generation service.</param>
+    /// <param name="rectCalculator">The layout calculator service.</param>
     public StimuliManagerViewModel(IatTest currentTest,
                                   ProjectPackageService packageService,
-                                  IImageGenerationService imageGenService)
+                                  IImageGenerationService imageGenService,
+                                  ILayoutCalculatorService rectCalculator)
     {
         _currentTest = currentTest;
         _packageService = packageService;
         _imageGenService = imageGenService;
-
+        _layoutCalculatorService = rectCalculator;
         LoadStimuli();
     }
 
     private void LoadStimuli()
     {
         StimuliItems.Clear();
+        LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
         foreach (var stimulus in _currentTest.AllStimuli)
         {
-            StimuliItems.Add(new StimulusListItemViewModel(stimulus, _imageGenService));
+            StimuliItems.Add(new StimulusListItemViewModel(stimulus, _packageService,
+                _imageGenService, rects.Stimulus));
         }
     }
 
     partial void OnSearchTextChanged(string value)
     {
         // Real-time filtering (you can also use CollectionViewSource if you prefer)
+        LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
         var filtered = _currentTest.AllStimuli
             .Where(s => string.IsNullOrEmpty(value) ||
                         (s is TextStimulus ts && ts.Text.Contains(value, StringComparison.OrdinalIgnoreCase)))
-            .Select(s => new StimulusListItemViewModel(s, _imageGenService))
+            .Select(s => new StimulusListItemViewModel(s, _packageService,
+                _imageGenService, rects.Stimulus))
             .ToList();
 
         StimuliItems.Clear();
@@ -67,10 +85,11 @@ public partial class StimuliManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             Text = "New Text Stimulus"
         };
+        LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
 
         _currentTest.AddStimulus(newStimulus);
-        StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _imageGenService));
-        SelectedItem = StimuliItems.Last();
+        StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _packageService, _imageGenService, rects.Stimulus));
+        SelectedItem = StimuliItems.Last(); 
     }
 
     [RelayCommand]
@@ -86,6 +105,8 @@ public partial class StimuliManagerViewModel : ObservableObject
 
         try
         {
+            LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
+
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
             var imageId = await _packageService.AddImageAsync(bytes, Path.GetFileName(dialog.FileName));
 
@@ -95,7 +116,7 @@ public partial class StimuliManagerViewModel : ObservableObject
             };
 
             _currentTest.AddStimulus(newStimulus);
-            StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _imageGenService));
+            StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _packageService, _imageGenService, rects.Stimulus));
             SelectedItem = StimuliItems.Last();
         }
         catch (Exception ex)
@@ -116,14 +137,40 @@ public partial class StimuliManagerViewModel : ObservableObject
     }
 }
 
+/// <summary>
+/// Represents a view model for a stimulus list item, providing display-friendly properties and a preview image.
+/// </summary>
 public partial class StimulusListItemViewModel : ObservableObject
 {
+    /// <summary>
+    /// Gets the stimulus.  
+    /// </summary>
     public Stimulus Stimulus { get; }
+
+    /// <summary>
+    /// Gets the display name.
+    /// </summary>
     public string DisplayName { get; }
+
+    /// <summary>
+    /// Gets the stimulus type
+    /// </summary>
     public string StimulusType { get; }
+
+    /// <summary>
+    /// Gets the preview bitmap image.
+    /// </summary>
     public BitmapSource? Preview { get; private set; }
 
-    public StimulusListItemViewModel(Stimulus stimulus, IImageGenerationService imageGenService)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StimulusListItemViewModel"/> class with the specified stimulus and
+    /// generates preview content.
+    /// </summary>
+    /// <param name="stimulus">The stimulus to display in the list item.</param>
+    /// <param name="pack">The package service used to retrieve image data.</param>
+    /// <param name="imageGenService">The service used to generate preview images.</param>
+    /// <param name="boundingRect">The bounding rectangle for rendering text previews.</param>
+    public StimulusListItemViewModel(Stimulus stimulus, ProjectPackageService pack, IImageGenerationService imageGenService, Rect boundingRect)
     {
         Stimulus = stimulus;
        
@@ -132,14 +179,13 @@ public partial class StimulusListItemViewModel : ObservableObject
         {
             DisplayName = ts.Text.Length > 30 ? ts.Text[..27] + "..." : ts.Text;
             StimulusType = "Text";
-            Preview = imageGenService.RenderTextToBitmap(ts, );
+            Preview = imageGenService.RenderTextToBitmap(ts, boundingRect);
         }
         else if (stimulus is ImageStimulus img)
         {
             DisplayName = string.IsNullOrEmpty(img.FileName) ? "Image Stimulus" : Path.GetFileName(img.FileName);
             StimulusType = "Image";
-            // TODO: Add thumbnail generation in ImageGenerationService if needed
-            Preview = null; // placeholder – you can extend LoadEncodedBytesAsManipulableImage for thumbs
+            Preview = imageGenService.BitmapFromBytes(pack.GetImageBytes(img.Id));
         }
     }
 }

@@ -7,11 +7,10 @@
              xmlns:local="clr-namespace:IAT.Views.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="650" d:DesignWidth="280"
-             Background="#1E1E1E">
-
-    <UserControl.DataContext>
-        <vm:StimuliManagerViewModel />
-    </UserControl.DataContext>
+             Background="#1E1E1E"
+   d:DataContext="{d:DesignInstance Type=vm:StimuliManagerViewModel, IsDesignTimeCreatable=False}">
+              
+   
 
     <Grid>
         <Grid.RowDefinitions>
