@@ -24,7 +24,7 @@
                     Style="{StaticResource ModernTabControlStyle}">
             <TabItem Header="Blocks" FontSize="18" Content="Blocks" Width="70" Foreground="#F7C46C" />
 
-            <TabItem Header="Stimuli" IsSelected="True" FontSize="18" Content="Stimuli" Width="70" Foreground="#F7C46C"/>
+            <TabItem Header="Stimuli" FontSize="18" Content="Stimuli" Width="70" Foreground="#F7C46C"/>
             <TabItem Header="Trials" FontSize="18" Content="Trials" Width="70" Foreground="#F7C46C"/>
             <TabItem Header="Deploy" FontSize="18" Content="Deploy" Width="70" Foreground="#F7C46C"/>
         </TabControl>
@@ -34,7 +34,8 @@
                               RenderTransformOrigin="0.5,0"
                               RenderTransform="{StaticResource TranslateTransformZero}"/>
 
-        <controls:BlockEditView x:Name="BlockEditView" DataContext="{Binding BlockEditViewModel}" Grid.Row="2" />
+        <controls:BlockEditView x:Name="BlockEditView" DataContext="{Binding BlockEditViewModel}" Grid.Row="2" Visibility="Collapsed"/>
+        <controls:StimuliManagerControl x:Name="StimuliManager" DataContext="{Binding StimuliManagerViewModel}" Grid.Row="2" />
 
 
 

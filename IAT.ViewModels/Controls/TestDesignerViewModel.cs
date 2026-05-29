@@ -18,11 +18,18 @@ namespace IAT.ViewModels.Controls
         private readonly IProjectPackageService _packageService;
         private IatTest? _currentTest;
 
-
+        /// <summary>
+        /// ViewModel for the Blocks tab. This is injected into the TestDesignerViewModel and can be shared across tabs if needed.
+        /// </summary>
         public BlockEditViewModel BlockEditor { get; }
 
 
         [ObservableProperty] private ObservableCollection<StimulusEditViewModel> _stimuliLibrary = new();
+        /// <summary>
+        /// Collection of stimuli available in the library. This is what the user sees in the Stimuli tab and can drag into their test design.  
+        /// </summary>
+        /// <param name="packageService">Service for managing project packages.</param>
+        /// <param name="blockEditor">ViewModel for the Blocks tab.</param>
         public TestDesignerViewModel(IProjectPackageService packageService, BlockEditViewModel blockEditor)
         {
             _packageService = packageService;
