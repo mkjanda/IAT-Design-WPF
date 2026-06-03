@@ -12,32 +12,34 @@
         FontFamily="Segoe UI"
         WindowStartupLocation="CenterScreen">
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <!-- Top Tab Bar -->
+        <!-- 
+            Single-cell layout: TabControl fills the entire available height (* from parent Window).
+            This allows tab contents to scale vertically to the window size.
+            ErrorBanner is overlaid via Z-order (declared after TabControl) and positioned below tab headers.
+        -->
     
-        <TabControl Grid.Row="0" Background="#252526" BorderThickness="0" 
-                    SelectedIndex="1" Height="30"
+        <TabControl Background="#252526" BorderThickness="0" 
+                    SelectedIndex="1" VerticalAlignment="Stretch"
                     Style="{StaticResource ModernTabControlStyle}">
-            <TabItem Header="Blocks" FontSize="18" Content="Blocks" Width="70" Foreground="#F7C46C" />
+            <TabItem Header="Blocks" FontSize="18" Width="70" Foreground="#F7C46C">
+                <controls:BlockEditView Name="BlockEditView" DataContext="{Binding BlockEditor}" />
+            </TabItem>
 
-            <TabItem Header="Stimuli" FontSize="18" Content="Stimuli" Width="70" Foreground="#F7C46C"/>
-            <TabItem Header="Trials" FontSize="18" Content="Trials" Width="70" Foreground="#F7C46C"/>
-            <TabItem Header="Deploy" FontSize="18" Content="Deploy" Width="70" Foreground="#F7C46C"/>
+            <TabItem Header="Stimuli" FontSize="18" Width="70" Foreground="#F7C46C">
+                <controls:StimuliManagerControl x:Name="StimuliManager" DataContext="{Binding StimuliManager}" />
+            </TabItem>
+
+            <TabItem Header="Trials" FontSize="18" Width="70" Foreground="#F7C46C"/>
+            <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C"/>
         </TabControl>
-     
-            <controls:ErrorBannerControl x:Name="ErrorBanner" 
-                              Grid.Row="1"
-                              RenderTransformOrigin="0.5,0"
-                              RenderTransform="{StaticResource TranslateTransformZero}"/>
 
-        <controls:BlockEditView x:Name="BlockEditView" DataContext="{Binding BlockEditViewModel}" Grid.Row="2" Visibility="Collapsed"/>
-        <controls:StimuliManagerControl x:Name="StimuliManager" DataContext="{Binding StimuliManagerViewModel}" Grid.Row="2" />
-
-
-
+        <!-- Error banner overlaid on the tab content (Z-order places it above the TabControl content).
+             Margin top value positions it just below the tab strip (~ tab header height).
+             The animation slides it into the top of the current tab page without affecting the tab content's allocated height. -->
+        <controls:ErrorBannerControl x:Name="ErrorBanner"
+                                     VerticalAlignment="Top"
+                                     Margin="8,42,8,0"
+                                     RenderTransformOrigin="0.5,0"
+                                     RenderTransform="{StaticResource TranslateTransformZero}"/>
     </Grid>
 </Window>

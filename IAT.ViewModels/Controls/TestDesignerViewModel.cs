@@ -23,6 +23,13 @@ namespace IAT.ViewModels.Controls
         /// </summary>
         public BlockEditViewModel BlockEditor { get; }
 
+        /// <summary>
+        /// ViewModel for the Stimuli tab. This is injected into the TestDesignerViewModel and can be shared across tabs if needed.
+        /// </summary>
+        public StimuliManagerViewModel StimuliManager { get; }
+
+        [ObservableProperty] private bool _isStimuliSelected = false;
+        [ObservableProperty] private bool _isBlocksSelected = false;
 
         [ObservableProperty] private ObservableCollection<StimulusEditViewModel> _stimuliLibrary = new();
         /// <summary>
@@ -30,10 +37,13 @@ namespace IAT.ViewModels.Controls
         /// </summary>
         /// <param name="packageService">Service for managing project packages.</param>
         /// <param name="blockEditor">ViewModel for the Blocks tab.</param>
-        public TestDesignerViewModel(IProjectPackageService packageService, BlockEditViewModel blockEditor)
+        /// <param name="stimuliManager">ViewModel for the Stimuli tab.</param>
+        public TestDesignerViewModel(IProjectPackageService packageService, BlockEditViewModel blockEditor,
+            StimuliManagerViewModel stimuliManager)
         {
             _packageService = packageService;
             BlockEditor = blockEditor;
+            StimuliManager = stimuliManager;
         }
 
         [RelayCommand]
@@ -58,6 +68,16 @@ namespace IAT.ViewModels.Controls
             }
         }
 
+        [RelayCommand]
+        private async Task OnStimuliTabSelected()
+        {
+            IsStimuliSelected = true;
+        }
 
+        [RelayCommand]
+        private async Task OnBlocksTabSelected()
+        {
+            IsBlocksSelected = true;
+        } 
     }
 }

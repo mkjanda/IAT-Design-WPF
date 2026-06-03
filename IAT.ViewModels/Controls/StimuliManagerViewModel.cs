@@ -19,7 +19,7 @@ namespace IAT.ViewModels.Controls;
 public partial class StimuliManagerViewModel : ObservableObject
 {
     private readonly IatTest _currentTest;
-    private readonly ProjectPackageService _packageService;
+    private readonly IProjectPackageService _packageService;
     private readonly IImageGenerationService _imageGenService;
     private readonly ILayoutCalculatorService _layoutCalculatorService;
 
@@ -40,7 +40,7 @@ public partial class StimuliManagerViewModel : ObservableObject
     /// <param name="imageGenService">The image generation service.</param>
     /// <param name="rectCalculator">The layout calculator service.</param>
     public StimuliManagerViewModel(IatTest currentTest,
-                                  ProjectPackageService packageService,
+                                  IProjectPackageService packageService,
                                   IImageGenerationService imageGenService,
                                   ILayoutCalculatorService rectCalculator)
     {
@@ -170,7 +170,7 @@ public partial class StimulusListItemViewModel : ObservableObject
     /// <param name="pack">The package service used to retrieve image data.</param>
     /// <param name="imageGenService">The service used to generate preview images.</param>
     /// <param name="boundingRect">The bounding rectangle for rendering text previews.</param>
-    public StimulusListItemViewModel(Stimulus stimulus, ProjectPackageService pack, IImageGenerationService imageGenService, Rect boundingRect)
+    public StimulusListItemViewModel(Stimulus stimulus, IProjectPackageService pack, IImageGenerationService imageGenService, Rect boundingRect)
     {
         Stimulus = stimulus;
        

@@ -28,13 +28,18 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TabItem">
-                                <Border x:Name="Border" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="0,0,0,3">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                <Border x:Name="Border" 
+            Background="{TemplateBinding Background}" 
+            BorderBrush="Transparent" 
+            BorderThickness="0,0,0,3">
+                                    <ContentPresenter ContentSource="Header"
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center" 
+                          RecognizesAccessKey="True"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Border" Property="BorderBrush" Value="#007ACC"/>
-                                        <!-- VS-style blue underline -->
                                         <Setter Property="Foreground" Value="White"/>
                                     </Trigger>
                                     <Trigger Property="IsMouseOver" Value="True">
@@ -137,3 +142,4 @@
     </Style>
 
 </ResourceDictionary>
+    

@@ -57,10 +57,6 @@ namespace IAT_Design_WPF
             services.AddSingleton<IWebSocketService, WebSocketService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<ILayoutCalculatorService, LayoutCalculatorService>();
-            services.AddSingleton<LayoutViewModel>();
-            services.AddSingleton<BlockEditViewModel>();
-            services.AddSingleton<TestDesignerViewModel>();
-            services.AddSingleton<IatTest>();
             services.AddSingleton<IImagePackageService, ImagePackageService>();
             services.AddSingleton<IActivationService, ActivationService>();
             services.AddSingleton<IEmailVerificationService, EmailVerificationService>();
@@ -74,11 +70,18 @@ namespace IAT_Design_WPF
             services.AddSingleton<ITextExportProcessor, TextExportProcessor>();
             services.AddSingleton<IProjectPackageService, ProjectPackageService>();
             services.AddSingleton<IFileManifestBuilder, FileManifestBuilder>();
+            services.AddSingleton<IImageGenerationService, ImageGenerationService>();
+            services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IValidator<IatTest>, IatTestValidator>();
             services.AddSingleton<IValidator<Block>, BlockValidator>();
             services.AddSingleton<IValidator<Stimulus>, StimulusValidator>();
             services.AddSingleton<IValidator<InstructionScreen>, InstructionScreenValidator>();
             services.AddSingleton<IValidator<Trial>, TrialValidator>();
+            services.AddSingleton<LayoutViewModel>();
+            services.AddSingleton<BlockEditViewModel>();
+            services.AddSingleton<TestDesignerViewModel>();
+            services.AddSingleton<StimuliManagerViewModel>();
+            services.AddSingleton<IatTest>();
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
