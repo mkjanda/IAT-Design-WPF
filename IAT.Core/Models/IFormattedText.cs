@@ -18,7 +18,7 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets the layout item associated with this instance.
         /// </summary>
-        LayoutItem LayoutItem { get; init; }
+        LayoutItem LayoutItem { get; init; } 
 
         /// <summary>
         /// Gets or sets the text content.

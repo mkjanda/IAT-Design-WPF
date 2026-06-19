@@ -85,7 +85,7 @@ namespace IAT_Design_WPF
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
-            Services = services.BuildServiceProvider();
+            Services = services.BuildServiceProvider();  
 
             base.OnStartup(e);
 

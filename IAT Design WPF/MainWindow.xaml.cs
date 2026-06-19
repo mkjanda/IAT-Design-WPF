@@ -46,7 +46,7 @@ namespace IAT_Design_WPF
         public void OnStimuliTabSelected(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as TestDesignerViewModel;
-            viewModel?.StimuliTabSelectedCommand.Execute(null);
+            viewModel?.StimuliTabSelectedCommand.Execute(null);  
         }
 
         public void OnBlocksTabSelected(object sender, RoutedEventArgs e)

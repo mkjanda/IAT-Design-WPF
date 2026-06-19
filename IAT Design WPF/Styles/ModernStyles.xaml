@@ -13,6 +13,6 @@
                      From="0" To="-40" Duration="0:0:0.25" DecelerationRatio="0.7"/>
     </Storyboard>
 
-    <TranslateTransform x:Key="TranslateTransformZero" X="0" Y="0"/>
+    <TranslateTransform x:Key="TranslateTransformZero" X="0" Y="0"/>  
 
 </ResourceDictionary>
