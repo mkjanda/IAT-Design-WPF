@@ -21,7 +21,7 @@ namespace IAT.Views.Controls
         {
             if (DataContext is BlockEditViewModel vm && vm.LayoutViewModel != null)
             {
-                vm.LayoutViewModel.FitToWindowCommand.Execute(e.NewSize);
+                vm.LayoutViewModel.FitToWindowCommand.Execute(e.NewSize); 
             }
         }
     }

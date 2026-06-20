@@ -24,7 +24,7 @@ namespace IAT.Views.Controls
         private void CloseEditPanel(object sender, RoutedEventArgs e)
         {
             var vm = DataContext as StimulusEditViewModel;
-            vm?.CloseCommand.Execute(null);
+            vm?.CloseCommand.Execute(null); 
         }
     }
 }

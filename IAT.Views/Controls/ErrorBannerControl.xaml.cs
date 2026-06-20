@@ -22,7 +22,7 @@ namespace IAT.Views.Controls
 
         public string Message
         {
-            get => (string)GetValue(MessageProperty);
+            get => (string)GetValue(MessageProperty); 
             set => SetValue(MessageProperty, value);
         }
 

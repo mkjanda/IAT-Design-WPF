@@ -19,7 +19,7 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Represents a survey type that occurs before a specified event or action.
         /// </summary>
-        public static readonly SurveyType Before = new _Before();
+        public static readonly SurveyType Before = new _Before(); 
 
         /// <summary>
         /// Represents a survey type that is conducted after a specified event or action.

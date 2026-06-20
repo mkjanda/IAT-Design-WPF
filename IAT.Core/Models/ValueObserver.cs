@@ -22,7 +22,7 @@ namespace IAT.Core.Models
         /// Gets or sets the unique identifier for the object.
         /// </summary>
         [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid(); 
 
         /// <summary>
         /// Gets or sets the current subscription to the observable sequence.

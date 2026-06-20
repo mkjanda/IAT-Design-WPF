@@ -22,7 +22,7 @@ namespace IAT.Views.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is bool b && b)
-                return new SolidColorBrush(Color.FromRgb(0, 122, 204)); // #007ACC  
+                return new SolidColorBrush(Color.FromRgb(0, 122, 204)); // #007ACC   
             return Brushes.Transparent;
         }
 
@@ -36,6 +36,6 @@ namespace IAT.Views.Converters
         /// <returns>Not applicable.</returns>
         /// <exception cref="NotImplementedException">This method is not implemented.</exception>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
+            => throw new NotImplementedException(); 
     }
 }

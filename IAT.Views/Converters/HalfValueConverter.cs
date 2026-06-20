@@ -18,7 +18,7 @@ namespace IAT.Views.Converters
         /// <param name="parameter">An optional parameter to be used in the conversion.</param>
         /// <param name="culture">The culture to use in the conversion.</param>
         /// <returns>A <see cref="double"/> representing half of the input value.</returns>
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) 
         {
             if (value is double d)
                 return d / 2;

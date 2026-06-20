@@ -66,7 +66,7 @@ public partial class StimuliManagerViewModel : ObservableObject
     {
         // Real-time filtering (you can also use CollectionViewSource if you prefer)
         LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
-        var filtered = _currentTest.AllStimuli
+        var filtered = _currentTest.AllStimuli 
             .Where(s => string.IsNullOrEmpty(value) ||
                         (s is TextStimulus ts && ts.Text.Contains(value, StringComparison.OrdinalIgnoreCase)))
             .Select(s => new StimulusListItemViewModel(s, _packageService,

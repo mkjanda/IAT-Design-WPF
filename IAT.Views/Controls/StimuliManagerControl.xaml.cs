@@ -19,7 +19,7 @@ namespace IAT.Views.Controls
     public partial class StimuliManagerControl : UserControl
     {
         public StimuliManagerControl()
-        {
+        { 
             InitializeComponent();
         }
     }

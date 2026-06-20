@@ -17,7 +17,7 @@ namespace IAT.Core.Enumerations
     {
         /// <summary>
         /// Represents the left direction in a set of keyed directions.
-        /// </summary>
+        /// </summary> 
         public static readonly KeyedDirection Left = new LeftDirection();
 
         /// <summary>

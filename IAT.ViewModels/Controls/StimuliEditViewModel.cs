@@ -21,7 +21,7 @@ namespace IAT.ViewModels.Controls
         [ObservableProperty] private string fontFamily = "Arial";
         [ObservableProperty] private double fontSize = 24.0;
         [ObservableProperty] private Color textColor = Colors.Black;
-        [ObservableProperty] private bool isImageStimulus;
+        [ObservableProperty] private bool isImageStimulus; 
         [ObservableProperty] private bool isEditPanelVisible = true;
         [ObservableProperty] private byte[]? imageBytes; // for future image preview
 
