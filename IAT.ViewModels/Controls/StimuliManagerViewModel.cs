@@ -47,7 +47,7 @@ public partial class StimuliManagerViewModel : ObservableObject
         _currentTest = currentTest;
         _packageService = packageService;
         _imageGenService = imageGenService;
-        _layoutCalculatorService = rectCalculator;
+        _layoutCalculatorService = rectCalculator; 
         LoadStimuli();
     }
 

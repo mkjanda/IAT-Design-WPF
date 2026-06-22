@@ -15,7 +15,7 @@ namespace IAT.Core.Domain;
 /// adhering to the common structure defined here. The ResponseType property is used to identify the specific type of response being 
 /// represented, allowing for appropriate handling and processing of survey responses based on their type.
 /// </summary>
-public abstract partial class Response : ObservableObject
+public abstract partial class Response : ObservableObject 
 {
     /// <summary>
     /// Gets the response type associated with the current instance.

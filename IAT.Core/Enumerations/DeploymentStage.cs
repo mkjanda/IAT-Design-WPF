@@ -11,7 +11,7 @@ namespace IAT.Core.Enumerations
         [Description("Preparing Deployment Resources")]
         compilingXSLT,
 
-        [Description("Encrypting Code")]
+        [Description("Encrypting Code")] 
         encryptingCode
     }
 

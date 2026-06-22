@@ -11,7 +11,7 @@ namespace IAT.Core.Domain;
 /// scenario. The text content and its appearance can be tailored using the Text and Style properties, respectively.
 /// This class is suitable for scenarios where the precise display and formatting of text stimuli are important,
 /// such as cognitive or psychological testing environments.</remarks>
-public sealed class TextStimulus : Stimulus, IFormattedText
+public sealed class TextStimulus : Stimulus, IFormattedText 
 {
     /// <summary>
     /// Gets or sets the text content.

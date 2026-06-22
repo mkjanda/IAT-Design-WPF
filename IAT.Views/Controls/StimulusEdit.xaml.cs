@@ -12,7 +12,7 @@ namespace IAT.Views.Controls
             DataContext = new StimulusEditViewModel();
         }
 
-        private void OnPaletteClick(object sender, RoutedEventArgs e)
+        private void OnPaletteClick(object sender, RoutedEventArgs e) 
         {
             if (sender is Button btn && btn.Content is string palette)
             {

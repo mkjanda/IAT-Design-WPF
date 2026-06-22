@@ -17,7 +17,7 @@ namespace IAT.Views.Controls
             InitializeComponent();
         }
 
-        private void OnPreviewHostSizeChanged(object sender, SizeChangedEventArgs e)
+        private void OnPreviewHostSizeChanged(object sender, SizeChangedEventArgs e) 
         {
             if (DataContext is BlockEditViewModel vm && vm.LayoutViewModel != null)
             {

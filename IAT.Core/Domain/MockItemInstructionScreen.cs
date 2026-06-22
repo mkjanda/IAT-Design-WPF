@@ -14,7 +14,7 @@ namespace IAT.Core.Domain
     /// instruction screen, enabling tailored instructions and feedback based on the current context. It supports visual
     /// indicators such as error marks and outlines for correct responses to enhance user guidance and performance.
     /// Implements formatted text capabilities via the IFormattedText interface.</remarks>
-    public class MockItemInstructionScreen : InstructionScreen
+    public class MockItemInstructionScreen : InstructionScreen 
     {
         /// <summary>
         /// The guid of the stimulus to be displayed on this instruction screen. This property is used to 

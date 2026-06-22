@@ -20,7 +20,7 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Represents a contents item type for an IAT block.
         /// </summary>
-        public static readonly ContentsItemType IATBlock = new _IATBlock();
+        public static readonly ContentsItemType IATBlock = new _IATBlock(); 
 
         /// <summary>
         /// Represents a content item of type Trial.
