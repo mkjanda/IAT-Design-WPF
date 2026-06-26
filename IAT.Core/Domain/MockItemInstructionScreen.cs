@@ -4,7 +4,7 @@ using System.Text;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 
-namespace IAT.Core.Domain
+namespace IAT.Core.Domain 
 {
     /// <summary>
     /// Represents an instruction screen that displays a stimulus and associated response keys, providing configurable
