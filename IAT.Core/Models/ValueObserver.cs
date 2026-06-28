@@ -11,8 +11,8 @@ namespace IAT.Core.Models
     /// <remarks>Implements the IObserver interface to receive updates from an observable value source.
     /// Supports resource management through IDisposable. Typically used to track and respond to changes in values
     /// within an observable pattern.</remarks>
-    [XmlRoot("ValueObserver")]
-    public class ValueObserver<T> : IObserver<T>, IDisposable
+    [XmlRoot("ValueObserver")] 
+    public class ValueObserver<T> : IObserver<T>, IDisposable 
     {
 
         /// <summary>
