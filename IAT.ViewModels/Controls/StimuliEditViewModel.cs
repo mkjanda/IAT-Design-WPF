@@ -10,7 +10,7 @@ namespace IAT.ViewModels.Controls
     /// ViewModel for a single stimulus in the library and edit panel.
     /// One-to-one with the domain Stimulus but adds UI-specific properties and commands.
     /// </summary>
-    public partial class StimulusEditViewModel  : ObservableObject
+    public partial class StimulusEditViewModel : ObservableObject
     {
         [ObservableProperty] private Guid id;
         [ObservableProperty] private string displayName = string.Empty;
