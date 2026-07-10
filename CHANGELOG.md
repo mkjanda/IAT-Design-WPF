@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added a skeleton implementation of the block design view, which provides a basic structure and layout for the block design interface. This implementation can be further developed and enhanced to include additional features and functionality as needed.
 - Added properties to LayoutViewModel to databind computed values to BlockEditView.xaml.
 - Added layout resize rectangles to the block design view, which can be used to visually represent the layout of the blocks in the IAT test and allow for easy resizing.
+- Added stimulus editing UI to the Stimuli tab, which can be used to manage and edit the stimuli used in the IAT test. 
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 

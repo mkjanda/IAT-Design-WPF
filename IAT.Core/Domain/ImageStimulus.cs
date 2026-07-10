@@ -26,6 +26,12 @@ namespace IAT.Core.Domain
         public Uri? PackageUri { get; set; }
 
         /// <summary>
+        /// Gets or sets the alternative text for the image stimulus. This text is used for accessibility purposes and 
+        /// provides a description of the image content.
+        /// </summary>
+        public string AltText { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the file name.
         /// </summary>
         public string FileName { get; set;  } = string.Empty;
