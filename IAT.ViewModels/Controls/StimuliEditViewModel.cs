@@ -7,7 +7,7 @@ using System.Windows.Media;
 namespace IAT.ViewModels.Controls
 {
     /// <summary>
-    /// ViewModel for a single stimulus in the library and edit panel.
+    /// ViewModel for a single stimulus in the library and edit panel. s
     /// One-to-one with the domain Stimulus but adds UI-specific properties and commands.
     /// </summary>
     public partial class StimulusEditViewModel : ObservableObject
