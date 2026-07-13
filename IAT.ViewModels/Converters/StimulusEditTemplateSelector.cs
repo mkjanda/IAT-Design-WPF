@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace IAT.Views.Converters;
+namespace IAT.ViewModels.Converters;
 
 /// <summary>
 /// A DataTemplateSelector that selects the appropriate DataTemplate for editing stimuli based on the type of the ViewModel.

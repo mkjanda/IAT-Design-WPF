@@ -2,9 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
-             xmlns:conv="clr-namespace:IAT.Views.Converters"
+             xmlns:conv="clr-namespace:IAT.ViewModels.Converters;assembly=IAT.ViewModels"
+             xmlns:local="clr-namespace:IAT.Views.Controls"
              Background="#1E1E1E">
 
+    
     <UserControl.Resources>
         <conv:StimulusEditTemplateSelector x:Key="StimulusEditSelector">
             <conv:StimulusEditTemplateSelector.TextEditTemplate>
@@ -47,13 +49,13 @@
                     <!-- Your existing ItemTemplate here -->
                 </ListBox>
 
-                <StackPanel Orientation="Horizontal" Margin="8" DockPanel.Dock="Bottom">
+                <StackPanel Orientation="Vertical" Margin="8" DockPanel.Dock="Bottom">
                     <Button Content="+ Add Text Stimulus" 
                             Command="{Binding AddTextStimulusCommand}"
-                            Style="{StaticResource AccentButton}" Width="138" Height="36"/>
+                            Style="{StaticResource AccentButton}" Width="auto" Height="36" Margin="0,0,0,8"/>
                     <Button Content="+ Add Image Stimulus" 
                             Command="{Binding AddImageStimulusCommand}"
-                            Style="{StaticResource AccentButton}" Width="138" Height="36" Margin="8,0,0,0"/>
+                            Style="{StaticResource AccentButton}" Width="auto" Height="36" Margin="0,0,0,0"/>
                 </StackPanel>
             </DockPanel>
         </Border>
