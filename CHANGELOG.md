@@ -33,6 +33,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added properties to LayoutViewModel to databind computed values to BlockEditView.xaml.
 - Added layout resize rectangles to the block design view, which can be used to visually represent the layout of the blocks in the IAT test and allow for easy resizing.
 - Added stimulus editing UI to the Stimuli tab, which can be used to manage and edit the stimuli used in the IAT test. 
+- Added UI for creating and editing the properties of individual stimuli, including support for changing the text, image, and other attributes of the stimuli. 
+- Added parent interface to stimuli UIs to list and  allow for searching of stimuli.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 

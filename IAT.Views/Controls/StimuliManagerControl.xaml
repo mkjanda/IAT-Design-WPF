@@ -4,9 +4,9 @@
              xmlns:vm="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
              xmlns:conv="clr-namespace:IAT.ViewModels.Converters;assembly=IAT.ViewModels"
              xmlns:local="clr-namespace:IAT.Views.Controls"
+             xmlns:domain="clr-namespace:IAT.Core.Domain;assembly=IAT.Core"
              Background="#1E1E1E">
 
-    
     <UserControl.Resources>
         <conv:StimulusEditTemplateSelector x:Key="StimulusEditSelector">
             <conv:StimulusEditTemplateSelector.TextEditTemplate>
@@ -20,6 +20,26 @@
                 </DataTemplate>
             </conv:StimulusEditTemplateSelector.ImageEditTemplate>
         </conv:StimulusEditTemplateSelector>
+
+        <!-- Simple DataTemplate for domain Stimulus objects in the ListBox -->
+        <DataTemplate DataType="{x:Type domain:TextStimulus}">
+            <StackPanel Orientation="Horizontal" Margin="4,6">
+                <TextBlock Text="T" FontWeight="Bold" Foreground="#00BFA5"
+                           Width="20" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Text}" Foreground="#E0E0E0"
+                           TextTrimming="CharacterEllipsis" MaxWidth="220"
+                           VerticalAlignment="Center" ToolTip="{Binding Text}"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type domain:ImageStimulus}">
+            <StackPanel Orientation="Horizontal" Margin="4,6">
+                <TextBlock Text="I" FontWeight="Bold" Foreground="#F7C46C"
+                           Width="20" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding FileName}" Foreground="#E0E0E0"
+                           TextTrimming="CharacterEllipsis" MaxWidth="220"
+                           VerticalAlignment="Center" ToolTip="{Binding FileName}"/>
+            </StackPanel>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid>
@@ -30,7 +50,7 @@
             <!-- Edit Panel -->
         </Grid.ColumnDefinitions>
 
-        <!-- LEFT: Stimuli List (your existing content, slightly cleaned) -->
+        <!-- LEFT: Stimuli List bound to the singleton IatTest.Stimuli -->
         <Border Grid.Column="0" Background="#252526" BorderBrush="#3C3C3C" BorderThickness="0,0,1,0">
             <DockPanel>
                 <TextBlock Text="Stimuli" FontSize="16" FontWeight="SemiBold" 
@@ -41,12 +61,17 @@
                          Background="#2D2D2D" BorderBrush="#3C3C3C" Foreground="#CCCCCC"
                          Tag="Search stimuli..." DockPanel.Dock="Top"/>
 
-                <ListBox ItemsSource="{Binding StimuliItems}"
-                         SelectedItem="{Binding SelectedItem}"
+                <!-- 
+                    Bind to DisplayedStimuli which always points at either the live
+                    IatTest.Stimuli ObservableCollection or a filtered snapshot.
+                    Add/Update/Remove on the domain collection therefore appear immediately.
+                -->
+                <ListBox ItemsSource="{Binding DisplayedStimuli}"
+                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                          Background="Transparent" BorderThickness="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         Margin="4,0,4,4">
-                    <!-- Your existing ItemTemplate here -->
+                         Margin="4,0,4,4" DockPanel.Dock="Top">
+                    <!-- DataTemplates above handle rendering per concrete Stimulus type -->
                 </ListBox>
 
                 <StackPanel Orientation="Vertical" Margin="8" DockPanel.Dock="Bottom">

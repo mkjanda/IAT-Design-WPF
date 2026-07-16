@@ -125,8 +125,6 @@
                                         Background="#007ACC" Foreground="White" FontWeight="SemiBold"/>
                         <Button Content="Delete Stimulus" Width="140" Height="38" Margin="0,0,8,0"
                                         Background="#252526" BorderBrush="#666" Foreground="#E0E0E0"/>
-                        <Button Content="+ Add New Stimulus" Width="160" Height="38"
-                                        Background="#00BFA5" Foreground="White" FontWeight="SemiBold"/>
                     </StackPanel>
                 </DockPanel>
             </Border>

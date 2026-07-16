@@ -8,6 +8,10 @@ using System.Windows.Media.Imaging;
 
 namespace IAT.ViewModels.Controls;
 
+/// <summary>
+/// ViewModel for editing an ImageStimulus. Inherits common Save/Delete/Close from StimulusEditViewModel
+/// and overrides CreateDomainStimulus so Save persists an ImageStimulus into the shared IatTest singleton.
+/// </summary>
 public partial class ImageStimulusEditViewModel : StimulusEditViewModel
 {
     private readonly IProjectPackageService _packageService;
@@ -18,23 +22,32 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
     [ObservableProperty] private string fileSize = string.Empty;
     [ObservableProperty] private string altText = string.Empty;
 
-    public ImageStimulusEditViewModel(IProjectPackageService packageService)
+    public ImageStimulusEditViewModel(IatTest iatTest, IProjectPackageService packageService)
+        : base(iatTest)
     {
-        _packageService = packageService;
+        _packageService = packageService ?? throw new ArgumentNullException(nameof(packageService));
     }
 
-    public ImageStimulusEditViewModel(ImageStimulus stimulus, IProjectPackageService packageService) : this(packageService)
+    public ImageStimulusEditViewModel(ImageStimulus stimulus, IatTest iatTest, IProjectPackageService packageService)
+        : this(iatTest, packageService)
     {
         Id = stimulus.Id;
-        FileName = Path.GetFileName(stimulus.FileName);
+        FileName = string.IsNullOrEmpty(stimulus.FileName) ? "Image Stimulus" : Path.GetFileName(stimulus.FileName);
         AltText = stimulus.AltText ?? string.Empty;
 
-        // Load preview from package service
-        var bytes = packageService.GetImageBytes(stimulus.Id);
-        if (bytes.Length > 0)
+        // Load preview from package service if available
+        try
         {
-            PreviewImage = BitmapFromBytes(bytes);
-            UpdateFileInfo(bytes);
+            var bytes = packageService.GetImageBytes(stimulus.Id);
+            if (bytes is { Length: > 0 })
+            {
+                PreviewImage = BitmapFromBytes(bytes);
+                UpdateFileInfo(bytes);
+            }
+        }
+        catch
+        {
+            // Graceful – preview simply stays empty
         }
     }
 
@@ -61,7 +74,6 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
         }
         catch (Exception ex)
         {
-            // Use your UserNotificationService here in production
             System.Windows.MessageBox.Show($"Failed to load image: {ex.Message}");
         }
     }
@@ -88,10 +100,16 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
         return image;
     }
 
-    public ImageStimulus ToDomainImageStimulus() => new()
+    /// <summary>
+    /// Override so the shared SaveCommand on the base class produces an ImageStimulus.
+    /// </summary>
+    protected override Stimulus CreateDomainStimulus()
     {
-        Id = Id,
-        FileName = FileName,
-        AltText = AltText
-    };
+        return new ImageStimulus
+        {
+            Id = Id,
+            FileName = FileName,
+            AltText = AltText
+        };
+    }
 }

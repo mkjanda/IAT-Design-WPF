@@ -4,17 +4,17 @@ using IAT.Core.Domain;
 using IAT.Core.Services;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.IO;
-using System.Linq;
-using System.Windows.Media.Imaging;
-using System.Windows.Media;
+using System.Windows;
 
 namespace IAT.ViewModels.Controls;
 
 /// <summary>
-/// Manages the collection of stimuli for an IAT test, providing functionality to add, delete, and filter text and image
-/// stimuli.
+/// Manages the stimuli list and the currently active edit panel for an IAT test.
+/// The ListBox is bound directly to IatTest.Stimuli (the singleton domain collection)
+/// via the DisplayedStimuli property. Selection drives creation of the appropriate
+/// edit ViewModel (text or image). Save on the edit panel adds or updates the item
+/// in that same ObservableCollection.
 /// </summary>
 public partial class StimuliManagerViewModel : ObservableObject
 {
@@ -23,58 +23,144 @@ public partial class StimuliManagerViewModel : ObservableObject
     private readonly IImageGenerationService _imageGenService;
     private readonly ILayoutCalculatorService _layoutCalculatorService;
 
-    [ObservableProperty]
-    private ObservableCollection<StimulusListItemViewModel> stimuliItems = new();
+    /// <summary>
+    /// Direct reference to the singleton domain model. Exposed so XAML (or other VMs)
+    /// can reach IatTest.Stimuli if needed.
+    /// </summary>
+    public IatTest CurrentTest => _currentTest;
 
     [ObservableProperty]
-    private StimulusListItemViewModel? selectedItem;
+    private Stimulus? selectedItem;
 
     [ObservableProperty]
     private string searchText = string.Empty;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="StimuliManagerViewModel"/> class.
+    /// The ViewModel currently shown in the right-hand edit pane.
+    /// Type is object so the DataTemplateSelector can distinguish Text vs Image.
     /// </summary>
-    /// <param name="currentTest">The current IAT test.</param>
-    /// <param name="packageService">The service for managing project packages.</param>
-    /// <param name="imageGenService">The image generation service.</param>
-    /// <param name="rectCalculator">The layout calculator service.</param>
+    [ObservableProperty]
+    private object? currentEditViewModel;
+
+    private ObservableCollection<Stimulus>? _filteredStimuli;
+
+    /// <summary>
+    /// Always returns a live bindable collection:
+    /// - the full IatTest.Stimuli when no search filter is active
+    /// - a temporary filtered collection when SearchText is set
+    /// This is what the ListBox binds to.
+    /// </summary>
+    public ObservableCollection<Stimulus> DisplayedStimuli =>
+        _filteredStimuli ?? _currentTest.Stimuli;
+
     public StimuliManagerViewModel(IatTest currentTest,
                                   IProjectPackageService packageService,
                                   IImageGenerationService imageGenService,
                                   ILayoutCalculatorService rectCalculator)
     {
-        _currentTest = currentTest;
+        _currentTest = currentTest ?? throw new ArgumentNullException(nameof(currentTest));
         _packageService = packageService;
         _imageGenService = imageGenService;
-        _layoutCalculatorService = rectCalculator; 
-        LoadStimuli();
-    }
-
-    private void LoadStimuli()
-    {
-        StimuliItems.Clear();
-        LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
-        foreach (var stimulus in _currentTest.AllStimuli)
-        {
-            StimuliItems.Add(new StimulusListItemViewModel(stimulus, _packageService,
-                _imageGenService, rects.Stimulus));
-        }
+        _layoutCalculatorService = rectCalculator;
     }
 
     partial void OnSearchTextChanged(string value)
     {
-        // Real-time filtering (you can also use CollectionViewSource if you prefer)
-        LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
-        var filtered = _currentTest.AllStimuli 
-            .Where(s => string.IsNullOrEmpty(value) ||
-                        (s is TextStimulus ts && ts.Text.Contains(value, StringComparison.OrdinalIgnoreCase)))
-            .Select(s => new StimulusListItemViewModel(s, _packageService,
-                _imageGenService, rects.Stimulus))
-            .ToList();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _filteredStimuli = null;
+        }
+        else
+        {
+            var filtered = _currentTest.Stimuli
+                .Where(s => s is TextStimulus ts && ts.Text.Contains(value, StringComparison.OrdinalIgnoreCase)
+                         || s is ImageStimulus img &&
+                            ((img.FileName?.Contains(value, StringComparison.OrdinalIgnoreCase) == true)
+                             || (img.AltText?.Contains(value, StringComparison.OrdinalIgnoreCase) == true)))
+                .ToList();
+            _filteredStimuli = new ObservableCollection<Stimulus>(filtered);
+        }
+        OnPropertyChanged(nameof(DisplayedStimuli));
+    }
 
-        StimuliItems.Clear();
-        foreach (var item in filtered) StimuliItems.Add(item);
+    partial void OnSelectedItemChanged(Stimulus? value)
+    {
+        if (value is null)
+        {
+            DetachEditorEvents();
+            CurrentEditViewModel = null;
+            return;
+        }
+
+        DetachEditorEvents();
+
+        if (value is TextStimulus textStim)
+        {
+            var vm = new StimulusEditViewModel(textStim, _currentTest);
+            AttachEditorEvents(vm);
+            CurrentEditViewModel = vm;
+        }
+        else if (value is ImageStimulus imageStim)
+        {
+            var vm = new ImageStimulusEditViewModel(imageStim, _currentTest, _packageService);
+            AttachEditorEvents(vm);
+            CurrentEditViewModel = vm;
+        }
+        else
+        {
+            CurrentEditViewModel = null;
+        }
+    }
+
+    private void AttachEditorEvents(StimulusEditViewModel vm)
+    {
+        vm.Saved += OnEditorSaved;
+        vm.Deleted += OnEditorDeleted;
+        vm.Closed += OnEditorClosed;
+        vm.AddNewRequested += OnAddNewRequested;
+    }
+
+    private void DetachEditorEvents()
+    {
+        if (CurrentEditViewModel is StimulusEditViewModel old)
+        {
+            old.Saved -= OnEditorSaved;
+            old.Deleted -= OnEditorDeleted;
+            old.Closed -= OnEditorClosed;
+            old.AddNewRequested -= OnAddNewRequested;
+        }
+    }
+
+    private void OnEditorSaved()
+    {
+        // Domain collection already notified via AddStimulus / UpdateStimulus.
+        // Re-select so the ListBox and editor stay consistent after a replace.
+        var id = SelectedItem?.Id;
+        if (id.HasValue)
+        {
+            SelectedItem = _currentTest.GetStimulusById(id.Value);
+        }
+        // Also refresh filter if active
+        if (_filteredStimuli is not null)
+            OnSearchTextChanged(SearchText);
+    }
+
+    private void OnEditorDeleted()
+    {
+        CurrentEditViewModel = null;
+        SelectedItem = null;
+        if (_filteredStimuli is not null)
+            OnSearchTextChanged(SearchText);
+    }
+
+    private void OnEditorClosed()
+    {
+        CurrentEditViewModel = null;
+    }
+
+    private void OnAddNewRequested()
+    {
+        AddTextStimulus();
     }
 
     [RelayCommand]
@@ -85,11 +171,8 @@ public partial class StimuliManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             Text = "New Text Stimulus"
         };
-        LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
-
         _currentTest.AddStimulus(newStimulus);
-        StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _packageService, _imageGenService, rects.Stimulus));
-        SelectedItem = StimuliItems.Last(); 
+        SelectedItem = newStimulus; // triggers creation of edit VM
     }
 
     [RelayCommand]
@@ -105,87 +188,39 @@ public partial class StimuliManagerViewModel : ObservableObject
 
         try
         {
-            LayoutRects rects = _layoutCalculatorService.GetFinalRects(_currentTest.Layout);
-
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
             var imageId = await _packageService.AddImageAsync(bytes, Path.GetFileName(dialog.FileName));
 
             var newStimulus = new ImageStimulus
             {
-                FileName = dialog.FileName
+                Id = imageId,
+                FileName = dialog.FileName,
+                AltText = string.Empty
             };
 
             _currentTest.AddStimulus(newStimulus);
-            StimuliItems.Add(new StimulusListItemViewModel(newStimulus, _packageService, _imageGenService, rects.Stimulus));
-            SelectedItem = StimuliItems.Last();
+            SelectedItem = newStimulus;
         }
         catch (Exception ex)
         {
-            // Your existing UserNotificationService would be injected here in production
-            System.Windows.MessageBox.Show($"Failed to add image: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            MessageBox.Show($"Failed to add image: {ex.Message}", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     [RelayCommand]
-    private void DeleteStimulus(StimulusListItemViewModel? item)
+    private void DeleteStimulus(Stimulus? item)
     {
-        if (item?.Stimulus == null) return;
+        if (item is null) return;
 
         // TODO: Production check – is this stimulus used in any trial?
-        _currentTest.RemoveStimulus(item.Stimulus);
-        StimuliItems.Remove(item);
-    }
-}
-
-/// <summary>
-/// Represents a view model for a stimulus list item, providing display-friendly properties and a preview image.
-/// </summary>
-public partial class StimulusListItemViewModel : ObservableObject
-{
-    /// <summary>
-    /// Gets the stimulus.  
-    /// </summary>
-    public Stimulus Stimulus { get; }
-
-    /// <summary>
-    /// Gets the display name.
-    /// </summary>
-    public string DisplayName { get; }
-
-    /// <summary>
-    /// Gets the stimulus type
-    /// </summary>
-    public string StimulusType { get; }
-
-    /// <summary>
-    /// Gets the preview bitmap image.
-    /// </summary>
-    public BitmapSource? Preview { get; private set; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="StimulusListItemViewModel"/> class with the specified stimulus and
-    /// generates preview content.
-    /// </summary>
-    /// <param name="stimulus">The stimulus to display in the list item.</param>
-    /// <param name="pack">The package service used to retrieve image data.</param>
-    /// <param name="imageGenService">The service used to generate preview images.</param>
-    /// <param name="boundingRect">The bounding rectangle for rendering text previews.</param>
-    public StimulusListItemViewModel(Stimulus stimulus, IProjectPackageService pack, IImageGenerationService imageGenService, Rect boundingRect)
-    {
-        Stimulus = stimulus;
-       
-
-        if (stimulus is TextStimulus ts)
+        _currentTest.RemoveStimulus(item);
+        if (ReferenceEquals(SelectedItem, item) || SelectedItem?.Id == item.Id)
         {
-            DisplayName = ts.Text.Length > 30 ? ts.Text[..27] + "..." : ts.Text;
-            StimulusType = "Text";
-            Preview = imageGenService.RenderTextToBitmap(ts, boundingRect);
+            SelectedItem = null;
+            CurrentEditViewModel = null;
         }
-        else if (stimulus is ImageStimulus img)
-        {
-            DisplayName = string.IsNullOrEmpty(img.FileName) ? "Image Stimulus" : Path.GetFileName(img.FileName);
-            StimulusType = "Image";
-            Preview = imageGenService.BitmapFromBytes(pack.GetImageBytes(img.Id));
-        }
+        if (_filteredStimuli is not null)
+            OnSearchTextChanged(SearchText);
     }
 }

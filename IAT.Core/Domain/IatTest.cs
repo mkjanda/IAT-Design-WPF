@@ -81,8 +81,9 @@ public partial class IatTest : ObservableObject
     /// </summary>
     /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
     /// additions or removals of stimuli. Modifications to the collection will be reflected in any data bindings or
-    /// observers.</remarks>
-    private ObservableCollection<Stimulus> Stimuli { get; } = new();
+    /// observers. Prefer using AddStimulus / UpdateStimulus / RemoveStimulus for proper cache maintenance.
+    /// Direct binding to this collection is supported for UI list views (e.g. StimuliManager ListBox).</remarks>
+    public ObservableCollection<Stimulus> Stimuli { get; } = new();
 
     /// <summary>
     /// Gets the collection of instruction screens displayed to the user.
@@ -124,11 +125,14 @@ public partial class IatTest : ObservableObject
 
     public void UpdateStimulus(Stimulus stim)
     {
-        if (Stimuli.Select(s => s.Id).Contains(stim.Id))
+        if (stim is null) return;
+        var existing = Stimuli.FirstOrDefault(s => s.Id == stim.Id);
+        if (existing is not null)
         {
             _stimulusCache[stim.Id] = stim;
-            Stimuli.Remove(Stimuli.Where(s => s.Id == stim.Id).First());
+            Stimuli.Remove(existing);
             Stimuli.Add(stim);
+            stim.IatTest = this;
         }
     }
 

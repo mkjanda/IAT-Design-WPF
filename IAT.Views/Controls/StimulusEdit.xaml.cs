@@ -1,4 +1,5 @@
-﻿using IAT.ViewModels.Controls;
+﻿using IAT.Core.Domain;
+using IAT.ViewModels.Controls;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -6,10 +7,12 @@ namespace IAT.Views.Controls
 {
     public partial class StimulusEdit : UserControl
     {
-        public StimulusEdit()
+        private IatTest _currentTest;
+        public StimulusEdit(IatTest currentTest)
         {
             InitializeComponent();
-            DataContext = new StimulusEditViewModel();
+            _currentTest = currentTest;
+            DataContext = new StimulusEditViewModel(_currentTest);
         }
 
         private void OnPaletteClick(object sender, RoutedEventArgs e) 

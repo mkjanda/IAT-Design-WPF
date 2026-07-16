@@ -4,7 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="650" d:DesignWidth="520"
+             d:DesignHeight="650" d:DesignWidth="670"
              Background="#252526">
 
     <Grid Margin="16">
@@ -46,7 +46,7 @@
                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource DarkTextBox}"
                      AcceptsReturn="True" TextWrapping="Wrap"
-                     Height="120" Margin="0,0,0,16"
+                     Height="Auto" Margin="0,0,0,16"
                      FontSize="14"/>
 
             <!-- Font Controls -->
@@ -86,11 +86,56 @@
                                 Command="{Binding ApplyPaletteCommand}" CommandParameter="White"
                                 Background="#FFFFFF" BorderBrush="#555"/>
                         <Button Width="32" Height="32" Margin="2"
-                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Pleasant"
-                                Background="#00BFA5" BorderBrush="#555"/>
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Flame Scarlet"
+                                Background="#CD212A" BorderBrush="#555"/>
                         <Button Width="32" Height="32" Margin="2"
-                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Unpleasant"
-                                Background="#DC3232" BorderBrush="#555"/>
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Firefly"
+                                Background="#D1CE20" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2" 
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Silver Sconce"
+                                Background="#A19FA5" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Ultra Violet"
+                                Background="#5F4B8B" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Knockout Pink"
+                                Background="#FF3EA5" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2" 
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Emerald"
+                                Background="#009473" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Sunset Gold"
+                                Background="#F7C494" BorderBrush="#555"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Width="32" Height="32" Margin="2" 
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Radiant Orchid"
+                                Background="#AE5D99" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Raspberry"
+                                Background="#FF2E5E" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Acid Lime"
+                                Background="#BBDF32" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Bluebird"
+                                Background="#00A1B4" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2" 
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Star Sapphire"
+                                Background="#45689A" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Angel Blue"
+                                Background="#83C6CF" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Ember Glow"
+                                Background="#EA6759" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Pale Gold"
+                                Background="#BD9865" BorderBrush="#555"/>
+                        <Button Width="32" Height="32" Margin="2"
+                                Command="{Binding ApplyPaletteCommand}" CommandParameter="Blackened Pearl"
+                                Background="#4D4B50" BorderBrush="#555"/>
+
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -104,7 +149,6 @@
                            FontFamily="{Binding FontFamily}"
                            FontSize="{Binding FontSize}"
                            Foreground="{Binding PreviewBrush}"
-                           FontWeight="SemiBold"
                            HorizontalAlignment="Center" 
                            VerticalAlignment="Center"
                            TextWrapping="Wrap"/>
@@ -120,9 +164,8 @@
             <Button Content="Delete Stimulus" Width="140" Height="38" Margin="0,0,8,0"
                     Background="#3C3C3C" Foreground="#E0E0E0"
                     Command="{Binding DeleteCommand}"/>
-            <Button Content="+ Add New Stimulus" Width="160" Height="38"
-                    Background="#00BFA5" Foreground="White" FontWeight="SemiBold"
-                    Command="{Binding AddNewCommand}"/>
+    
+            
         </StackPanel>
     </Grid>
 </UserControl>

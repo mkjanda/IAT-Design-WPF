@@ -58,7 +58,7 @@ namespace IAT.ViewModels.Controls
                 foreach (var stim in _currentTest.AllStimuli)
                 {
                     if (stim is TextStimulus textStim)
-                        StimuliLibrary.Add(new StimulusEditViewModel(textStim));
+                        StimuliLibrary.Add(new StimulusEditViewModel(textStim, _currentTest));
                     // TODO: else if (stim is ImageStimulus img) → add image support
                 }
             }
