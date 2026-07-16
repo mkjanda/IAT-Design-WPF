@@ -17,12 +17,16 @@
             This allows tab contents to scale vertically to the window size.
             ErrorBanner is overlaid via Z-order (declared after TabControl) and positioned below tab headers.
         -->
-    
+
         <TabControl Background="#252526" BorderThickness="0" 
                     SelectedIndex="1" VerticalAlignment="Stretch"
                     Style="{StaticResource ModernTabControlStyle}">
             <TabItem Header="Blocks" FontSize="18" Width="70" Foreground="#F7C46C">
                 <controls:BlockEditView Name="BlockEditView" DataContext="{Binding BlockEditor}" />
+            </TabItem>
+
+            <TabItem Header="Layout" FontSize="18" Width="70" Foreground="#F7C46C">
+                <controls:LayoutEditView DataContext="{Binding LayoutEditor}" />
             </TabItem>
 
             <TabItem Header="Stimuli" FontSize="18" Width="70" Foreground="#F7C46C">

@@ -1,10 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IAT.Core.Domain;
-using IAT.Core.Models;
 using IAT.Core.Services;
-using IAT.ViewModels.Controls;
-using sun.security.x509;
+using IAT.ViewModels;
 using System.Collections.ObjectModel;
 
 namespace IAT.ViewModels.Controls;
@@ -16,25 +14,23 @@ public partial class BlockEditViewModel : ObservableObject
 
     [ObservableProperty] private ObservableCollection<Block> blocks = new();
     [ObservableProperty] private Block? selectedBlock;
-    [ObservableProperty] private LayoutViewModel? layoutViewModel;
-
 
     /// <summary>
-    /// The constructor for the test designer view model, which facilitates the creating of IAT blocks and the assignment of trials and 
-    /// stimuli to those blocks. It takes in services for loading project packages and calculating layouts, which are essential for managing 
-    /// the test design process.
+    /// Shared layout view model (same instance used by the Layout tab).
+    /// Blocks tab only reads it for a read-only preview.
     /// </summary>
-    /// <param name="packageService">The service responsible for loading project packages.</param>
-    /// <param name="layoutCalculator">The service responsible for calculating layouts.</param>
-    /// <param name="layoutViewModel">The initial layout view model, which can be null if no block is selected.</param>
-    public BlockEditViewModel(IProjectPackageService packageService, ILayoutCalculatorService layoutCalculator, 
+    public LayoutViewModel LayoutViewModel { get; }
+
+    public BlockEditViewModel(
+        IProjectPackageService packageService,
+        ILayoutCalculatorService layoutCalculator,
         LayoutViewModel layoutViewModel)
     {
         _packageService = packageService;
         _layoutCalculator = layoutCalculator;
         LayoutViewModel = layoutViewModel;
     }
-    
+
     [RelayCommand]
     private async Task LoadTestAsync(string packagePath)
     {
@@ -47,20 +43,17 @@ public partial class BlockEditViewModel : ObservableObject
             SelectedBlock = Blocks.First();
     }
 
-    partial void OnSelectedBlockChanged(Block? value)
-    {
-        if (value != null && value.IatTest != null)
-        {
-            LayoutViewModel = new LayoutViewModel(_layoutCalculator, value.IatTest);
-        }
-    }
-
     [RelayCommand]
-    private void ToggleLayoutEditMode()
+    private void AddBlock()
     {
-        if (LayoutViewModel == null)
-            return;
-        LayoutViewModel.IsLayoutEditMode = !LayoutViewModel.IsLayoutEditMode;
+        var block = new Block
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Block {Blocks.Count + 1}"
+        };
+        // BlockNumber if available
+        try { block.GetType().GetProperty("BlockNumber")?.SetValue(block, Blocks.Count + 1); } catch { /* ignore */ }
+        Blocks.Add(block);
+        SelectedBlock = block;
     }
-
 }
