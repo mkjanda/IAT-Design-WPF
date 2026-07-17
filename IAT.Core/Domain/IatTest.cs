@@ -159,6 +159,54 @@ public partial class IatTest : ObservableObject
         return block;
     }
 
+    public void AddTrial(Trial trial)
+    {
+        if (trial is null) return;
+        if (!_trialCache.ContainsKey(trial.Id))
+        {
+            Trials.Add(trial);
+            _trialCache[trial.Id] = trial;
+        }
+    }
+
+    public Trial? RemoveTrial(Trial trial)
+    {
+        if (trial is null) return null;
+        if (Trials.Remove(trial))
+        {
+            _trialCache.Remove(trial.Id);
+            foreach (var block in Blocks)
+                block.TrialIds.Remove(trial.Id);
+            return trial;
+        }
+        return null;
+    }
+
+    public void AddKey(Key key)
+    {
+        if (key is null) return;
+        if (!_keyCache.ContainsKey(key.Id))
+        {
+            Keys.Add(key);
+            _keyCache[key.Id] = key;
+        }
+    }
+
+    public Key? RemoveKey(Key key)
+    {
+        if (key is null) return null;
+        if (Keys.Remove(key))
+        {
+            _keyCache.Remove(key.Id);
+            return key;
+        }
+        return null;
+    }
+
+    public ObservableCollection<Trial> TrialsCollection => Trials;
+    public ObservableCollection<Key> KeysCollection => Keys;
+    public ObservableCollection<Block> BlocksCollection => Blocks;
+
     /// <summary>
     /// Validates the entire test configuration, including all trials, stimuli, and instruction screens.
     /// </summary>

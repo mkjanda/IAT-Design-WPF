@@ -87,7 +87,7 @@ namespace IAT.Core.Domain
         private static readonly Rect _defaultLeftKeyRect = new Rect(0, 0, 200, 120);
         private static readonly Rect _defaultRightKeyRect = new Rect(400, 0, 200, 120);
         private static readonly Rect _defaultErrorMarkRect = new Rect(275, 450, 50, 50);
-        private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 320, 570, 80);
+        private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 520, 570, 80);
         private static readonly Rect _defaultMockItemInstructionsRect = new Rect(15, 510, 570, 60);
         private static readonly Rect _defaultKeyedInstructionsRect = new Rect(15, 135, 570, 410);
         private static readonly Rect _defaultTextInstructionsRect = new Rect(15, 15, 570, 530);

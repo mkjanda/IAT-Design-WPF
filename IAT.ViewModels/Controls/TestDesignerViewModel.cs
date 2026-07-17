@@ -31,15 +31,15 @@ namespace IAT.ViewModels.Controls
 
         [ObservableProperty] private ObservableCollection<StimulusEditViewModel> _stimuliLibrary = new();
 
-        public TestDesignerViewModel(
-            IProjectPackageService packageService,
-            BlockEditViewModel blockEditor,
-            StimuliManagerViewModel stimuliManager,
-            LayoutViewModel layoutEditor)
+        public TrialsManagerViewModel TrialsManager { get; }
+
+        public TestDesignerViewModel(IProjectPackageService packageService, BlockEditViewModel blockEditor,
+            StimuliManagerViewModel stimuliManager, TrialsManagerViewModel trialsManager, LayoutViewModel layoutEditor)
         {
             _packageService = packageService;
             BlockEditor = blockEditor;
             StimuliManager = stimuliManager;
+            TrialsManager = trialsManager;
             LayoutEditor = layoutEditor;
         }
 

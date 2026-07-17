@@ -32,8 +32,9 @@
             <TabItem Header="Stimuli" FontSize="18" Width="70" Foreground="#F7C46C">
                 <controls:StimuliManagerControl x:Name="StimuliManager" DataContext="{Binding StimuliManager}" />
             </TabItem>
-
-            <TabItem Header="Trials" FontSize="18" Width="70" Foreground="#F7C46C"/>
+            <TabItem Header="Trials" FontSize="18" Width="70" Foreground="#F7C46C">
+                <controls:TrialsManagerControl x:Name="TrialsManager" DataContext="{Binding TrialsManager}" />
+            </TabItem>
             <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C"/>
         </TabControl>
 

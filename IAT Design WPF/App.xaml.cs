@@ -47,9 +47,10 @@ namespace IAT_Design_WPF
             var services = new ServiceCollection();
 
             services.AddSingleton<TransactionState>();
-           
+
 
             // Register your services here as we build them
+            services.AddSingleton<TrialsManagerViewModel>();
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
             services.AddSingleton<IStringResourceService, StringResourceService>();

@@ -36,6 +36,8 @@ namespace IAT.Core.Domain
         /// </summary>
         public string FileName { get; set;  } = string.Empty;
 
+        public string Text => FileName;
+
         /// <summary>
         /// Returns a string suitable for displaying as a preview of the current item.
         /// </summary>
