@@ -16,10 +16,14 @@ public partial class TrialsManagerViewModel : ObservableObject
 {
     private readonly IatTest _currentTest;
 
+    /// <summary>
+    /// Direct reference to the domain model.
+    /// </summary>
     public IatTest CurrentTest => _currentTest;
 
     /// <summary>
-    /// Live collection of blocks from the domain model. Changes made on the Blocks tab appear here automatically.
+    /// Live shared collection of blocks from the domain model.
+    /// Blocks created on the Blocks tab appear here automatically (and vice-versa).
     /// </summary>
     public ObservableCollection<Block> Blocks => _currentTest.BlocksCollection;
 
@@ -41,11 +45,16 @@ public partial class TrialsManagerViewModel : ObservableObject
     [ObservableProperty]
     private int _numPresentations;
 
+    /// <summary>
+    /// All stimuli available for assignment (bound to ComboBoxes in the trial list).
+    /// </summary>
     public ObservableCollection<Stimulus> AvailableStimuli => _currentTest.Stimuli;
 
     public TrialsManagerViewModel(IatTest currentTest)
     {
         _currentTest = currentTest ?? throw new ArgumentNullException(nameof(currentTest));
+
+        // Select first block if any exist
         if (Blocks.Count > 0)
             SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).First();
     }
@@ -63,6 +72,7 @@ public partial class TrialsManagerViewModel : ObservableObject
 
         NumPresentations = value.NumPresentations;
 
+        // Load left / right key text
         var leftKey = value.LeftResponseId != Guid.Empty
             ? _currentTest.GetKeyById(value.LeftResponseId)
             : null;
@@ -95,7 +105,9 @@ public partial class TrialsManagerViewModel : ObservableObject
             .ToList();
 
         foreach (var trial in blockTrials)
+        {
             Trials.Add(new TrialRowViewModel(trial!, _currentTest));
+        }
     }
 
     [RelayCommand]
@@ -130,9 +142,12 @@ public partial class TrialsManagerViewModel : ObservableObject
         Trials.Remove(SelectedTrial);
         SelectedTrial = null;
 
+        // renumber remaining
         int n = 1;
         foreach (var row in Trials)
+        {
             row.Trial.TrialNumber = n++;
+        }
     }
 
     [RelayCommand]
@@ -153,6 +168,7 @@ public partial class TrialsManagerViewModel : ObservableObject
             return;
         }
 
+        // Clear existing trials for this block
         var existingIds = SelectedBlock.TrialIds.ToList();
         foreach (var id in existingIds)
         {
@@ -162,6 +178,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         SelectedBlock.TrialIds.Clear();
         Trials.Clear();
 
+        // Simple generation: cycle through stimuli, alternate Left/Right
         var stimList = AvailableStimuli.ToList();
         for (int i = 0; i < NumPresentations; i++)
         {
@@ -207,8 +224,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         Key leftKey;
         if (SelectedBlock.LeftResponseId != Guid.Empty)
         {
-            leftKey = _currentTest.GetKeyById(SelectedBlock.LeftResponseId)
-                      ?? new Key { Id = SelectedBlock.LeftResponseId, LayoutItem = LayoutItem.LeftKey };
+            leftKey = _currentTest.GetKeyById(SelectedBlock.LeftResponseId) ?? new Key { Id = SelectedBlock.LeftResponseId };
         }
         else
         {
@@ -223,8 +239,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         Key rightKey;
         if (SelectedBlock.RightResponseId != Guid.Empty)
         {
-            rightKey = _currentTest.GetKeyById(SelectedBlock.RightResponseId)
-                       ?? new Key { Id = SelectedBlock.RightResponseId, LayoutItem = LayoutItem.RightKey };
+            rightKey = _currentTest.GetKeyById(SelectedBlock.RightResponseId) ?? new Key { Id = SelectedBlock.RightResponseId };
         }
         else
         {
@@ -236,6 +251,9 @@ public partial class TrialsManagerViewModel : ObservableObject
             _currentTest.AddKey(rightKey);
     }
 
+    /// <summary>
+    /// Assign a stimulus to the selected block with the given keying direction by creating a new trial.
+    /// </summary>
     [RelayCommand]
     private void AssignStimulus(object? parameter)
     {
@@ -264,6 +282,7 @@ public partial class TrialsManagerViewModel : ObservableObject
 
 /// <summary>
 /// Lightweight row ViewModel used by the Trials list.
+/// Keeps the underlying Trial in sync when the user changes stimulus or direction.
 /// Direction is exposed as a simple string ("Left" / "Right") for easy ComboBox binding.
 /// </summary>
 public partial class TrialRowViewModel : ObservableObject
@@ -280,6 +299,9 @@ public partial class TrialRowViewModel : ObservableObject
 
     public int TrialNumber => Trial.TrialNumber;
 
+    /// <summary>
+    /// Friendly display text for the currently selected stimulus.
+    /// </summary>
     public string StimulusPreview => SelectedStimulus?.GetDisplayPreview() ?? "(none)";
 
     public static IReadOnlyList<string> DirectionOptions { get; } = new[] { "Left", "Right" };

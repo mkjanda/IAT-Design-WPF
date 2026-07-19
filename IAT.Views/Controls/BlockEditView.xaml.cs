@@ -10,8 +10,8 @@ namespace IAT.Views.Controls
         public BlockEditView()
         {
             InitializeComponent();
-            Loaded += (_, _) => TryFitToHost();
-            DataContextChanged += (_, _) => TryFitToHost();
+            Loaded += (_, _) => ScheduleFitToHost();
+            DataContextChanged += (_, _) => ScheduleFitToHost();
         }
 
         private void OnPreviewHostSizeChanged(object sender, SizeChangedEventArgs e)
@@ -23,15 +23,21 @@ namespace IAT.Views.Controls
             }
         }
 
-        private void TryFitToHost()
+        private void ScheduleFitToHost()
         {
-            if (DataContext is not BlockEditViewModel vm || vm.LayoutViewModel is null)
-                return;
-            if (ActualWidth > 1 && ActualHeight > 1)
+            // Use BeginInvoke so we run after the layout pass has completed.
+            // This fixes the common issue where ActualWidth/Height are still 0 on Loaded.
+            Dispatcher.BeginInvoke(new Action(() =>
             {
+                if (DataContext is not BlockEditViewModel vm || vm.LayoutViewModel is null)
+                    return;
+
+                double availableWidth = PreviewHost.ActualWidth > 50 ? PreviewHost.ActualWidth - 32 : 600;
+                double availableHeight = PreviewHost.ActualHeight > 50 ? PreviewHost.ActualHeight - 32 : 500;
+
                 vm.LayoutViewModel.FitToWindowCommand.Execute(
-                    new Size(Math.Max(100, ActualWidth - 32), Math.Max(100, ActualHeight - 32)));
-            }
+                    new Size(Math.Max(100, availableWidth), Math.Max(100, availableHeight)));
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
     }
 }

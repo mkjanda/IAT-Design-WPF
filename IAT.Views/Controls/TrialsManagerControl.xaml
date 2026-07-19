@@ -21,6 +21,11 @@
             <Setter Property="Foreground" Value="#CCCCCC"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
+
+        <!-- Stimulus display in ComboBox -->
+        <DataTemplate x:Key="StimulusComboTemplate" DataType="{x:Type domain:Stimulus}">
+            <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"/>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid>
@@ -30,7 +35,7 @@
             <ColumnDefinition Width="280"/>
         </Grid.ColumnDefinitions>
 
-        <!-- LEFT: Blocks list -->
+        <!-- ========== LEFT: Blocks list ========== -->
         <Border Grid.Column="0" Background="#252526" BorderBrush="#3C3C3C" BorderThickness="0,0,1,0">
             <DockPanel>
                 <TextBlock Text="Blocks" FontSize="16" FontWeight="SemiBold"
@@ -59,7 +64,7 @@
             </DockPanel>
         </Border>
 
-        <!-- CENTER: Trials + Keys -->
+        <!-- ========== CENTER: Trials + Keys for selected block ========== -->
         <Grid Grid.Column="1" Margin="16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -67,6 +72,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
+            <!-- Header + NumPresentations + Response Keys -->
             <StackPanel Grid.Row="0">
                 <DockPanel Margin="0,0,0,12">
                     <TextBlock Text="{Binding SelectedBlock.Name, FallbackValue='Select a block'}"
@@ -124,6 +130,7 @@
                     <TextBlock Text="Trials (Stimulus + Keying)" Style="{StaticResource SectionHeader}"
                                Margin="12,10,12,4" DockPanel.Dock="Top"/>
 
+                    <!-- Column headers -->
                     <Grid Margin="12,0,12,4" DockPanel.Dock="Top">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40"/>
@@ -154,12 +161,14 @@
                                         <ColumnDefinition Width="130"/>
                                     </Grid.ColumnDefinitions>
 
+                                    <!-- Trial # -->
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding TrialNumber}"
                                                Foreground="#888888"
                                                VerticalAlignment="Center"
                                                FontWeight="SemiBold"/>
 
+                                    <!-- Stimulus selector -->
                                     <ComboBox Grid.Column="1"
                                               ItemsSource="{Binding DataContext.AvailableStimuli, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                               SelectedItem="{Binding SelectedStimulus, Mode=TwoWay}"
@@ -167,13 +176,13 @@
                                               Margin="0,0,12,0"
                                               Height="32">
                                         <ComboBox.ItemTemplate>
-                                            
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis"/>
                                             </DataTemplate>
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
 
+                                    <!-- Keyed direction -->
                                     <ComboBox Grid.Column="2"
                                               ItemsSource="{x:Static vm:TrialRowViewModel.DirectionOptions}"
                                               SelectedItem="{Binding DirectionName, Mode=TwoWay}"
@@ -192,10 +201,6 @@
                         Command="{Binding AddTrialCommand}"
                         Style="{StaticResource AccentButton}"
                         Height="36" Width="110" Margin="0,0,8,0"/>
-                <Button Content="Generate Trials"
-                        Command="{Binding GenerateTrialsCommand}"
-                        Background="#3C3C3C" Foreground="#E0E0E0"
-                        Height="36" Width="130" Margin="0,0,8,0"/>
                 <Button Content="Clear Trials"
                         Command="{Binding ClearTrialsCommand}"
                         Background="#3C3C3C" Foreground="#E0E0E0"
@@ -207,7 +212,7 @@
             </StackPanel>
         </Grid>
 
-        <!-- RIGHT: Assign Stimuli -->
+        <!-- ========== RIGHT: Available Stimuli for quick assignment ========== -->
         <Border Grid.Column="2" Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1,0,0,0">
             <DockPanel>
                 <TextBlock Text="Assign Stimuli" FontSize="16" FontWeight="SemiBold"
@@ -242,7 +247,7 @@
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0"
-                                               ToolTip="{Binding Text}"/>
+                                               ToolTip="{Binding}"/>
                                 </DockPanel>
                             </Border>
                         </DataTemplate>

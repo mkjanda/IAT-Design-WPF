@@ -43,7 +43,8 @@
 
             <!-- Stimulus Text -->
             <TextBox Grid.Row="0"
-                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"  GotFocus="StimulusTextBox_GotFocus" 
+                               LostFocus="StimulusTextBox_LostFocus"
                      Style="{StaticResource DarkTextBox}"
                      AcceptsReturn="True" TextWrapping="Wrap"
                      Height="Auto" Margin="0,0,0,16"
@@ -68,7 +69,7 @@
 
                 <!-- Font Size -->
                 <StackPanel Grid.Column="1" Margin="0,0,24,0">
-                    <TextBlock Text="Font Size" FontSize="12" Foreground="#CCCCCC" Margin="0,0,0,4"/>
+                    <TextBlock Text="Font Size" FontSize="12" Foreground="#CCCCCC" Margin="0,0,0,4" />
                     <ComboBox Width="90"
                               ItemsSource="{Binding AvailableFontSizes}"
                               SelectedItem="{Binding FontSize}"

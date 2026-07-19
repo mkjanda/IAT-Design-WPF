@@ -54,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Test deployment has been updated to include the generation of necessary files and resources, as well as the packaging of the test configuration and associated data for deployment to the server. 
 - Normalized the style dictionaries and XAML converter declaration.
 - Moved DataContext assigments in the XAML to the main window's Show function, which allows for better separation of concerns and makes the XAML files more focused on defining the user interface rather than managing the data context. 
+- The "Add Block" button has been implemented, allowing the Trials tab to be tested.
 ### Deprecated
 ### Removed
 - Removed support for older versions of .NET, as the application now requires .NET 10.0 or later to take advantage of the latest features and improvements. 
@@ -69,6 +70,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Repaired an error that caused Page build actioned items to show up as duplicates.
 - Made a simple repair to App.xaml, setting its corresponding object's namespace correctly to IAT_Design_WPF. The previous entry had begun to block compilation. 
 - The trial preview of the block design view no resizes correctly with the window.
+- The preview panel of the block tab now sizes correctly with the window.
 ### Security
 - Enhanced the security of product activation to a public/private AES key exchange. Product activation is necessitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.
 - Altered the handshaking algorithm with the server. It is now limited to a challenge/response exchange revolving around the AES encryption of a random string. This eliminates a web socket transaction from the process, and cuts "security for the sake of security."
