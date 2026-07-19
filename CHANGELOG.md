@@ -55,7 +55,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Normalized the style dictionaries and XAML converter declaration.
 - Moved DataContext assigments in the XAML to the main window's Show function, which allows for better separation of concerns and makes the XAML files more focused on defining the user interface rather than managing the data context. 
 - The "Add Block" button has been implemented, allowing the Trials tab to be tested.
-- Modified Layout Editor to fit its host correctly, size correctly, and reposition its comonents correctly when its dimensions change.
+- Modified Layout Editor to fit its host correctly, size correctly, and reposition its components correctly when its dimensions change.
+- Error fixes on Layout Editor involving repositioning of elements and deflating their sizes.
 ### Deprecated
 ### Removed
 - Removed support for older versions of .NET, as the application now requires .NET 10.0 or later to take advantage of the latest features and improvements. 

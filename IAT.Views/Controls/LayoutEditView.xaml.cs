@@ -138,7 +138,7 @@ namespace IAT.Views.Controls
 
             double scale = layoutVm.ScaleFactor > 0 ? layoutVm.ScaleFactor : 1.0;
             var pos = e.GetPosition(canvas);
-            _dragStartInCanvas = new Point(pos.X / scale, pos.Y / scale);
+            _dragStartInCanvas = new Point(pos.X * scale, pos.Y * scale);
             (_dragOriginX, _dragOriginY) = GetElementPosition(layoutVm, tag);
 
             element.CaptureMouse();
@@ -173,8 +173,8 @@ namespace IAT.Views.Controls
 
             double scale = layoutVm.ScaleFactor > 0 ? layoutVm.ScaleFactor : 1.0;
             var current = e.GetPosition(canvas);
-            double dx = (current.X / scale) - _dragStartInCanvas.X;
-            double dy = (current.Y / scale) - _dragStartInCanvas.Y;
+            double dx = (current.X * scale) - _dragStartInCanvas.X;
+            double dy = (current.Y * scale) - _dragStartInCanvas.Y;
 
             SetElementPosition(layoutVm, _dragElementTag, _dragOriginX + dx, _dragOriginY + dy);
         }
