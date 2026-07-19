@@ -18,7 +18,7 @@ namespace IAT.Core.Domain
     /// provides methods for validation, serialization, and previewing. Blocks are typically managed as part of an IAT's
     /// structure and can be added, removed, or reordered within the test. Thread safety is not guaranteed; external
     /// synchronization is required for concurrent access.</remarks>
-    public partial class Block 
+    public partial class Block : ObservableObject
     {
 
         /// <summary>
@@ -39,8 +39,10 @@ namespace IAT.Core.Domain
 
         /// <summary>
         /// Gets or sets the number of trials to perform in the operation.
+        /// Raises PropertyChanged so the Trials-tab block list updates live.
         /// </summary>
-        public int NumPresentations { get; set; } = 0;
+        [ObservableProperty]
+        private int numPresentations = 0;
 
         /// <summary>
         /// Id of the instructions that appear through the block in the test window
@@ -110,7 +112,7 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets the name associated with the current instance.
         /// </summary>
-        
+
         public string Name { get; set; } = String.Empty;
 
         /// <summary>

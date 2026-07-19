@@ -22,7 +22,24 @@ public partial class StimulusEditViewModel : ObservableObject
     [ObservableProperty] private Color textColor = Colors.Black;
     [ObservableProperty] private bool isEditPanelVisible = true;
 
-    public ObservableCollection<string> AvailableFontFamilies { get; } = new() { "Arial", "Segoe UI", "Calibri", "Verdana", "Georgia", "Segoe Print," };
+    public ObservableCollection<string> AvailableFontFamilies { get; } = new()
+    {
+        "Arial",
+        "Segoe UI",
+        "Calibri",
+        "Verdana",
+        "Trebuchet MS",
+        "Tahoma",
+        "Georgia",
+        "Times New Roman",
+        "Cambria",
+        "Garamond",
+        "Palatino Linotype",
+        "Consolas",
+        "Courier New",
+        "Segoe Script",
+        "Impact"
+    };
     public ObservableCollection<double> AvailableFontSizes { get; } = new() { 12, 16, 20, 24, 28, 32, 36, 48, 54, 66, 72, 96 };
 
     public SolidColorBrush PreviewBrush => new SolidColorBrush(TextColor);
@@ -66,21 +83,21 @@ public partial class StimulusEditViewModel : ObservableObject
             "black" => Colors.Black,
             "white" => Colors.White,
             "flame scarlet" => Color.FromRgb(205, 33, 42),
-            "silver sconce" => Color.FromRgb(220, 50, 50),
+            "firefly" => Color.FromRgb(209, 206, 32),
+            "silver sconce" => Color.FromRgb(161, 159, 165),
             "ultra violet" => Color.FromRgb(95, 75, 139),
             "knockout pink" => Color.FromRgb(255, 62, 165),
             "emerald" => Color.FromRgb(0, 148, 115),
             "sunset gold" => Color.FromRgb(247, 196, 148),
             "radiant orchid" => Color.FromRgb(174, 93, 153),
-            "raspberry" => Color.FromRgb(227, 11, 93),
+            "raspberry" => Color.FromRgb(255, 46, 94),
             "acid lime" => Color.FromRgb(187, 223, 50),
             "bluebird" => Color.FromRgb(0, 161, 180),
             "star sapphire" => Color.FromRgb(69, 104, 154),
             "angel blue" => Color.FromRgb(131, 198, 207),
             "ember glow" => Color.FromRgb(234, 103, 89),
-            "pale gold" => Color.FromRgb(238, 232, 170),
+            "pale gold" => Color.FromRgb(189, 152, 101),
             "blackened pearl" => Color.FromRgb(77, 75, 80),
-
             _ => TextColor
         };
         OnPropertyChanged(nameof(PreviewBrush));

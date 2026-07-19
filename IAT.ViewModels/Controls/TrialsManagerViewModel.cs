@@ -110,6 +110,17 @@ public partial class TrialsManagerViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Keeps Block.NumPresentations (and the VM copy) in sync with the actual trial list
+    /// so the left-pane block list updates live.
+    /// </summary>
+    private void SyncTrialCount()
+    {
+        if (SelectedBlock is null) return;
+        SelectedBlock.NumPresentations = SelectedBlock.TrialIds.Count;
+        NumPresentations = SelectedBlock.NumPresentations;
+    }
+
     [RelayCommand]
     private void AddTrial()
     {
@@ -130,6 +141,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         var row = new TrialRowViewModel(trial, _currentTest);
         Trials.Add(row);
         SelectedTrial = row;
+        SyncTrialCount();
     }
 
     [RelayCommand]
@@ -139,6 +151,7 @@ public partial class TrialsManagerViewModel : ObservableObject
 
         var trial = SelectedTrial.Trial;
         _currentTest.RemoveTrial(trial);
+        SelectedBlock.TrialIds.Remove(trial.Id);
         Trials.Remove(SelectedTrial);
         SelectedTrial = null;
 
@@ -148,6 +161,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         {
             row.Trial.TrialNumber = n++;
         }
+        SyncTrialCount();
     }
 
     [RelayCommand]
@@ -198,6 +212,7 @@ public partial class TrialsManagerViewModel : ObservableObject
             SelectedBlock.TrialIds.Add(trial.Id);
             Trials.Add(new TrialRowViewModel(trial, _currentTest));
         }
+        SyncTrialCount();
     }
 
     [RelayCommand]
@@ -213,6 +228,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         }
         SelectedBlock.TrialIds.Clear();
         Trials.Clear();
+        SyncTrialCount();
     }
 
     [RelayCommand]
@@ -277,6 +293,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         _currentTest.AddTrial(trial);
         SelectedBlock.TrialIds.Add(trial.Id);
         Trials.Add(new TrialRowViewModel(trial, _currentTest));
+        SyncTrialCount();
     }
 }
 

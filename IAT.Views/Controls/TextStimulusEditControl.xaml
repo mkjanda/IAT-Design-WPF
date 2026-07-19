@@ -4,7 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="650" d:DesignWidth="670"
+             d:DesignHeight="650" d:DesignWidth="520"
              Background="#252526">
 
     <Grid Margin="16">
@@ -42,13 +42,15 @@
             </Grid.RowDefinitions>
 
             <!-- Stimulus Text -->
-            <TextBox Grid.Row="0"
-                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"  GotFocus="StimulusTextBox_GotFocus" 
-                               LostFocus="StimulusTextBox_LostFocus"
+            <TextBox x:Name="StimulusTextBox"
+                     Grid.Row="0"
+                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource DarkTextBox}"
                      AcceptsReturn="True" TextWrapping="Wrap"
-                     Height="Auto" Margin="0,0,0,16"
-                     FontSize="14"/>
+                     Height="120" Margin="0,0,0,16"
+                     FontSize="14"
+                     GotFocus="StimulusTextBox_GotFocus"
+                     LostFocus="StimulusTextBox_LostFocus"/>
 
             <!-- Font Controls -->
             <Grid Grid.Row="1" Margin="0,0,0,16">
@@ -61,15 +63,21 @@
                 <!-- Font Family -->
                 <StackPanel Grid.Column="0" Margin="0,0,24,0">
                     <TextBlock Text="Font Family" FontSize="12" Foreground="#CCCCCC" Margin="0,0,0,4"/>
-                    <ComboBox Width="160" 
+                    <ComboBox Width="180" 
                               ItemsSource="{Binding AvailableFontFamilies}"
                               SelectedItem="{Binding FontFamily}"
-                              Style="{StaticResource DarkComboBox}"/>
+                              Style="{StaticResource DarkComboBox}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="{Binding}" FontSize="14"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
 
                 <!-- Font Size -->
                 <StackPanel Grid.Column="1" Margin="0,0,24,0">
-                    <TextBlock Text="Font Size" FontSize="12" Foreground="#CCCCCC" Margin="0,0,0,4" />
+                    <TextBlock Text="Font Size" FontSize="12" Foreground="#CCCCCC" Margin="0,0,0,4"/>
                     <ComboBox Width="90"
                               ItemsSource="{Binding AvailableFontSizes}"
                               SelectedItem="{Binding FontSize}"
@@ -136,7 +144,6 @@
                         <Button Width="32" Height="32" Margin="2"
                                 Command="{Binding ApplyPaletteCommand}" CommandParameter="Blackened Pearl"
                                 Background="#4D4B50" BorderBrush="#555"/>
-
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -150,6 +157,7 @@
                            FontFamily="{Binding FontFamily}"
                            FontSize="{Binding FontSize}"
                            Foreground="{Binding PreviewBrush}"
+                           FontWeight="SemiBold"
                            HorizontalAlignment="Center" 
                            VerticalAlignment="Center"
                            TextWrapping="Wrap"/>
@@ -165,8 +173,9 @@
             <Button Content="Delete Stimulus" Width="140" Height="38" Margin="0,0,8,0"
                     Background="#3C3C3C" Foreground="#E0E0E0"
                     Command="{Binding DeleteCommand}"/>
-    
-            
+            <Button Content="+ Add New Stimulus" Width="160" Height="38"
+                    Background="#00BFA5" Foreground="White" FontWeight="SemiBold"
+                    Command="{Binding AddNewCommand}"/>
         </StackPanel>
     </Grid>
 </UserControl>

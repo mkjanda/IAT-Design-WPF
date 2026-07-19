@@ -13,6 +13,8 @@ namespace IAT.ViewModels
         private readonly ILayoutCalculatorService _calculator;
         private readonly IatTest _test;
 
+        [ObservableProperty] private double previewWidth;
+        [ObservableProperty] private double previewHeight;
         [ObservableProperty] private double interiorWidth;
         [ObservableProperty] private double interiorHeight;
         [ObservableProperty] private double stimulusWidth;
@@ -31,7 +33,7 @@ namespace IAT.ViewModels
         [ObservableProperty] private double textInstructionsHeight;
         [ObservableProperty] private double continueInstructionsWidth;
         [ObservableProperty] private double continueInstructionsHeight;
-        [ObservableProperty] private bool isLayoutEditMode = true;
+        [ObservableProperty] private bool isLayoutEditMode = false;
         [ObservableProperty] private double scaleFactor;
         [ObservableProperty] private string statusMessage = string.Empty;
 
@@ -100,11 +102,17 @@ namespace IAT.ViewModels
         {
             // Stage size changed. Element positions stay absolute (user drags are preserved).
             // ScaleFactor is recomputed so the on-screen preview frame size remains stable.
-            RefitToLastAvailableSize();
-            OnPropertyChanged(nameof(DesignWidth));
+            LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
             try
             {
+                int layoutWidth = (int)rects.Interior.Width;
                 _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(value, InteriorHeight));
+                LeftKeyX = ((LeftKeyX + (KeyWidth / 2)) / layoutWidth) * value - (KeyWidth / 2);
+                StimulusX = ((StimulusX + (StimulusWidth / 2)) / layoutWidth) * value - (StimulusWidth / 2);
+                RightKeyX = ((RightKeyX + (KeyWidth / 2)) / layoutWidth) * value - (KeyWidth / 2);
+                ErrorMarkX = ((ErrorMarkX + (ErrorMarkWidth / 2)) / layoutWidth) * value - (ErrorMarkWidth / 2);
+                BlockInstructionsX = ((BlockInstructionsX + (BlockInstructionsWidth / 2)) / layoutWidth) * value - (BlockInstructionsWidth / 2);
+                FitToWindow(_lastAvailableSize); // recompute scale factor to keep preview size stable
             }
             catch
             {
@@ -114,11 +122,18 @@ namespace IAT.ViewModels
 
         partial void OnInteriorHeightChanged(double value)
         {
-            RefitToLastAvailableSize();
             OnPropertyChanged(nameof(DesignHeight));
+            LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
             try
             {
+                int layoutHeight = (int)rects.Interior.Height;
                 _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(InteriorWidth, value));
+                LeftKeyY = ((LeftKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight / 2);
+                StimulusY = ((StimulusY + (StimulusHeight / 2)) / layoutHeight) * value - (StimulusHeight / 2);
+                RightKeyY = ((RightKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight / 2);
+                ErrorMarkY = ((ErrorMarkY + (ErrorMarkHeight / 2)) / layoutHeight) * value - (ErrorMarkHeight / 2);
+                BlockInstructionsY = ((BlockInstructionsY + (BlockInstructionsHeight / 2)) / layoutHeight) * value - (BlockInstructionsHeight / 2);
+                FitToWindow(_lastAvailableSize); // recompute scale factor to keep preview size stable
             }
             catch
             {
@@ -146,6 +161,8 @@ namespace IAT.ViewModels
         /// Re-applies the default layout rules (centering, edge alignment, padding) to all element positions.
         /// Called on construction and available for a future "Reset layout" command.
         /// </summary>
+        /// 
+         
         public void RecalculateDefaultPositions()
         {
             StimulusX = InteriorWidth / 2 - StimulusWidth / 2;
@@ -164,7 +181,7 @@ namespace IAT.ViewModels
             ErrorMarkY = StimulusY + StimulusHeight + (keysSideBySide ? thinPad : thickPad);
             BlockInstructionsY = InteriorHeight - BlockInstructionsHeight;
         }
-
+         
         /// <summary>
         /// Constructs a new instance of the LayoutViewModel class, initializing layout properties based on the provided layout calculator 
         /// service and test configuration. The constructor retrieves the final layout rectangles from the calculator service using the test's 

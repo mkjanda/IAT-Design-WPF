@@ -242,7 +242,7 @@
                                                 Tag="{Binding}"
                                                 Click="OnAssignRightClick"/>
                                     </StackPanel>
-                                    <TextBlock Text="{Binding Text}" 
+                                    <TextBlock Text="{Binding}" 
                                                Foreground="#E0E0E0"
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"
