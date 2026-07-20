@@ -35,11 +35,6 @@ public partial class BlockEditViewModel : ObservableObject
     [ObservableProperty] private Trial? selectedTrial;
 
     /// <summary>
-    /// Human-readable stimulus label for the selected trial (for the properties pane / grid helper).
-    /// </summary>
-    [ObservableProperty] private string selectedTrialStimulusPreview = string.Empty;
-
-    /// <summary>
     /// Bound to the Instructions Text editor. Mirrors <see cref="Block.BlockInstructions"/> and
     /// pushes live updates into the layout preview.
     /// </summary>
@@ -130,15 +125,6 @@ public partial class BlockEditViewModel : ObservableObject
     partial void OnSelectedTrialChanged(Trial? value)
     {
         LayoutViewModel?.ApplyTrialPreview(value);
-
-        if (value is null)
-        {
-            SelectedTrialStimulusPreview = string.Empty;
-            return;
-        }
-
-        var stim = _currentTest.GetStimulusById(value.StimulusId);
-        SelectedTrialStimulusPreview = stim?.GetDisplayPreview() ?? "(missing stimulus)";
     }
 
     /// <summary>
