@@ -4,7 +4,6 @@ using System.Xml.Schema;
 using System.Xml.Serialization;
 using IAT.Core.Serializable;
 using CommunityToolkit.Mvvm.ComponentModel;
-using net.sf.saxon.style;
 using System.Text.Json.Serialization;
 
 namespace IAT.Core.Domain
@@ -39,7 +38,7 @@ namespace IAT.Core.Domain
 
         /// <summary>
         /// Gets or sets the number of trials to perform in the operation.
-        /// Raises PropertyChanged so the Trials-tab block list updates live.
+        /// Raises PropertyChanged so the Trials-tab block list and Blocks-tab trial count update live.
         /// </summary>
         [ObservableProperty]
         private int numPresentations = 0;
@@ -48,6 +47,13 @@ namespace IAT.Core.Domain
         /// Id of the instructions that appear through the block in the test window
         /// </summary>
         public Guid BlockInstructionsId { get; set; } = Guid.Empty;
+
+        /// <summary>
+        /// Free-form instruction text shown during the block (edited on the Blocks tab,
+        /// previewed in the layout Block Instructions rectangle).
+        /// </summary>
+        [ObservableProperty]
+        private string blockInstructions = string.Empty;
 
         /// <summary>
         /// Gets or sets the alternation group associated with the element.
@@ -75,6 +81,41 @@ namespace IAT.Core.Domain
         /// Gets the collection of unique identifiers for the associated trials.
         /// </summary>
         public List<Guid> TrialIds { get; set; } = new();
+
+        /// <summary>
+        /// Resolved trials for this block (looked up via the parent <see cref="IatTest"/>).
+        /// Used by the Blocks-tab DataGrid. Call <see cref="NotifyTrialsChanged"/> after
+        /// mutating <see cref="TrialIds"/> so bindings refresh.
+        /// </summary>
+        [JsonIgnore]
+        public IEnumerable<Trial> Trials
+        {
+            get
+            {
+                if (IatTest is null || TrialIds.Count == 0)
+                    return Enumerable.Empty<Trial>();
+
+                return TrialIds
+                    .Select(id => IatTest.GetTrialById(id))
+                    .Where(t => t is not null)
+                    .Cast<Trial>()
+                    .OrderBy(t => t.TrialNumber);
+            }
+        }
+
+        /// <summary>
+        /// Raises PropertyChanged for <see cref="Trials"/> and syncs <see cref="NumPresentations"/>
+        /// so any bound grid or count label updates immediately.
+        /// </summary>
+        public void NotifyTrialsChanged()
+        {
+            var count = TrialIds.Count;
+            // Only assign when the value changes so ObservableProperty does not
+            // raise a redundant PropertyChanged that can re-enter bindings.
+            if (NumPresentations != count)
+                NumPresentations = count;
+            OnPropertyChanged(nameof(Trials));
+        }
 
         /// <summary>
         /// Indicates whether the item is a header item.

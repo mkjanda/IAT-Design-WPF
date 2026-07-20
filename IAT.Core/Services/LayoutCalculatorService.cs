@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using IAT.Core.Domain;
 using IAT.Core.Enumerations;
-using jdk.nashorn.@internal.ir;
 
 namespace IAT.Core.Services;
 
@@ -79,11 +78,11 @@ public class LayoutCalculatorService : ILayoutCalculatorService
     /// <param name="rect">The rectangle to be inflated. The rectangle's size and position are modified by this method.</param>
     /// <param name="sz">The target size to which the rectangle should be inflated. Both width and height must be greater than or equal
     /// to the rectangle's current size.</param>
-//    private void Inflate(Rect rect, Size sz)
-  //  {
+    //    private void Inflate(Rect rect, Size sz)
+    //  {
     //    var inflateSz = new Size((sz.Width - rect.Size.Width) / 2, (sz.Height - rect.Size.Height) / 2);
-      //  rect.Inflate(inflateSz);
-//    }
+    //  rect.Inflate(inflateSz);
+    //    }
 
     /// <summary>
     /// Applies a user-defined size override to a specified region within the given layout configuration.
@@ -154,7 +153,7 @@ public class LayoutCalculatorService : ILayoutCalculatorService
             _ => throw new ArgumentOutOfRangeException(nameof(li), $"Unsupported layout item: {li}")
         };
     }
-    
+
 
     /// <summary>
     /// Calculates the final layout rectangles for all UI elements based on the specified layout configuration and any
@@ -184,49 +183,76 @@ public class LayoutCalculatorService : ILayoutCalculatorService
         foreach (var (layoutItem, sz) in layout.UserSizeOverrides)
         {
             Rect r;
-            switch (layoutItem) 
+            switch (layoutItem)
             {
                 case LayoutItem.Interior:
                     rects = rects with { Interior = new Rect(0, 0, sz.Width, sz.Height) };
                     break;
                 case LayoutItem.Stimulus:
-                    rects = rects with { Stimulus = new Rect(layout.StimulusRect.Location.X - (sz.Width - layout.StimulusRect.Size.Width) / 2,
-                        layout.StimulusRect.Location.Y - (sz.Height - layout.StimulusRect.Size.Height) / 2, sz.Width, sz.Height)     };
+                    rects = rects with
+                    {
+                        Stimulus = new Rect(layout.StimulusRect.Location.X - (sz.Width - layout.StimulusRect.Size.Width) / 2,
+                        layout.StimulusRect.Location.Y - (sz.Height - layout.StimulusRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.LeftKey:
-                    rects = rects with { LeftKey = new Rect(layout.LeftKeyRect.Location.X - (sz.Width - layout.LeftKeyRect.Size.Width) / 2,
-                        layout.LeftKeyRect.Location.Y - (sz.Height - layout.LeftKeyRect.Size.Height) / 2, sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        LeftKey = new Rect(layout.LeftKeyRect.Location.X - (sz.Width - layout.LeftKeyRect.Size.Width) / 2,
+                        layout.LeftKeyRect.Location.Y - (sz.Height - layout.LeftKeyRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.RightKey:
-                    rects = rects with { RightKey = new Rect(layout.RightKeyRect.Location.X - (sz.Width - layout.RightKeyRect.Size.Width) / 2,
-                        layout.RightKeyRect.Location.Y - (sz.Height - layout.RightKeyRect.Size.Height) / 2, sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        RightKey = new Rect(layout.RightKeyRect.Location.X - (sz.Width - layout.RightKeyRect.Size.Width) / 2,
+                        layout.RightKeyRect.Location.Y - (sz.Height - layout.RightKeyRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.ErrorMark:
                     Rect errorRect = layout.ErrorMarkRect;
                     errorRect.Inflate(sz);
-                    rects = rects with { ErrorMark = new Rect(layout.ErrorMarkRect.Location.X - (sz.Width - layout.ErrorMarkRect.Size.Width) / 2, 
-                        layout.ErrorMarkRect.Location.Y - (sz.Height - layout.ErrorMarkRect.Size.Height) / 2, sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        ErrorMark = new Rect(layout.ErrorMarkRect.Location.X - (sz.Width - layout.ErrorMarkRect.Size.Width) / 2,
+                        layout.ErrorMarkRect.Location.Y - (sz.Height - layout.ErrorMarkRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.BlockInstructions:
-                    rects = rects with { BlockInstructions = new Rect(layout.BlockInstructionsRect.Location.X - (sz.Width - 
-                        layout.BlockInstructionsRect.Size.Width) / 2, layout.BlockInstructionsRect.Location.Y - layout.BlockInstructionsRect.Size.Height,   
-                        sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        BlockInstructions = new Rect(layout.BlockInstructionsRect.Location.X - (sz.Width -
+                        layout.BlockInstructionsRect.Size.Width) / 2, layout.BlockInstructionsRect.Location.Y - layout.BlockInstructionsRect.Size.Height,
+                        sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.MockItemInstructions:
-                    rects = rects with { MockItemInstructions = new Rect(layout.MockItemInstructionsRect.Location.X - (sz.Width - layout.MockItemInstructionsRect.Size.Width) / 2,
-                        layout.MockItemInstructionsRect.Location.Y - (sz.Height - layout.MockItemInstructionsRect.Size.Height) / 2, sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        MockItemInstructions = new Rect(layout.MockItemInstructionsRect.Location.X - (sz.Width - layout.MockItemInstructionsRect.Size.Width) / 2,
+                        layout.MockItemInstructionsRect.Location.Y - (sz.Height - layout.MockItemInstructionsRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
-                case LayoutItem.KeyedInstructions:   
-                    rects = rects with { KeyedInstructions = new Rect(layout.KeyedInstructionsRect.Location.X - (sz.Width - layout.KeyedInstructionsRect.Size.Width) / 2,
-                        layout.KeyedInstructionsRect.Location.Y - (sz.Height - layout.KeyedInstructionsRect.Size.Height) / 2, sz.Width, sz.Height) };
+                case LayoutItem.KeyedInstructions:
+                    rects = rects with
+                    {
+                        KeyedInstructions = new Rect(layout.KeyedInstructionsRect.Location.X - (sz.Width - layout.KeyedInstructionsRect.Size.Width) / 2,
+                        layout.KeyedInstructionsRect.Location.Y - (sz.Height - layout.KeyedInstructionsRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.TextInstructions:
-                    rects = rects with { TextInstructions = new Rect(layout.TextInstructionsRect.Location.X - (sz.Width - layout.TextInstructionsRect.Size.Width) / 2,
-                        layout.TextInstructionsRect.Location.Y - (sz.Height - layout.TextInstructionsRect.Size.Height) / 2, sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        TextInstructions = new Rect(layout.TextInstructionsRect.Location.X - (sz.Width - layout.TextInstructionsRect.Size.Width) / 2,
+                        layout.TextInstructionsRect.Location.Y - (sz.Height - layout.TextInstructionsRect.Size.Height) / 2, sz.Width, sz.Height)
+                    };
                     break;
                 case LayoutItem.ContinueInstructions:
-                    rects = rects with { ContinueInstructions = new Rect((layout.InteriorRect.Size.Width - sz.Width) / 2, layout.InteriorRect.Size.Height - sz.Height,
-                        sz.Width, sz.Height) };
+                    rects = rects with
+                    {
+                        ContinueInstructions = new Rect((layout.InteriorRect.Size.Width - sz.Width) / 2, layout.InteriorRect.Size.Height - sz.Height,
+                        sz.Width, sz.Height)
+                    };
                     break;
             }
         }

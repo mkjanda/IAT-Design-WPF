@@ -1,6 +1,5 @@
-﻿using com.sun.org.apache.xml.@internal.resolver.helpers;
-using IAT.Core.Enumerations;
-using IAT.Core.Models; 
+﻿using IAT.Core.Enumerations;
+using IAT.Core.Models;
 
 namespace IAT.Core.Domain;
 
@@ -11,7 +10,7 @@ namespace IAT.Core.Domain;
 /// scenario. The text content and its appearance can be tailored using the Text and Style properties, respectively.
 /// This class is suitable for scenarios where the precise display and formatting of text stimuli are important,
 /// such as cognitive or psychological testing environments.</remarks>
-public sealed class TextStimulus : Stimulus, IFormattedText 
+public sealed class TextStimulus : Stimulus, IFormattedText
 {
     /// <summary>
     /// Gets or sets the text content.
@@ -51,7 +50,7 @@ public sealed class TextStimulus : Stimulus, IFormattedText
     /// Determines whether the current instance contains valid text for use in a test scenario.
     /// </summary>
     /// <returns>true if the Text property is not null, empty, or consists only of white-space characters; otherwise, false.</returns>
-    public override ValidationResult Validate() 
+    public override ValidationResult Validate()
         => !string.IsNullOrWhiteSpace(Text) ? ValidationResult.Success : ValidationResult.Fail("Text cannot be empty or whitespace.");
 }
 

@@ -159,6 +159,10 @@ public partial class IatTest : ObservableObject
         return block;
     }
 
+    /// <summary>
+    /// Adds a trial to the collection and cache.
+    /// </summary>
+    /// <param name="trial">The trial to add.</param>
     public void AddTrial(Trial trial)
     {
         if (trial is null) return;
@@ -169,6 +173,11 @@ public partial class IatTest : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Removes a trial from the collection and cache, and removes its ID from every block that references it.
+    /// </summary>
+    /// <param name="trial">The trial to remove.</param>
+    /// <returns>The removed trial, or null if not found.</returns>
     public Trial? RemoveTrial(Trial trial)
     {
         if (trial is null) return null;
@@ -176,12 +185,18 @@ public partial class IatTest : ObservableObject
         {
             _trialCache.Remove(trial.Id);
             foreach (var block in Blocks)
+            {
                 block.TrialIds.Remove(trial.Id);
+            }
             return trial;
         }
         return null;
     }
 
+    /// <summary>
+    /// Adds a key to the collection and cache.
+    /// </summary>
+    /// <param name="key">The key to add.</param>
     public void AddKey(Key key)
     {
         if (key is null) return;
@@ -192,6 +207,11 @@ public partial class IatTest : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Removes a key from the collection and cache.
+    /// </summary>
+    /// <param name="key">The key to remove.</param>
+    /// <returns>The removed key, or null if not found.</returns>
     public Key? RemoveKey(Key key)
     {
         if (key is null) return null;
@@ -203,8 +223,20 @@ public partial class IatTest : ObservableObject
         return null;
     }
 
+    /// <summary>
+    /// Live collection of trials. Prefer <see cref="AddTrial"/> / <see cref="RemoveTrial"/> for mutation.
+    /// </summary>
     public ObservableCollection<Trial> TrialsCollection => Trials;
+
+    /// <summary>
+    /// Live collection of keys. Prefer <see cref="AddKey"/> / <see cref="RemoveKey"/> for mutation.
+    /// </summary>
     public ObservableCollection<Key> KeysCollection => Keys;
+
+    /// <summary>
+    /// Live collection of blocks. Prefer <see cref="AddBlock"/> / <see cref="RemoveBlock"/> for mutation.
+    /// Shared by Blocks tab and Trials tab so both stay in sync.
+    /// </summary>
     public ObservableCollection<Block> BlocksCollection => Blocks;
 
     /// <summary>

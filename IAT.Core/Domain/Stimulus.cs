@@ -35,4 +35,10 @@ public abstract partial class Stimulus
     // Pure domain behavior only
     public abstract ValidationResult Validate();
     public abstract string GetDisplayPreview();
+
+    /// <summary>
+    /// Returns the display preview so ComboBoxes and lists bound with <c>{Binding}</c>
+    /// show a human-readable label instead of the type name.
+    /// </summary>
+    public override string ToString() => GetDisplayPreview();
 }

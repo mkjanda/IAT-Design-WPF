@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added parent interface to stimuli UIs to list and  allow for searching of stimuli.
 - Added a layout editor interface with its own tab.
 - Added a tab and interface for assigning trials to IAT blocks.
+- Preview of IAT trials in the Blocks tab.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 

@@ -4,7 +4,10 @@ using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using IAT.Core.Services;
 using System;
+using System.IO;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace IAT.ViewModels
 {
@@ -12,6 +15,7 @@ namespace IAT.ViewModels
     {
         private readonly ILayoutCalculatorService _calculator;
         private readonly IatTest _test;
+        private readonly IProjectPackageService? _packageService;
 
         [ObservableProperty] private double previewWidth;
         [ObservableProperty] private double previewHeight;
@@ -37,12 +41,69 @@ namespace IAT.ViewModels
         [ObservableProperty] private double scaleFactor;
         [ObservableProperty] private string statusMessage = string.Empty;
 
+        // ── Trial preview content (driven by Blocks-tab trial selection) ──────
+
+        /// <summary>Text shown in the stimulus area when previewing a text stimulus (or as image fallback).</summary>
+        [ObservableProperty] private string previewStimulusText = "Sample Stimulus";
+
+        /// <summary>Font family for the stimulus text preview.</summary>
+        [ObservableProperty] private string previewStimulusFontFamily = "Segoe UI";
+
+        /// <summary>Font size for the stimulus text preview.</summary>
+        [ObservableProperty] private double previewStimulusFontSize = 28.0;
+
+        /// <summary>Foreground brush for the stimulus text preview.</summary>
+        [ObservableProperty] private Brush previewStimulusBrush = Brushes.DimGray;
+
+        /// <summary>Image source when previewing an image stimulus; null for text.</summary>
+        [ObservableProperty] private ImageSource? previewStimulusImage;
+
+        /// <summary>True when the preview should show text (not an image).</summary>
+        [ObservableProperty] private bool isPreviewTextVisible = true;
+
+        /// <summary>True when the preview should show an image.</summary>
+        [ObservableProperty] private bool isPreviewImageVisible = false;
+
+        /// <summary>Label for the left response key in the preview.</summary>
+        [ObservableProperty] private string leftKeyPreviewText = "Left Key (E)";
+
+        /// <summary>Label for the right response key in the preview.</summary>
+        [ObservableProperty] private string rightKeyPreviewText = "Right Key (I)";
+
+        /// <summary>Block instructions text shown in the Block Instructions rectangle.</summary>
+        [ObservableProperty] private string previewBlockInstructionsText = string.Empty;
+
+        /// <summary>Foreground for the left key label (highlighted when trial is left-keyed).</summary>
+        [ObservableProperty] private Brush leftKeyPreviewBrush = Brushes.Black;
+
+        /// <summary>Foreground for the right key label (highlighted when trial is right-keyed).</summary>
+        [ObservableProperty] private Brush rightKeyPreviewBrush = Brushes.Black;
+
+        /// <summary>Font weight for the left key label.</summary>
+        [ObservableProperty] private FontWeight leftKeyPreviewFontWeight = FontWeights.Normal;
+
+        /// <summary>Font weight for the right key label.</summary>
+        [ObservableProperty] private FontWeight rightKeyPreviewFontWeight = FontWeights.Normal;
+
         /// <summary>
         /// Last host size reported by the preview container. Used to re-fit the scale
         /// when InteriorWidth/Height change so the on-screen preview size stays stable
         /// while the logical stage (and aspect ratio) changes.
         /// </summary>
         private Size _lastAvailableSize;
+
+        /// <summary>
+        /// True while the constructor is assigning initial property values.
+        /// Suppresses OnInteriorWidth/HeightChanged side-effects (ApplyUserOverrides + FitToWindow)
+        /// that would otherwise run against half-initialized state and can re-enter layout.
+        /// </summary>
+        private bool _isInitializing = true;
+
+        /// <summary>
+        /// Re-entrancy guard for FitToWindow. SizeChanged on the preview host can fire again
+        /// when ScaleFactor updates the visual tree; without this guard the call stack overflows.
+        /// </summary>
+        private bool _isFitting;
 
         /// <summary>
         /// Persists the current layout sizes and positions through the calculator
@@ -71,20 +132,40 @@ namespace IAT.ViewModels
         [RelayCommand]
         public void FitToWindow(Size availableSize)
         {
+            // Guard: invalid host size, zero stage, or re-entrant call from SizeChanged.
+            if (_isFitting)
+                return;
             if (availableSize.Width <= 0 || availableSize.Height <= 0)
                 return;
+            if (InteriorWidth <= 0 || InteriorHeight <= 0)
+                return;
 
-            _lastAvailableSize = availableSize;
+            _isFitting = true;
+            try
+            {
+                _lastAvailableSize = availableSize;
 
-            // Design size comes from InteriorWidth/Height (logical stage).
-            // Uniform scale keeps aspect ratio visible as the white preview rectangle
-            // changes shape when Interior aspect changes.
-            double scaleX = availableSize.Width / InteriorWidth;
-            double scaleY = availableSize.Height / InteriorHeight;
+                // Design size comes from InteriorWidth/Height (logical stage).
+                // Uniform scale keeps aspect ratio visible as the white preview rectangle
+                // changes shape when Interior aspect changes.
+                double scaleX = availableSize.Width / InteriorWidth;
+                double scaleY = availableSize.Height / InteriorHeight;
+                double newScale = Math.Min(scaleX, scaleY) * 0.95; // 5% padding looks better
 
-            ScaleFactor = Math.Min(scaleX, scaleY) * 0.95; // 5% padding looks better
-            OnPropertyChanged(nameof(DesignHeight));
-            OnPropertyChanged(nameof(DesignWidth));
+                // Only push a new ScaleFactor when it actually changes.
+                // Tiny floating-point differences from repeated layout passes must not
+                // retrigger SizeChanged → FitToWindow → SizeChanged (stack overflow).
+                if (Math.Abs(ScaleFactor - newScale) > 0.0001)
+                {
+                    ScaleFactor = newScale;
+                    OnPropertyChanged(nameof(DesignHeight));
+                    OnPropertyChanged(nameof(DesignWidth));
+                }
+            }
+            finally
+            {
+                _isFitting = false;
+            }
         }
 
         /// <summary>
@@ -100,13 +181,19 @@ namespace IAT.ViewModels
 
         partial void OnInteriorWidthChanged(double value)
         {
+            if (_isInitializing || value <= 0)
+                return;
+
             // Stage size changed. Element positions stay absolute (user drags are preserved).
             // ScaleFactor is recomputed so the on-screen preview frame size remains stable.
-            LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
             try
             {
-                int layoutWidth = (int)rects.Interior.Width;
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(value, InteriorHeight));
+                LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
+                double layoutWidth = rects.Interior.Width;
+                if (layoutWidth <= 0)
+                    layoutWidth = value; // avoid divide-by-zero on first override
+
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(value, Math.Max(1, InteriorHeight)));
                 LeftKeyX = ((LeftKeyX + (KeyWidth / 2)) / layoutWidth) * value - (KeyWidth / 2);
                 StimulusX = ((StimulusX + (StimulusWidth / 2)) / layoutWidth) * value - (StimulusWidth / 2);
                 RightKeyX = ((RightKeyX + (KeyWidth / 2)) / layoutWidth) * value - (KeyWidth / 2);
@@ -122,12 +209,18 @@ namespace IAT.ViewModels
 
         partial void OnInteriorHeightChanged(double value)
         {
+            if (_isInitializing || value <= 0)
+                return;
+
             OnPropertyChanged(nameof(DesignHeight));
-            LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
             try
             {
-                int layoutHeight = (int)rects.Interior.Height;
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(InteriorWidth, value));
+                LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
+                double layoutHeight = rects.Interior.Height;
+                if (layoutHeight <= 0)
+                    layoutHeight = value;
+
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(Math.Max(1, InteriorWidth), value));
                 LeftKeyY = ((LeftKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight / 2);
                 StimulusY = ((StimulusY + (StimulusHeight / 2)) / layoutHeight) * value - (StimulusHeight / 2);
                 RightKeyY = ((RightKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight / 2);
@@ -162,7 +255,7 @@ namespace IAT.ViewModels
         /// Called on construction and available for a future "Reset layout" command.
         /// </summary>
         /// 
-         
+
         public void RecalculateDefaultPositions()
         {
             StimulusX = InteriorWidth / 2 - StimulusWidth / 2;
@@ -181,7 +274,7 @@ namespace IAT.ViewModels
             ErrorMarkY = StimulusY + StimulusHeight + (keysSideBySide ? thinPad : thickPad);
             BlockInstructionsY = InteriorHeight - BlockInstructionsHeight;
         }
-         
+
         /// <summary>
         /// Constructs a new instance of the LayoutViewModel class, initializing layout properties based on the provided layout calculator 
         /// service and test configuration. The constructor retrieves the final layout rectangles from the calculator service using the test's 
@@ -189,12 +282,17 @@ namespace IAT.ViewModels
         /// This allows the view model to reflect the current layout settings and enables dynamic updates when properties are changed. The constructor 
         /// assumes that the provided calculator service and test are valid and properly initialized.
         /// </summary>
-        /// <param name="calculator"></param>
-        /// <param name="test"></param>
-        public LayoutViewModel(ILayoutCalculatorService calculator, IatTest test)
+        /// <param name="calculator">Layout geometry calculator.</param>
+        /// <param name="test">Shared IAT test domain model.</param>
+        /// <param name="packageService">Optional package service used to resolve image stimulus bytes for the live preview.</param>
+        public LayoutViewModel(
+            ILayoutCalculatorService calculator,
+            IatTest test,
+            IProjectPackageService? packageService = null)
         {
             _calculator = calculator;
             _test = test;
+            _packageService = packageService;
             var rects = _calculator.GetFinalRects(_test.Layout);
             InteriorWidth = rects.Interior.Width;
             InteriorHeight = rects.Interior.Height;
@@ -230,6 +328,14 @@ namespace IAT.ViewModels
             // If the calculator returned origin-only rects, fall back to rule-based placement.
             if (StimulusX == 0 && StimulusY == 0 && ErrorMarkX == 0)
                 RecalculateDefaultPositions();
+
+            // Construction complete — allow InteriorWidth/Height change handlers to run.
+            _isInitializing = false;
+
+            // Non-zero default so the Blocks-tab preview is visible before the first
+            // FitToWindow (which previously only ran after visiting the Layout tab).
+            if (ScaleFactor <= 0)
+                ScaleFactor = 0.4;
         }
 
         partial void OnStimulusWidthChanged(double value)
@@ -314,6 +420,234 @@ namespace IAT.ViewModels
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Size(ContinueInstructionsWidth, value));
         }
 
+        // ── Trial / block preview API ─────────────────────────────────────────
 
+        /// <summary>
+        /// Updates the stimulus area to reflect the selected trial's stimulus
+        /// (text with style, or image when available). Clears to a placeholder when trial is null.
+        /// Also highlights the key rectangle matching the trial's keyed direction.
+        /// </summary>
+        public void ApplyTrialPreview(Trial? trial)
+        {
+            if (trial is null)
+            {
+                ClearStimulusPreview();
+                ApplyKeyHighlight(KeyedDirection.None);
+                return;
+            }
+
+            ApplyKeyHighlight(trial.KeyedDirection);
+
+            var stimulus = _test.GetStimulusById(trial.StimulusId);
+            if (stimulus is null)
+            {
+                PreviewStimulusText = "(missing stimulus)";
+                PreviewStimulusFontFamily = "Segoe UI";
+                PreviewStimulusFontSize = 20;
+                PreviewStimulusBrush = Brushes.Gray;
+                PreviewStimulusImage = null;
+                IsPreviewTextVisible = true;
+                IsPreviewImageVisible = false;
+                return;
+            }
+
+            if (stimulus is TextStimulus textStim)
+            {
+                PreviewStimulusText = string.IsNullOrWhiteSpace(textStim.Text) ? "(empty)" : textStim.Text;
+                PreviewStimulusFontFamily = textStim.Style?.FontFamily ?? "Segoe UI";
+                PreviewStimulusFontSize = textStim.Style?.FontSize > 0 ? textStim.Style.FontSize : 28.0;
+                var color = textStim.Style?.FontColor ?? Colors.Black;
+                PreviewStimulusBrush = new SolidColorBrush(color);
+                PreviewStimulusImage = null;
+                IsPreviewTextVisible = true;
+                IsPreviewImageVisible = false;
+                return;
+            }
+
+            if (stimulus is ImageStimulus imageStim)
+            {
+                var image = TryLoadImage(imageStim);
+                if (image is not null)
+                {
+                    PreviewStimulusImage = image;
+                    PreviewStimulusText = string.Empty;
+                    IsPreviewTextVisible = false;
+                    IsPreviewImageVisible = true;
+                }
+                else
+                {
+                    // Bytes not in package cache and no PackageUri — filename fallback only
+                    PreviewStimulusImage = null;
+                    PreviewStimulusText = string.IsNullOrWhiteSpace(imageStim.FileName)
+                        ? (imageStim.GetDisplayPreview() is { Length: > 0 } p ? p : "(image)")
+                        : imageStim.FileName;
+                    PreviewStimulusFontFamily = "Segoe UI";
+                    PreviewStimulusFontSize = 16;
+                    PreviewStimulusBrush = Brushes.DimGray;
+                    IsPreviewTextVisible = true;
+                    IsPreviewImageVisible = false;
+                }
+                return;
+            }
+
+            // Unknown stimulus type
+            PreviewStimulusText = stimulus.GetDisplayPreview();
+            PreviewStimulusFontFamily = "Segoe UI";
+            PreviewStimulusFontSize = 20;
+            PreviewStimulusBrush = Brushes.DimGray;
+            PreviewStimulusImage = null;
+            IsPreviewTextVisible = true;
+            IsPreviewImageVisible = false;
+        }
+
+        /// <summary>
+        /// Updates left/right key labels from the block's response key definitions.
+        /// Prefer block-linked keys; fall back to any key registered with the matching LayoutItem.
+        /// </summary>
+        public void ApplyBlockKeys(Block? block)
+        {
+            if (block is null)
+            {
+                LeftKeyPreviewText = string.Empty;
+                RightKeyPreviewText = string.Empty;
+                return;
+            }
+
+            var left = block.LeftResponseId != Guid.Empty
+                ? _test.GetKeyById(block.LeftResponseId)
+                : null;
+            var right = block.RightResponseId != Guid.Empty
+                ? _test.GetKeyById(block.RightResponseId)
+                : null;
+
+            // Fallback: scan keys collection by layout role if the block has no linked IDs yet
+            if (left is null || right is null)
+            {
+                foreach (var key in _test.KeysCollection)
+                {
+                    if (left is null && key.LayoutItem == LayoutItem.LeftKey)
+                        left = key;
+                    if (right is null && key.LayoutItem == LayoutItem.RightKey)
+                        right = key;
+                }
+            }
+
+            LeftKeyPreviewText = left?.Text?.Trim() ?? string.Empty;
+            RightKeyPreviewText = right?.Text?.Trim() ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Updates the Block Instructions rectangle text (from the Blocks-tab editor).
+        /// </summary>
+        public void ApplyBlockInstructions(string? text)
+        {
+            PreviewBlockInstructionsText = string.IsNullOrWhiteSpace(text)
+                ? string.Empty
+                : text.Trim();
+        }
+
+        /// <summary>
+        /// Highlights the key that matches the trial's keyed direction (bold + accent color).
+        /// The opposite key stays normal black.
+        /// </summary>
+        public void ApplyKeyHighlight(KeyedDirection direction)
+        {
+            // Accent blue used elsewhere in the app for selection / primary actions
+            var highlight = new SolidColorBrush(Color.FromRgb(0, 122, 204));
+
+            if (direction == KeyedDirection.Left)
+            {
+                LeftKeyPreviewBrush = highlight;
+                LeftKeyPreviewFontWeight = FontWeights.Bold;
+                RightKeyPreviewBrush = Brushes.Black;
+                RightKeyPreviewFontWeight = FontWeights.Normal;
+            }
+            else if (direction == KeyedDirection.Right)
+            {
+                RightKeyPreviewBrush = highlight;
+                RightKeyPreviewFontWeight = FontWeights.Bold;
+                LeftKeyPreviewBrush = Brushes.Black;
+                LeftKeyPreviewFontWeight = FontWeights.Normal;
+            }
+            else
+            {
+                LeftKeyPreviewBrush = Brushes.Black;
+                LeftKeyPreviewFontWeight = FontWeights.Normal;
+                RightKeyPreviewBrush = Brushes.Black;
+                RightKeyPreviewFontWeight = FontWeights.Normal;
+            }
+        }
+
+        private void ClearStimulusPreview()
+        {
+            PreviewStimulusText = "Sample Stimulus";
+            PreviewStimulusFontFamily = "Segoe UI";
+            PreviewStimulusFontSize = 28;
+            PreviewStimulusBrush = Brushes.DimGray;
+            PreviewStimulusImage = null;
+            IsPreviewTextVisible = true;
+            IsPreviewImageVisible = false;
+        }
+
+        /// <summary>
+        /// Loads the image for preview, preferring in-memory package cache bytes (same source the
+        /// stimulus editor uses), then falling back to <see cref="ImageStimulus.PackageUri"/>.
+        /// Decoded at roughly the stimulus rectangle size for crisp display without excess memory.
+        /// </summary>
+        private ImageSource? TryLoadImage(ImageStimulus imageStim)
+        {
+            // 1. Preferred path: bytes from IProjectPackageService (AddImageAsync cache)
+            if (_packageService is not null)
+            {
+                try
+                {
+                    var bytes = _packageService.GetImageBytes(imageStim.Id);
+                    if (bytes is { Length: > 0 })
+                        return BitmapFromBytes(bytes);
+                }
+                catch
+                {
+                    // fall through to URI
+                }
+            }
+
+            // 2. Fallback: PackageUri (OPC part URI when loaded from a saved package)
+            if (imageStim.PackageUri is not null)
+            {
+                try
+                {
+                    var bmp = new BitmapImage();
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.UriSource = imageStim.PackageUri;
+                    if (StimulusWidth > 0)
+                        bmp.DecodePixelWidth = Math.Max(1, (int)StimulusWidth);
+                    bmp.EndInit();
+                    bmp.Freeze();
+                    return bmp;
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            return null;
+        }
+
+        private BitmapSource BitmapFromBytes(byte[] bytes)
+        {
+            using var stream = new MemoryStream(bytes);
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.StreamSource = stream;
+            // Decode near the stimulus rectangle width so the preview stays sharp and light
+            if (StimulusWidth > 0)
+                image.DecodePixelWidth = Math.Max(1, (int)StimulusWidth);
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
     }
 }

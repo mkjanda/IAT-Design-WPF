@@ -5,6 +5,11 @@ using System.Windows.Controls;
 
 namespace IAT.Views.Controls
 {
+    /// <summary>
+    /// Interaction logic for TrialsManagerControl.xaml
+    /// Provides the Trials tab UI for assigning stimuli to blocks, setting trial counts,
+    /// keying left/right, and editing basic response keys.
+    /// </summary>
     public partial class TrialsManagerControl : UserControl
     {
         public TrialsManagerControl()

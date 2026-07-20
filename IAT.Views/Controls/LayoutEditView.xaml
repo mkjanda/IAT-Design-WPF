@@ -9,40 +9,20 @@
              Background="#1E1E1E">
 
     <UserControl.Resources>
-        <!-- Larger thumbs on top of the move surface.
-             Style child order: Setters → EventSetters → Style.Triggers (property element must be last). -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style x:Key="ResizeThumbStyle" TargetType="{x:Type primitives:Thumb}">
-            <Setter Property="Width" Value="14"/>
-            <Setter Property="Height" Value="14"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
             <Setter Property="Background" Value="#007ACC"/>
-            <Setter Property="BorderBrush" Value="White"/>
-            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="IsEnabled" Value="{Binding IsLayoutEditMode}"/>
             <Setter Property="IsHitTestVisible" Value="{Binding IsLayoutEditMode}"/>
-            <Setter Property="Opacity" Value="1"/>
-            <Setter Property="Panel.ZIndex" Value="100"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type primitives:Thumb}">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"
-                                Width="{TemplateBinding Width}"
-                                Height="{TemplateBinding Height}"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <!-- Fully hidden unless Edit Mode is on — not merely disabled -->
+            <Setter Property="Visibility" Value="{Binding IsLayoutEditMode, Converter={StaticResource BoolToVis}}"/>
+            <Setter Property="Opacity" Value="0.95"/>
+            <Setter Property="Panel.ZIndex" Value="10"/>
+            <Setter Property="Cursor" Value="SizeAll"/>
             <EventSetter Event="DragDelta" Handler="OnResizeThumbDragDelta"/>
             <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnThumbPreviewMouseLeftButtonDown"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#00BFA5"/>
-                </Trigger>
-                <DataTrigger Binding="{Binding IsLayoutEditMode}" Value="False">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-            </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
@@ -77,19 +57,19 @@
                             Tag="BlockInstructions"
                             Cursor="SizeAll"
                             BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
-                            MouseLeftButtonDown="OnElementMouseLeftButtonDown"
+                            PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
                         <Grid>
                             <TextBlock Text="Block Instructions" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" Foreground="#000"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                              Margin="-7,-7,0,0" Cursor="SizeNWSE" Tag="BlockInstructions_NW"/>
+                                              Margin="-5,-5,0,0" Cursor="SizeNWSE" Tag="BlockInstructions_NW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                              Margin="0,-7,-7,0" Cursor="SizeNESW" Tag="BlockInstructions_NE"/>
+                                              Margin="0,-5,-5,0" Cursor="SizeNESW" Tag="BlockInstructions_NE"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                              Margin="-7,0,0,-7" Cursor="SizeNESW" Tag="BlockInstructions_SW"/>
+                                              Margin="-5,0,0,-5" Cursor="SizeNESW" Tag="BlockInstructions_SW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                              Margin="0,0,-7,-7" Cursor="SizeNWSE" Tag="BlockInstructions_SE"/>
+                                              Margin="0,0,-5,-5" Cursor="SizeNWSE" Tag="BlockInstructions_SE"/>
                         </Grid>
                     </Border>
 
@@ -103,19 +83,19 @@
                             Tag="Stimulus"
                             Cursor="SizeAll"
                             BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
-                            MouseLeftButtonDown="OnElementMouseLeftButtonDown"
+                            PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
                         <Grid>
                             <TextBlock Text="Sample Stimulus" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="28" FontWeight="Medium" Foreground="#555"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                              Margin="-7,-7,0,0" Cursor="SizeNWSE" Tag="Stimulus_NW"/>
+                                              Margin="-5,-5,0,0" Cursor="SizeNWSE" Tag="Stimulus_NW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                              Margin="0,-7,-7,0" Cursor="SizeNESW" Tag="Stimulus_NE"/>
+                                              Margin="0,-5,-5,0" Cursor="SizeNESW" Tag="Stimulus_NE"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                              Margin="-7,0,0,-7" Cursor="SizeNESW" Tag="Stimulus_SW"/>
+                                              Margin="-5,0,0,-5" Cursor="SizeNESW" Tag="Stimulus_SW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                              Margin="0,0,-7,-7" Cursor="SizeNWSE" Tag="Stimulus_SE"/>
+                                              Margin="0,0,-5,-5" Cursor="SizeNWSE" Tag="Stimulus_SE"/>
                         </Grid>
                     </Border>
 
@@ -129,19 +109,19 @@
                             Tag="LeftKey"
                             Cursor="SizeAll"
                             BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
-                            MouseLeftButtonDown="OnElementMouseLeftButtonDown"
+                            PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
                         <Grid>
                             <TextBlock Text="Left Key (E)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                              Margin="-7,-7,0,0" Cursor="SizeNWSE" Tag="LeftKey_NW"/>
+                                              Margin="-5,-5,0,0" Cursor="SizeNWSE" Tag="LeftKey_NW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                              Margin="0,-7,-7,0" Cursor="SizeNESW" Tag="LeftKey_NE"/>
+                                              Margin="0,-5,-5,0" Cursor="SizeNESW" Tag="LeftKey_NE"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                              Margin="-7,0,0,-7" Cursor="SizeNESW" Tag="LeftKey_SW"/>
+                                              Margin="-5,0,0,-5" Cursor="SizeNESW" Tag="LeftKey_SW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                              Margin="0,0,-7,-7" Cursor="SizeNWSE" Tag="LeftKey_SE"/>
+                                              Margin="0,0,-5,-5" Cursor="SizeNWSE" Tag="LeftKey_SE"/>
                         </Grid>
                     </Border>
 
@@ -155,19 +135,19 @@
                             Tag="RightKey"
                             Cursor="SizeAll"
                             BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
-                            MouseLeftButtonDown="OnElementMouseLeftButtonDown"
+                            PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
                         <Grid>
                             <TextBlock Text="Right Key (I)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                              Margin="-7,-7,0,0" Cursor="SizeNWSE" Tag="RightKey_NW"/>
+                                              Margin="-5,-5,0,0" Cursor="SizeNWSE" Tag="RightKey_NW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                              Margin="0,-7,-7,0" Cursor="SizeNESW" Tag="RightKey_NE"/>
+                                              Margin="0,-5,-5,0" Cursor="SizeNESW" Tag="RightKey_NE"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                              Margin="-7,0,0,-7" Cursor="SizeNESW" Tag="RightKey_SW"/>
+                                              Margin="-5,0,0,-5" Cursor="SizeNESW" Tag="RightKey_SW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                              Margin="0,0,-7,-7" Cursor="SizeNWSE" Tag="RightKey_SE"/>
+                                              Margin="0,0,-5,-5" Cursor="SizeNWSE" Tag="RightKey_SE"/>
                         </Grid>
                     </Border>
 
@@ -181,19 +161,19 @@
                             Tag="ErrorMark"
                             Cursor="SizeAll"
                             BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
-                            MouseLeftButtonDown="OnElementMouseLeftButtonDown"
+                            PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
                         <Grid>
                             <TextBlock Text="X" Foreground="Red" FontSize="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                              Margin="-7,-7,0,0" Cursor="SizeNWSE" Tag="ErrorMark_NW"/>
+                                              Margin="-5,-5,0,0" Cursor="SizeNWSE" Tag="ErrorMark_NW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                              Margin="0,-7,-7,0" Cursor="SizeNESW" Tag="ErrorMark_NE"/>
+                                              Margin="0,-5,-5,0" Cursor="SizeNESW" Tag="ErrorMark_NE"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                                              Margin="-7,0,0,-7" Cursor="SizeNESW" Tag="ErrorMark_SW"/>
+                                              Margin="-5,0,0,-5" Cursor="SizeNESW" Tag="ErrorMark_SW"/>
                             <primitives:Thumb Style="{StaticResource ResizeThumbStyle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                              Margin="0,0,-7,-7" Cursor="SizeNWSE" Tag="ErrorMark_SE"/>
+                                              Margin="0,0,-5,-5" Cursor="SizeNWSE" Tag="ErrorMark_SE"/>
                         </Grid>
                     </Border>
                 </Canvas>

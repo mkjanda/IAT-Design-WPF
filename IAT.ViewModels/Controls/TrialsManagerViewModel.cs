@@ -90,7 +90,11 @@ public partial class TrialsManagerViewModel : ObservableObject
     {
         if (SelectedBlock is null) return;
         if (value < 0) value = 0;
-        SelectedBlock.NumPresentations = value;
+        // Only write when the value actually differs. Writing the same value back
+        // through ObservableProperty still raises PropertyChanged and can re-enter
+        // SyncTrialCount / NotifyTrialsChanged under certain binding timings.
+        if (SelectedBlock.NumPresentations != value)
+            SelectedBlock.NumPresentations = value;
     }
 
     private void ReloadTrialsForSelectedBlock()
@@ -112,13 +116,15 @@ public partial class TrialsManagerViewModel : ObservableObject
 
     /// <summary>
     /// Keeps Block.NumPresentations (and the VM copy) in sync with the actual trial list
-    /// so the left-pane block list updates live.
+    /// so the left-pane block list and the Blocks-tab Trials grid update live.
     /// </summary>
     private void SyncTrialCount()
     {
         if (SelectedBlock is null) return;
-        SelectedBlock.NumPresentations = SelectedBlock.TrialIds.Count;
-        NumPresentations = SelectedBlock.NumPresentations;
+        SelectedBlock.NotifyTrialsChanged(); // updates NumPresentations + raises Trials PropertyChanged
+        // Only push into the VM property when it differs — avoids re-entering OnNumPresentationsChanged.
+        if (NumPresentations != SelectedBlock.NumPresentations)
+            NumPresentations = SelectedBlock.NumPresentations;
     }
 
     [RelayCommand]
@@ -231,8 +237,27 @@ public partial class TrialsManagerViewModel : ObservableObject
         SyncTrialCount();
     }
 
+    /// <summary>
+    /// Persist key text into the domain as the user types so the Blocks-tab preview
+    /// can show response-key labels without requiring an explicit Save click.
+    /// </summary>
+    partial void OnLeftKeyTextChanged(string value)
+    {
+        PersistKeys();
+    }
+
+    partial void OnRightKeyTextChanged(string value)
+    {
+        PersistKeys();
+    }
+
     [RelayCommand]
-    private void SaveKeys()
+    private void SaveKeys() => PersistKeys();
+
+    /// <summary>
+    /// Writes left/right key text onto the selected block's response keys in the shared domain model.
+    /// </summary>
+    private void PersistKeys()
     {
         if (SelectedBlock is null) return;
 

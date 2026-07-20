@@ -15,7 +15,6 @@ using IAT.Core.Services.Export;
 using IAT.Core.Domain;
 using IAT.Core.Validation;
 using IAT.ViewModels.Controls;
-using com.sun.corba.se.spi.servicecontext;
 
 namespace IAT_Design_WPF
 {
@@ -50,11 +49,10 @@ namespace IAT_Design_WPF
 
 
             // Register your services here as we build them
-            services.AddSingleton<TrialsManagerViewModel>();
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
             services.AddSingleton<IStringResourceService, StringResourceService>();
-            services.AddSingleton<UserNotificationService, UserNotificationService>(); 
+            services.AddSingleton<UserNotificationService, UserNotificationService>();
             services.AddSingleton<IWebSocketService, WebSocketService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<ILayoutCalculatorService, LayoutCalculatorService>();
@@ -67,7 +65,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<ITestDeploymentService, TestDeploymentService>();
             services.AddSingleton<IBlockExportProcessor, BlockExportProcessor>();
             services.AddSingleton<IStimulusExportProcessor, StimulusExportProcessor>();
-            services.AddSingleton<ITestExportService, TestExportService>(); 
+            services.AddSingleton<ITestExportService, TestExportService>();
             services.AddSingleton<ITextExportProcessor, TextExportProcessor>();
             services.AddSingleton<IProjectPackageService, ProjectPackageService>();
             services.AddSingleton<IFileManifestBuilder, FileManifestBuilder>();
@@ -78,15 +76,18 @@ namespace IAT_Design_WPF
             services.AddSingleton<IValidator<Stimulus>, StimulusValidator>();
             services.AddSingleton<IValidator<InstructionScreen>, InstructionScreenValidator>();
             services.AddSingleton<IValidator<Trial>, TrialValidator>();
+            // Domain model first — shared singleton used by all designer tabs
+            services.AddSingleton<IatTest>();
+
             services.AddSingleton<LayoutViewModel>();
             services.AddSingleton<BlockEditViewModel>();
-            services.AddSingleton<TestDesignerViewModel>();
             services.AddSingleton<StimuliManagerViewModel>();
-            services.AddSingleton<IatTest>();
+            services.AddSingleton<TrialsManagerViewModel>();
+            services.AddSingleton<TestDesignerViewModel>();
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
-            Services = services.BuildServiceProvider();  
+            Services = services.BuildServiceProvider();
 
             base.OnStartup(e);
 

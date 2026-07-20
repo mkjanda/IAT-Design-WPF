@@ -12,35 +12,54 @@ namespace IAT.ViewModels.Controls
 {
     /// <summary>
     /// Main ViewModel for the entire designer (Blocks + Layout + Stimuli + Trials + Deploy tabs).
+    /// Holds references to the per-tab ViewModels that share the same singleton <see cref="IatTest"/>
+    /// and the shared singleton <see cref="LayoutViewModel"/>.
     /// </summary>
     public partial class TestDesignerViewModel : ObservableObject
     {
         private readonly IProjectPackageService _packageService;
         private IatTest? _currentTest;
 
+        /// <summary>
+        /// ViewModel for the Blocks tab.
+        /// </summary>
         public BlockEditViewModel BlockEditor { get; }
-        public StimuliManagerViewModel StimuliManager { get; }
 
         /// <summary>
-        /// Shared layout editor used by the Layout tab (and read-only preview on Blocks).
+        /// Shared layout editor used by the Layout tab (and the read-only preview on Blocks).
+        /// Same DI singleton instance injected into <see cref="BlockEditViewModel"/>.
         /// </summary>
         public LayoutViewModel LayoutEditor { get; }
 
+        /// <summary>
+        /// ViewModel for the Stimuli tab.
+        /// </summary>
+        public StimuliManagerViewModel StimuliManager { get; }
+
+        /// <summary>
+        /// ViewModel for the Trials tab.
+        /// </summary>
+        public TrialsManagerViewModel TrialsManager { get; }
+
         [ObservableProperty] private bool _isStimuliSelected = false;
         [ObservableProperty] private bool _isBlocksSelected = false;
+        [ObservableProperty] private bool _isLayoutSelected = false;
+        [ObservableProperty] private bool _isTrialsSelected = false;
 
         [ObservableProperty] private ObservableCollection<StimulusEditViewModel> _stimuliLibrary = new();
 
-        public TrialsManagerViewModel TrialsManager { get; }
-
-        public TestDesignerViewModel(IProjectPackageService packageService, BlockEditViewModel blockEditor,
-            StimuliManagerViewModel stimuliManager, TrialsManagerViewModel trialsManager, LayoutViewModel layoutEditor)
+        public TestDesignerViewModel(
+            IProjectPackageService packageService,
+            BlockEditViewModel blockEditor,
+            LayoutViewModel layoutEditor,
+            StimuliManagerViewModel stimuliManager,
+            TrialsManagerViewModel trialsManager)
         {
             _packageService = packageService;
             BlockEditor = blockEditor;
+            LayoutEditor = layoutEditor;
             StimuliManager = stimuliManager;
             TrialsManager = trialsManager;
-            LayoutEditor = layoutEditor;
         }
 
         [RelayCommand]
@@ -56,6 +75,7 @@ namespace IAT.ViewModels.Controls
                 {
                     if (stim is TextStimulus textStim)
                         StimuliLibrary.Add(new StimulusEditViewModel(textStim, _currentTest));
+                    // TODO: else if (stim is ImageStimulus img) → add image support
                 }
             }
             catch (Exception ex)
@@ -74,6 +94,21 @@ namespace IAT.ViewModels.Controls
         private async Task OnBlocksTabSelected()
         {
             IsBlocksSelected = true;
+        }
+
+        [RelayCommand]
+        private async Task OnLayoutTabSelected()
+        {
+            IsLayoutSelected = true;
+            // Ensure edit-mode affordances (resize thumbs) are available on the Layout tab.
+            if (LayoutEditor is not null)
+                LayoutEditor.IsLayoutEditMode = true;
+        }
+
+        [RelayCommand]
+        private async Task OnTrialsTabSelected()
+        {
+            IsTrialsSelected = true;
         }
     }
 }

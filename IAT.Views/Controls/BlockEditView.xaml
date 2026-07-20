@@ -5,8 +5,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:IAT.ViewModels;assembly=IAT.ViewModels"
              xmlns:controls="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -21,131 +25,209 @@
 
         <!-- LEFT: Blocks sidebar -->
         <Border Background="#1F1F1F" BorderBrush="#333" BorderThickness="0,0,1,0" Grid.Row="0" Grid.RowSpan="2">
-        <DockPanel>
-            <TextBlock Text="Blocks" FontSize="18" FontWeight="SemiBold" Foreground="White"
+            <DockPanel>
+                <TextBlock Text="Blocks" FontSize="18" FontWeight="SemiBold" Foreground="White"
                            Margin="16,12,16,8" DockPanel.Dock="Top"/>
 
-            <StackPanel Orientation="Vertical" Margin="12,0,12,12" DockPanel.Dock="Bottom">
-                <Button Content="+ Add Block" Command="{Binding AddBlockCommand}" 
-                            Style="{StaticResource AccentButton}" Height="36" Margin="0, 12, 0, 0"/>
-                <Button Content="Delete" Command="{Binding DeleteBlockCommand}" Margin="0,12,0,0" Height="36"/>
-            </StackPanel>
+                <StackPanel Orientation="Vertical" Margin="12,0,12,12" DockPanel.Dock="Bottom">
+                    <Button Content="+ Add Block" Command="{Binding AddBlockCommand}"
+                            Style="{StaticResource AccentButton}" Height="36" />
+                    <Button Content="Save" Command="{Binding SaveBlockCommand}" Margin="0,8,0,0"
+                            Height="36"/>
+                    <Button Content="Delete" Margin="0,8,0,0" Height="36"/>
+                </StackPanel>
 
-            <ListBox ItemsSource="{Binding Blocks}" SelectedItem="{Binding SelectedBlock}"
+                <ListBox ItemsSource="{Binding Blocks}" SelectedItem="{Binding SelectedBlock}"
                          Background="Transparent" BorderThickness="0" Margin="8">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Name}" Foreground="White" Margin="8"/>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </DockPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" Foreground="White" Margin="8"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
         </Border>
 
-
-        <!-- CENTER: Live Preview Canvas -->
+        <!-- CENTER: Live Preview Canvas (no layout chrome borders — production-like) -->
         <Grid Grid.Column="1" Margin="16" Grid.Row="0" SizeChanged="OnPreviewHostSizeChanged" x:Name="PreviewHost">
 
             <Border Background="White" CornerRadius="4" Padding="20" Effect="{StaticResource DropShadow}">
 
-                <!-- This is the key: push LayoutViewModel down as the DataContext -->
-                <Grid DataContext="{Binding LayoutViewModel, TargetNullValue={x:Null}, FallbackValue={x:Null}}" >
+                <!-- LayoutViewModel is the DataContext for geometry + trial preview content -->
+                <Grid DataContext="{Binding LayoutViewModel, TargetNullValue={x:Null}, FallbackValue={x:Null}}">
 
-                    <Canvas x:Name="PreviewCanvas" Background="#F8F8F8" Width="{Binding InteriorWidth}"
-                            Height="{Binding InteriorHeight}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Canvas x:Name="PreviewCanvas" Background="#F8F8F8"
+                            Width="{Binding InteriorWidth}"
+                            Height="{Binding InteriorHeight}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Canvas.RenderTransform>
                             <ScaleTransform ScaleX="{Binding ScaleFactor}" ScaleY="{Binding ScaleFactor}"
                                             CenterX="{Binding InteriorWidth, Converter={StaticResource HalfValueConverter}}"
                                             CenterY="{Binding InteriorHeight, Converter={StaticResource HalfValueConverter}}" />
                         </Canvas.RenderTransform>
-                        <!-- Block Instructions -->
-                        <Border Canvas.Left="{Binding BlockInstructionsX}" 
-                        Canvas.Top="{Binding BlockInstructionsY}"
-                        Width="{Binding BlockInstructionsWidth}"
-                        Height="{Binding BlockInstructionsHeight}"
-                        BorderThickness="2" CornerRadius="4"
-                        BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
-                            <TextBlock Text="Block Instructions" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" Foreground="#000"/>
+
+                        <!-- Block Instructions: live text from the Blocks properties editor -->
+                        <Border Canvas.Left="{Binding BlockInstructionsX}"
+                                Canvas.Top="{Binding BlockInstructionsY}"
+                                Width="{Binding BlockInstructionsWidth}"
+                                Height="{Binding BlockInstructionsHeight}"
+                                BorderThickness="0"
+                                Background="Transparent"
+                                ClipToBounds="True">
+                            <TextBlock Text="{Binding PreviewBlockInstructionsText}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextAlignment="Center" TextWrapping="Wrap"
+                                       FontSize="16" Foreground="#222"
+                                       Margin="6"/>
                         </Border>
 
-                        <!-- Stimulus Area -->
-                        <Border Canvas.Left="{Binding StimulusX}" 
-                        Canvas.Top="{Binding StimulusY}"
-                        Width="{Binding StimulusWidth}"
-                        Height="{Binding StimulusHeight}" 
-                        BorderThickness="3" CornerRadius="8"
-                        BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
-                            <TextBlock Text="Sample Stimulus" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="28" FontWeight="Medium" Foreground="#555" />
+                        <!-- Stimulus Area: selected trial's stimulus, sized to the layout rectangle -->
+                        <Border Canvas.Left="{Binding StimulusX}"
+                                Canvas.Top="{Binding StimulusY}"
+                                Width="{Binding StimulusWidth}"
+                                Height="{Binding StimulusHeight}"
+                                BorderThickness="0"
+                                ClipToBounds="True"
+                                Background="Transparent">
+                            <Grid>
+                                <TextBlock Text="{Binding PreviewStimulusText}"
+                                           FontFamily="{Binding PreviewStimulusFontFamily}"
+                                           FontSize="{Binding PreviewStimulusFontSize}"
+                                           Foreground="{Binding PreviewStimulusBrush}"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Margin="8"
+                                           Visibility="{Binding IsPreviewTextVisible, Converter={StaticResource BoolToVis}}"/>
+
+                                <Image Source="{Binding PreviewStimulusImage}"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Stretch"
+                                       Margin="2"
+                                       Visibility="{Binding IsPreviewImageVisible, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
                         </Border>
 
-                        <!-- Left Key -->
-                        <Border Canvas.Left="{Binding LeftKeyX}" 
-                        Canvas.Top="{Binding LeftKeyY}"
-                        Width="{Binding KeyWidth}"
-                        Height="{Binding KeyHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
-                            <TextBlock Text="Left Key (E)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
+                        <!-- Left Key: key text; highlighted when trial is left-keyed -->
+                        <Border Canvas.Left="{Binding LeftKeyX}"
+                                Canvas.Top="{Binding LeftKeyY}"
+                                Width="{Binding KeyWidth}"
+                                Height="{Binding KeyHeight}"
+                                BorderThickness="0"
+                                Background="Transparent"
+                                ClipToBounds="True">
+                            <TextBlock Text="{Binding LeftKeyPreviewText}"
+                                       Foreground="{Binding LeftKeyPreviewBrush}"
+                                       FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                       FontSize="18"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextWrapping="Wrap" TextAlignment="Center"
+                                       Margin="4"/>
                         </Border>
 
-                        <!-- Right Key -->
-                        <Border Canvas.Left="{Binding RightKeyX}" 
-                        Canvas.Top="{Binding RightKeyY}"
-                        Width="{Binding KeyWidth}"
-                        Height="{Binding KeyHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
-                            <TextBlock Text="Right Key (I)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
+                        <!-- Right Key: key text; highlighted when trial is right-keyed -->
+                        <Border Canvas.Left="{Binding RightKeyX}"
+                                Canvas.Top="{Binding RightKeyY}"
+                                Width="{Binding KeyWidth}"
+                                Height="{Binding KeyHeight}"
+                                BorderThickness="0"
+                                Background="Transparent"
+                                ClipToBounds="True">
+                            <TextBlock Text="{Binding RightKeyPreviewText}"
+                                       Foreground="{Binding RightKeyPreviewBrush}"
+                                       FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                       FontSize="18"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextWrapping="Wrap" TextAlignment="Center"
+                                       Margin="4"/>
                         </Border>
 
-                        <!-- Error Mark -->
-                        <Border Canvas.Left="{Binding ErrorMarkX}" 
-                        Canvas.Top="{Binding ErrorMarkY}"
-                        Width="{Binding ErrorMarkWidth}"
-                        Height="{Binding ErrorMarkHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}">
-                            <TextBlock Text="X" Foreground="Red" FontSize="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- Error Mark (no chrome border) -->
+                        <Border Canvas.Left="{Binding ErrorMarkX}"
+                                Canvas.Top="{Binding ErrorMarkY}"
+                                Width="{Binding ErrorMarkWidth}"
+                                Height="{Binding ErrorMarkHeight}"
+                                BorderThickness="0"
+                                Background="Transparent">
+                            <TextBlock Text="X" Foreground="Red" FontSize="48"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-
-                        <!-- Continue Instructions 
-                        <Border Canvas.Left="{Binding ContinueInstructionsX}" 
-                        Canvas.Top="{Binding ContinueInstructionsY}"
-                        Width="{Binding ContinueInstructionsWidth}"
-                        Height="{Binding ContinueInstructionsHeight}"
-                        BorderThickness="2" BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                            <TextBlock Text="Press SPACE to continue" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
--->
-                        <!-- Resize thumbs go here later -->
                     </Canvas>
                 </Grid>
             </Border>
         </Grid>
-        
+
         <!-- RIGHT: Properties -->
         <Border Grid.Column="2" Background="#1F1F1F" Padding="16">
             <StackPanel>
-                <TextBlock Text="Block Properties" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,16"/>
-                <Label Content="Name" Foreground="White"/>
-                <TextBox Text="{Binding SelectedBlock.Name}" Style="{StaticResource DarkTextBox}"/>
+                <TextBlock Text="Block Properties" FontSize="16" FontWeight="SemiBold"
+                           Foreground="White" Margin="0,0,0,16"/>
+
                 <Label Content="Number of Trials" Foreground="White" Margin="0,12,0,0"/>
-                <TextBox Text="{Binding SelectedBlock.TrialIds.Count, Mode=OneWay}" IsReadOnly="True"/>
+                <TextBox Text="{Binding SelectedBlock.NumPresentations, Mode=OneWay}" IsReadOnly="True"/>
+
                 <Label Content="Instructions Text" Foreground="White" Margin="0,12,0,0"/>
-                <TextBox Text="{Binding SelectedBlock.BlockInstructions}" AcceptsReturn="True" Height="80"/>
+                <TextBox Text="{Binding BlockInstructionsText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" TextWrapping="Wrap" Height="80"/>
+
+                <TextBlock Text="Selected Trial Preview" FontSize="14" FontWeight="SemiBold"
+                           Foreground="White" Margin="0,24,0,8"/>
+                <Label Content="Stimulus" Foreground="#AAAAAA" Margin="0,0,0,0"/>
+                <TextBox Text="{Binding SelectedTrialStimulusPreview, Mode=OneWay}" IsReadOnly="True"
+                         TextWrapping="Wrap" MinHeight="32"/>
+                <Label Content="Direction" Foreground="#AAAAAA" Margin="0,8,0,0"/>
+                <TextBox Text="{Binding SelectedTrial.KeyedDirection, Mode=OneWay}" IsReadOnly="True"/>
             </StackPanel>
         </Border>
 
-        <!-- BOTTOM: Trials grid -->
-        <Grid Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Margin="16,0,16,16" VerticalAlignment="Bottom" Height="200">
+        <!-- BOTTOM: Trials grid — selection drives the layout preview -->
+        <Grid Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Margin="16,0,16,16"
+              VerticalAlignment="Bottom" Height="200">
             <Border Background="#1F1F1F" CornerRadius="4">
-                <DataGrid ItemsSource="{Binding SelectedBlock.Trials}" AutoGenerateColumns="False" 
-                          Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="#2A2A2A">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Trial #" Binding="{Binding ItemNum}"/>
-                        <DataGridTextColumn Header="Stimulus" Binding="{Binding Stimulus.Phrase}"/>
-                        <!-- Add more columns as needed -->
-                    </DataGrid.Columns>
-                </DataGrid>
+                <DockPanel>
+                    <TextBlock Text="Trials — select a row to preview its stimulus"
+                               Foreground="#AAAAAA" FontSize="11"
+                               Margin="12,8,12,4" DockPanel.Dock="Top"/>
+                    <DataGrid ItemsSource="{Binding SelectedBlock.Trials}"
+                              SelectedItem="{Binding SelectedTrial, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              Background="Transparent"
+                              RowBackground="Transparent"
+                              AlternatingRowBackground="#2A2A2A"
+                              Foreground="#E0E0E0"
+                              HeadersVisibility="Column"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal"
+                              BorderThickness="0"
+                              Margin="4">
+                        <!-- Dark column headers so header text is legible on the dark grid -->
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#252526"/>
+                                <Setter Property="Foreground" Value="#E0E0E0"/>
+                                <Setter Property="BorderBrush" Value="#3C3C3C"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                <Setter Property="Padding" Value="10,8"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="FontSize" Value="12"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Trial #" Binding="{Binding TrialNumber}" Width="70"/>
+                            <DataGridTextColumn Header="Stimulus Id" Binding="{Binding StimulusId}" Width="*"/>
+                            <DataGridTextColumn Header="Direction" Binding="{Binding KeyedDirection}" Width="100"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
             </Border>
         </Grid>
-
     </Grid>
 </UserControl>

@@ -1,6 +1,4 @@
-﻿using com.sun.corba.se.impl.protocol.giopmsgheaders;
-
-namespace IAT.Core.Domain
+﻿namespace IAT.Core.Domain
 {
     /// <summary>
     /// The result of validating a domain entity, such as a stimulus, trial, or entire test. This class accumulates multiple error messages 

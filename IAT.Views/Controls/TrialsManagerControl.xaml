@@ -242,12 +242,12 @@
                                                 Tag="{Binding}"
                                                 Click="OnAssignRightClick"/>
                                     </StackPanel>
-                                    <TextBlock Text="{Binding}" 
+                                    <TextBlock Text="{Binding Text}" 
                                                Foreground="#E0E0E0"
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0"
-                                               ToolTip="{Binding}"/>
+                                               ToolTip="{Binding Text}"/>
                                 </DockPanel>
                             </Border>
                         </DataTemplate>
