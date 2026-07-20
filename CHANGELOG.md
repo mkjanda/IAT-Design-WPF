@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added a layout editor interface with its own tab.
 - Added a tab and interface for assigning trials to IAT blocks.
 - Preview of IAT trials in the Blocks tab.
+- Added New, Open, Save, and Save As buttons.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 
@@ -58,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The "Add Block" button has been implemented, allowing the Trials tab to be tested.
 - Modified Layout Editor to fit its host correctly, size correctly, and reposition its components correctly when its dimensions change.
 - Error fixes on Layout Editor involving repositioning of elements and deflating their sizes.
+- The error banner in the main window is now used for reporting errors to the user instead of dialog boxes.
 ### Deprecated
 ### Removed
 - Removed support for older versions of .NET, as the application now requires .NET 10.0 or later to take advantage of the latest features and improvements. 

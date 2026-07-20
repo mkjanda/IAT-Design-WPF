@@ -64,14 +64,23 @@ namespace IAT.ViewModels
         /// <summary>True when the preview should show an image.</summary>
         [ObservableProperty] private bool isPreviewImageVisible = false;
 
+        /// <summary>Placeholder shown for the left key when no block is selected (or key text is empty).</summary>
+        public const string DummyLeftKeyText = "Left Key (E)";
+
+        /// <summary>Placeholder shown for the right key when no block is selected (or key text is empty).</summary>
+        public const string DummyRightKeyText = "Right Key (I)";
+
+        /// <summary>Placeholder shown in the Block Instructions rectangle when no text is available.</summary>
+        public const string DummyBlockInstructionsText = "Block Instructions";
+
         /// <summary>Label for the left response key in the preview.</summary>
-        [ObservableProperty] private string leftKeyPreviewText = "Left Key (E)";
+        [ObservableProperty] private string leftKeyPreviewText = DummyLeftKeyText;
 
         /// <summary>Label for the right response key in the preview.</summary>
-        [ObservableProperty] private string rightKeyPreviewText = "Right Key (I)";
+        [ObservableProperty] private string rightKeyPreviewText = DummyRightKeyText;
 
         /// <summary>Block instructions text shown in the Block Instructions rectangle.</summary>
-        [ObservableProperty] private string previewBlockInstructionsText = string.Empty;
+        [ObservableProperty] private string previewBlockInstructionsText = DummyBlockInstructionsText;
 
         /// <summary>Foreground for the left key label (highlighted when trial is left-keyed).</summary>
         [ObservableProperty] private Brush leftKeyPreviewBrush = Brushes.Black;
@@ -338,6 +347,51 @@ namespace IAT.ViewModels
                 ScaleFactor = 0.4;
         }
 
+        /// <summary>
+        /// Re-reads geometry from the shared <see cref="IatTest.Layout"/> after New/Open.
+        /// Call after the domain model has been reset or replaced in place.
+        /// </summary>
+        public void ReloadGeometry()
+        {
+            var rects = _calculator.GetFinalRects(_test.Layout);
+            InteriorWidth = rects.Interior.Width;
+            InteriorHeight = rects.Interior.Height;
+            StimulusWidth = rects.Stimulus.Width;
+            StimulusHeight = rects.Stimulus.Height;
+            KeyWidth = rects.LeftKey.Width;
+            KeyHeight = rects.LeftKey.Height;
+            ErrorMarkWidth = rects.ErrorMark.Width;
+            ErrorMarkHeight = rects.ErrorMark.Height;
+            BlockInstructionsWidth = rects.BlockInstructions.Width;
+            BlockInstructionsHeight = rects.BlockInstructions.Height;
+            MockItemInstructionsWidth = rects.MockItemInstructions.Width;
+            MockItemInstructionsHeight = rects.MockItemInstructions.Height;
+            KeyedInstructionsWidth = rects.KeyedInstructions.Width;
+            KeyedInstructionsHeight = rects.KeyedInstructions.Height;
+            TextInstructionsWidth = rects.TextInstructions.Width;
+            TextInstructionsHeight = rects.TextInstructions.Height;
+            ContinueInstructionsWidth = rects.ContinueInstructions.Width;
+            ContinueInstructionsHeight = rects.ContinueInstructions.Height;
+
+            StimulusX = rects.Stimulus.X;
+            StimulusY = rects.Stimulus.Y;
+            LeftKeyX = rects.LeftKey.X;
+            LeftKeyY = rects.LeftKey.Y;
+            RightKeyX = rects.RightKey.X;
+            RightKeyY = rects.RightKey.Y;
+            ErrorMarkX = rects.ErrorMark.X;
+            ErrorMarkY = rects.ErrorMark.Y;
+            BlockInstructionsX = rects.BlockInstructions.X;
+            BlockInstructionsY = rects.BlockInstructions.Y;
+
+            if (StimulusX == 0 && StimulusY == 0 && ErrorMarkX == 0)
+                RecalculateDefaultPositions();
+
+            ApplyBlockKeys(null);
+            ApplyBlockInstructions(null);
+            ApplyTrialPreview(null);
+        }
+
         partial void OnStimulusWidthChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(value, StimulusHeight));
@@ -503,13 +557,15 @@ namespace IAT.ViewModels
         /// <summary>
         /// Updates left/right key labels from the block's response key definitions.
         /// Prefer block-linked keys; fall back to any key registered with the matching LayoutItem.
+        /// When no block is selected (or a key has no text), shows the dummy placeholders so the
+        /// preview never looks empty.
         /// </summary>
         public void ApplyBlockKeys(Block? block)
         {
             if (block is null)
             {
-                LeftKeyPreviewText = string.Empty;
-                RightKeyPreviewText = string.Empty;
+                LeftKeyPreviewText = DummyLeftKeyText;
+                RightKeyPreviewText = DummyRightKeyText;
                 return;
             }
 
@@ -532,17 +588,21 @@ namespace IAT.ViewModels
                 }
             }
 
-            LeftKeyPreviewText = left?.Text?.Trim() ?? string.Empty;
-            RightKeyPreviewText = right?.Text?.Trim() ?? string.Empty;
+            var leftText = left?.Text?.Trim();
+            var rightText = right?.Text?.Trim();
+            LeftKeyPreviewText = string.IsNullOrEmpty(leftText) ? DummyLeftKeyText : leftText;
+            RightKeyPreviewText = string.IsNullOrEmpty(rightText) ? DummyRightKeyText : rightText;
         }
 
         /// <summary>
         /// Updates the Block Instructions rectangle text (from the Blocks-tab editor).
+        /// Null/whitespace falls back to the dummy placeholder so the rectangle stays readable
+        /// when no block is selected or instructions have not been entered yet.
         /// </summary>
         public void ApplyBlockInstructions(string? text)
         {
             PreviewBlockInstructionsText = string.IsNullOrWhiteSpace(text)
-                ? string.Empty
+                ? DummyBlockInstructionsText
                 : text.Trim();
         }
 

@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using System.Collections.ObjectModel;
@@ -94,7 +95,11 @@ public partial class TrialsManagerViewModel : ObservableObject
         // through ObservableProperty still raises PropertyChanged and can re-enter
         // SyncTrialCount / NotifyTrialsChanged under certain binding timings.
         if (SelectedBlock.NumPresentations != value)
+        {
             SelectedBlock.NumPresentations = value;
+            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Send(
+                IAT.Core.Messages.TestModifiedMessage.Instance);
+        }
     }
 
     private void ReloadTrialsForSelectedBlock()
@@ -115,14 +120,16 @@ public partial class TrialsManagerViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Keeps Block.NumPresentations (and the VM copy) in sync with the actual trial list
-    /// so the left-pane block list and the Blocks-tab Trials grid update live.
+    /// Raises change notification on the block's Trials collection so the
+    /// Blocks-tab grid refreshes. Also pulls the current domain NumPresentations
+    /// into the VM property when they have diverged (e.g. after an external edit
+    /// on the Blocks tab).
     /// </summary>
     private void SyncTrialCount()
     {
         if (SelectedBlock is null) return;
-        SelectedBlock.NotifyTrialsChanged(); // updates NumPresentations + raises Trials PropertyChanged
-        // Only push into the VM property when it differs — avoids re-entering OnNumPresentationsChanged.
+        SelectedBlock.NotifyTrialsChanged(); // raises Trials PropertyChanged only
+        // Keep the VM copy aligned with the domain without forcing the domain value.
         if (NumPresentations != SelectedBlock.NumPresentations)
             NumPresentations = SelectedBlock.NumPresentations;
     }
@@ -319,6 +326,22 @@ public partial class TrialsManagerViewModel : ObservableObject
         SelectedBlock.TrialIds.Add(trial.Id);
         Trials.Add(new TrialRowViewModel(trial, _currentTest));
         SyncTrialCount();
+    }
+
+    /// <summary>
+    /// Called by the shell after New/Open so the Trials tab reflects the current document.
+    /// </summary>
+    public void OnDocumentReset()
+    {
+        SelectedTrial = null;
+        SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).FirstOrDefault();
+        if (SelectedBlock is null)
+        {
+            Trials.Clear();
+            NumPresentations = 0;
+            LeftKeyText = string.Empty;
+            RightKeyText = string.Empty;
+        }
     }
 }
 

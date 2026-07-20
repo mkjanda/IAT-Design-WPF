@@ -1,20 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using IAT.Core.Services;
 using IAT.ViewModels.Controls;
-using IAT.Views.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Text;
+using System.ComponentModel;
 using System.Windows;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace IAT_Design_WPF
 {
@@ -32,12 +21,12 @@ namespace IAT_Design_WPF
             {
                 DataContext = App.Services.GetRequiredService<TestDesignerViewModel>();
             }
+
             // Listen for errors and show the banner (non-blocking)
             WeakReferenceMessenger.Default.Register<ErrorNotificationMessage>(this,
                 (r, msg) =>
                 {
                     ErrorBanner.Show(msg.Title ?? "Error", msg.Message, 8);
-                    // Optional: also log to console for devs
                     if (msg.Exception != null)
                         System.Diagnostics.Debug.WriteLine(msg.Exception);
                 });
@@ -46,13 +35,35 @@ namespace IAT_Design_WPF
         public void OnStimuliTabSelected(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as TestDesignerViewModel;
-            viewModel?.StimuliTabSelectedCommand.Execute(null);  
+            viewModel?.StimuliTabSelectedCommand.Execute(null);
         }
 
         public void OnBlocksTabSelected(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as TestDesignerViewModel;
             viewModel?.BlocksTabSelectedCommand.Execute(null);
+        }
+
+        /// <summary>
+        /// Prompt to discard unsaved changes before the window closes.
+        /// Uses a synchronous wait because Closing does not support async handlers cleanly.
+        /// </summary>
+        private async void OnWindowClosing(object? sender, CancelEventArgs e)
+        {
+            if (DataContext is not TestDesignerViewModel vm)
+                return;
+
+            if (!vm.IsDirty)
+                return;
+
+            // Cancel first; re-close only if the user confirms.
+            e.Cancel = true;
+            var discard = await vm.ConfirmDiscardIfDirtyAsync();
+            if (discard)
+            {
+                vm.IsDirty = false; // prevent re-entry
+                Close();
+            }
         }
     }
 }

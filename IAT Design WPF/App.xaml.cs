@@ -52,7 +52,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
             services.AddSingleton<IStringResourceService, StringResourceService>();
-            services.AddSingleton<UserNotificationService, UserNotificationService>();
+            services.AddSingleton<IUserNotificationService, UserNotificationService>();
             services.AddSingleton<IWebSocketService, WebSocketService>();
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<ILayoutCalculatorService, LayoutCalculatorService>();

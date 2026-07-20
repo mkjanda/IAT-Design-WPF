@@ -2,6 +2,7 @@
 using IAT.Core.Enumerations;
 using javax.swing.filechooser;
 using System;
+using System.IO;
 
 
 namespace IAT.Core.Domain
@@ -16,7 +17,6 @@ namespace IAT.Core.Domain
     /// </summary>
     public sealed partial class ImageStimulus : Stimulus
     {
-        private Guid _imageId;           // service assigns this
         private string _fileName = string.Empty;   // UI binds to this
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace IAT.Core.Domain
         /// </summary>
         public string FileName { get; set;  } = string.Empty;
 
-        public string Text => FileName;
+        public string Text => FileName.Substring(FileName.LastIndexOf(Path.DirectorySeparatorChar));
 
         /// <summary>
         /// Returns a string suitable for displaying as a preview of the current item.
@@ -48,6 +48,6 @@ namespace IAT.Core.Domain
         /// Determines whether the current instance contains valid data for use in a test scenario.
         /// </summary>
         /// <returns>A ValidationResult indicating whether the instance is valid.</returns>
-        public override ValidationResult Validate() => _imageId != Guid.Empty ? ValidationResult.Success : ValidationResult.Fail("Image ID cannot be empty.");   
+        public override ValidationResult Validate() => Id != Guid.Empty ? ValidationResult.Success : ValidationResult.Fail("Image ID cannot be empty.");   
     }
 }

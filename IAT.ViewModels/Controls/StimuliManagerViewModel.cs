@@ -43,6 +43,18 @@ public partial class StimuliManagerViewModel : ObservableObject
     private object? currentEditViewModel;
 
     private ObservableCollection<Stimulus>? _filteredStimuli;
+    public ObservableCollection<Stimulus>? FilteredStimuli
+    {
+        get => _filteredStimuli;
+        private set
+        {
+            if (_filteredStimuli != value)
+            {
+                _filteredStimuli = value;
+                OnPropertyChanged(nameof(DisplayedStimuli));
+            }
+        }
+    }
 
     /// <summary>
     /// Always returns a live bindable collection:
@@ -222,5 +234,17 @@ public partial class StimuliManagerViewModel : ObservableObject
         }
         if (_filteredStimuli is not null)
             OnSearchTextChanged(SearchText);
+    }
+
+    /// <summary>
+    /// Called by the shell after New/Open so the Stimuli tab clears selection and filters.
+    /// </summary>
+    public void OnDocumentReset()
+    {
+        SelectedItem = null;
+        CurrentEditViewModel = null;
+        SearchText = string.Empty;
+        _filteredStimuli = null;
+        OnPropertyChanged(nameof(FilteredStimuli));
     }
 }

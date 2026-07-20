@@ -22,7 +22,7 @@ public interface IProjectPackageService
     /// <param name="ct">A cancellation token that can be used to cancel the save operation.</param>
     /// <returns>A task that represents the asynchronous save operation.</returns>
     Task SaveProjectAsync(IatTest test, string filePath, CancellationToken ct = default);
-    
+
     /// <summary>
     /// Loads an IAT test project from the specified file path asynchronously.
     /// </summary>
@@ -77,7 +77,7 @@ public class ProjectPackageService : IProjectPackageService
     private readonly Dictionary<Guid, byte[]> _imageCache = new();
     private readonly Dictionary<Guid, string> _imageTypes = new();
     private readonly IImagePackageService _imagePackageService;
-    private readonly Dictionary<Guid, string> _originalNames = new();   
+    private readonly Dictionary<Guid, string> _originalNames = new();
 
     /// <summary>
     /// Initializes a new instance of the ProjectPackageService class with the specified image package service.
@@ -96,11 +96,11 @@ public class ProjectPackageService : IProjectPackageService
     /// <returns>A task that represents the asynchronous save operation.</returns>
     public async Task SaveProjectAsync(IatTest test, string filePath, CancellationToken ct)
     {
-        var validationResult = test.ValidateEntireTest();
-        if (!validationResult.IsValid)
-        {
-            throw new ValidationException($"Validation failed: {string.Join("|", validationResult.Errors)}");
-        }
+        // Project save persists work-in-progress. Full structural validation belongs at Deploy time,
+        // not when the author hits Save on an incomplete design.
+        ArgumentNullException.ThrowIfNull(test);
+        if (string.IsNullOrWhiteSpace(filePath))
+            throw new ArgumentException("File path is required.", nameof(filePath));
 
         using var package = Package.Open(filePath, FileMode.Create);
 
@@ -215,7 +215,7 @@ public class ProjectPackageService : IProjectPackageService
         }
     }
 
- 
+
     private string GetSourceFilePath(ImageStimulus stimulus)
     {
         return stimulus.FileName;

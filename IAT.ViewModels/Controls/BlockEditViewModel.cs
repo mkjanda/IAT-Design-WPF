@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using IAT.Core.Domain;
 using IAT.Core.Services;
 using System.Collections.ObjectModel;
@@ -26,7 +27,6 @@ public partial class BlockEditViewModel : ObservableObject
     public ObservableCollection<Block> Blocks => _currentTest.BlocksCollection;
 
     [ObservableProperty] private Block? selectedBlock;
-    [ObservableProperty] private int selectedBlockTrialCount;
     [ObservableProperty] private LayoutViewModel? layoutViewModel;
 
     /// <summary>
@@ -88,8 +88,6 @@ public partial class BlockEditViewModel : ObservableObject
 
     partial void OnSelectedBlockChanged(Block? value)
     {
-        SelectedBlockTrialCount = value?.TrialIds?.Count ?? 0;
-
         // Layout is test-scoped, not block-scoped. Only create a LayoutViewModel once
         // (or when the underlying IatTest changes). Recreating it on every block selection
         // tears down/rebuilds the preview tree and re-fires SizeChanged → FitToWindow,
@@ -117,7 +115,11 @@ public partial class BlockEditViewModel : ObservableObject
     partial void OnBlockInstructionsTextChanged(string value)
     {
         if (SelectedBlock is not null && SelectedBlock.BlockInstructions != value)
+        {
             SelectedBlock.BlockInstructions = value ?? string.Empty;
+            CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Send(
+                IAT.Core.Messages.TestModifiedMessage.Instance);
+        }
 
         LayoutViewModel?.ApplyBlockInstructions(value);
     }
@@ -157,5 +159,25 @@ public partial class BlockEditViewModel : ObservableObject
         if (LayoutViewModel == null)
             return;
         LayoutViewModel.IsLayoutEditMode = !LayoutViewModel.IsLayoutEditMode;
+    }
+
+    /// <summary>
+    /// Called by the shell after New/Open so selection and preview match the (possibly empty) document.
+    /// </summary>
+    public void OnDocumentReset()
+    {
+        SelectedTrial = null;
+        SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).FirstOrDefault();
+        if (SelectedBlock is null)
+        {
+            BlockInstructionsText = string.Empty;
+            LayoutViewModel?.ApplyBlockInstructions(null);
+            LayoutViewModel?.ApplyBlockKeys(null);
+            LayoutViewModel?.ApplyTrialPreview(null);
+        }
+        else
+        {
+            RefreshLayoutPreview();
+        }
     }
 }

@@ -87,7 +87,7 @@ namespace IAT.Core.Domain
         private static readonly Rect _defaultLeftKeyRect = new Rect(0, 0, 200, 120);
         private static readonly Rect _defaultRightKeyRect = new Rect(400, 0, 200, 120);
         private static readonly Rect _defaultErrorMarkRect = new Rect(275, 450, 50, 50);
-        private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 520, 570, 80);
+        private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 320, 570, 80);
         private static readonly Rect _defaultMockItemInstructionsRect = new Rect(15, 510, 570, 60);
         private static readonly Rect _defaultKeyedInstructionsRect = new Rect(15, 135, 570, 410);
         private static readonly Rect _defaultTextInstructionsRect = new Rect(15, 15, 570, 530);
@@ -111,6 +111,32 @@ namespace IAT.Core.Domain
             KeyedInstructionsRect = _defaultKeyedInstructionsRect;
             TextInstructionsRect = _defaultTextInstructionsRect;
             ContinueInstructionsRect = _defaultContinueInstructionsRect;
+            UserSizeOverrides.Clear();
+        }
+
+        /// <summary>
+        /// Copies geometry and user size overrides from another layout instance.
+        /// Used when replacing the in-memory test contents without swapping the Layout object identity
+        /// is not required — callers typically assign a fresh Layout or call this on the existing one.
+        /// </summary>
+        public void CopyFrom(Layout source)
+        {
+            if (source is null || ReferenceEquals(source, this)) return;
+
+            InteriorRect = source.InteriorRect;
+            StimulusRect = source.StimulusRect;
+            LeftKeyRect = source.LeftKeyRect;
+            RightKeyRect = source.RightKeyRect;
+            ErrorMarkRect = source.ErrorMarkRect;
+            BlockInstructionsRect = source.BlockInstructionsRect;
+            MockItemInstructionsRect = source.MockItemInstructionsRect;
+            KeyedInstructionsRect = source.KeyedInstructionsRect;
+            TextInstructionsRect = source.TextInstructionsRect;
+            ContinueInstructionsRect = source.ContinueInstructionsRect;
+
+            UserSizeOverrides.Clear();
+            foreach (var kv in source.UserSizeOverrides)
+                UserSizeOverrides[kv.Key] = kv.Value;
         }
     }
 }

@@ -162,16 +162,15 @@ namespace IAT.Core.Domain
         /// <returns>A ValidationResult object containing any validation errors.</returns>
         public ValidationResult Validate()
         {
-            var result = new ValidationResult();
             if (NumPresentations <= 0)
-                result.AddError("Number of presentations must be greater than zero.");
+                return ValidationResult.Fail("Number of presentations must be greater than zero.");
             if (InstructionsIds == null || InstructionsIds.Count == 0)
-                result.AddError("At least one instructions ID must be set.");
+                return ValidationResult.Fail("At least one instructions ID must be set.");
             if (LeftResponseId == Guid.Empty)
-                result.AddError("Left response ID must be set.");
+                return ValidationResult.Fail("Left response ID must be set.");
             if (RightResponseId == Guid.Empty)
-                result.AddError("Right response ID must be set.");
-            return result;
+                return ValidationResult.Fail("Right response ID must be set.");
+            return ValidationResult.Success;
         }
     }
 }

@@ -342,6 +342,91 @@ public partial class IatTest : ObservableObject
             _keyCache[key.Id] = key;
     }
 
+    /// <summary>
+    /// Adds an instruction screen to the collection and cache.
+    /// </summary>
+    public void AddInstructionScreen(InstructionScreen screen)
+    {
+        if (screen is null) return;
+        if (!_instructionCache.ContainsKey(screen.Id))
+        {
+            InstructionScreens.Add(screen);
+            _instructionCache[screen.Id] = screen;
+        }
+    }
+
+    /// <summary>
+    /// Resets this test to an empty "New IAT Test" state without replacing the instance.
+    /// Child ViewModels that hold a reference to this singleton remain valid; their bound
+    /// ObservableCollections raise CollectionChanged as items are removed.
+    /// </summary>
+    public void Reset()
+    {
+        Id = Guid.NewGuid();
+        Name = "New IAT Test";
+
+        Stimuli.Clear();
+        Blocks.Clear();
+        Trials.Clear();
+        Keys.Clear();
+        InstructionScreens.Clear();
+
+        _stimulusCache.Clear();
+        _blockCache.Clear();
+        _trialCache.Clear();
+        _keyCache.Clear();
+        _instructionCache.Clear();
+        _formattedTextCache.Clear();
+
+        Layout = new Layout();
+    }
+
+    /// <summary>
+    /// Replaces the contents of this singleton instance with data from <paramref name="source"/>.
+    /// Object identity is preserved so every ViewModel that holds this reference stays valid.
+    /// </summary>
+    public void ReplaceWith(IatTest source)
+    {
+        if (source is null || ReferenceEquals(source, this)) return;
+
+        // Clear existing content first (raises CollectionChanged for bound UIs).
+        Stimuli.Clear();
+        Blocks.Clear();
+        Trials.Clear();
+        Keys.Clear();
+        InstructionScreens.Clear();
+
+        _stimulusCache.Clear();
+        _blockCache.Clear();
+        _trialCache.Clear();
+        _keyCache.Clear();
+        _instructionCache.Clear();
+        _formattedTextCache.Clear();
+
+        Id = source.Id;
+        Name = source.Name ?? "Untitled";
+
+        Layout = new Layout();
+        if (source.Layout is not null)
+            Layout.CopyFrom(source.Layout);
+
+        // Order matters for referential integrity: stimuli/keys before trials/blocks.
+        foreach (var stimulus in source.AllStimuli)
+            AddStimulus(stimulus);
+
+        foreach (var key in source.AllKeys)
+            AddKey(key);
+
+        foreach (var trial in source.AllTrials)
+            AddTrial(trial);
+
+        foreach (var block in source.AllBlocks)
+            AddBlock(block);
+
+        foreach (var screen in source.AllInstructionScreens)
+            AddInstructionScreen(screen);
+    }
+
     private readonly Dictionary<Guid, FormattedText> _formattedTextCache = new();
     private readonly Dictionary<Guid, Block> _blockCache = new();
     private readonly Dictionary<Guid, Stimulus> _stimulusCache = new();

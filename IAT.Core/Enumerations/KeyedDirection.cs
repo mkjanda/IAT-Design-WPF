@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace IAT.Core.Enumerations
 {
@@ -48,6 +49,7 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Gets the direction that is opposite to the current direction.
         /// </summary>
+        [JsonIgnore]
         public abstract KeyedDirection Opposite { get; }
 
         /// <summary>

@@ -5,48 +5,79 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:IAT.Views.Controls;assembly=IAT.Views"
         mc:Ignorable="d"
-        Title="IAT Designer - My First Test"
+        Title="{Binding WindowTitle}"
         Height="720" Width="1280"
-        Background="#1E1E1E"
+        Background="#252526"
         Foreground="#E0E0E0"
         FontFamily="Segoe UI"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Closing="OnWindowClosing">
+
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewCommand}"/>
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control+Shift" Command="{Binding SaveAsCommand}"/>
+    </Window.InputBindings>
+
     <Grid>
-        <!--
-            Single-cell layout: TabControl fills the entire available height (* from parent Window).
-            This allows tab contents to scale vertically to the window size.
-            ErrorBanner is overlaid via Z-order (declared after TabControl) and positioned below tab headers.
-        -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <TabControl Background="#252526" BorderThickness="0"
-                    SelectedIndex="0" VerticalAlignment="Stretch"
-                    Style="{StaticResource ModernTabControlStyle}">
-            <TabItem Header="Blocks" FontSize="18" Width="70" Foreground="#F7C46C">
-                <controls:BlockEditView Name="BlockEditView" DataContext="{Binding BlockEditor}" />
-            </TabItem>
+        <!-- File toolbar -->
+        <Border Grid.Row="0" Background="#2D2D2D" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1"
+                Padding="10,6">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="New" Command="{Binding NewCommand}"
+                        Style="{StaticResource AccentButton}"
+                        Padding="14,6" Margin="0,0,6,0" Height="24" Width="60"
+                        ToolTip="New project (Ctrl+N)"/>
+                <Button Content="Open" Command="{Binding OpenCommand}"
+                        Style="{StaticResource AccentButton}"
+                        Padding="14,6" Margin="0,0,6,0" Height="24" Width="60"      
+                        ToolTip="Open project (Ctrl+O)"/>
+                <Button Content="Save" Command="{Binding SaveCommand}" Width="60"
+                        Style="{StaticResource AccentButton}"
+                        Padding="14,6" Margin="0,0,6,0" Height="24" 
+                        ToolTip="Save project (Ctrl+S)"/>
+                <Button Content="Save As" Command="{Binding SaveAsCommand}"
+                        Style="{StaticResource AccentButton}"
+                        Padding="14,6" Height="24" Width="60"
+                        ToolTip="Save project as… (Ctrl+Shift+S)"/>
+            </StackPanel>
+        </Border>
 
-            <TabItem Header="Layout" FontSize="18" Width="70" Foreground="#F7C46C">
-                <controls:LayoutEditView DataContext="{Binding LayoutEditor}" />
-            </TabItem>
+        <!-- Tabs + error banner -->
+        <Grid Grid.Row="1">
+            <TabControl Background="#252526" BorderThickness="0"
+                        SelectedIndex="0" VerticalAlignment="Stretch"
+                        Style="{StaticResource ModernTabControlStyle}">
+                <TabItem Header="Blocks" FontSize="18" Width="70" Foreground="#F7C46C">
+                    <controls:BlockEditView Name="BlockEditView" DataContext="{Binding BlockEditor}" />
+                </TabItem>
 
-            <TabItem Header="Stimuli" FontSize="18" Width="70" Foreground="#F7C46C">
-                <controls:StimuliManagerControl x:Name="StimuliManager" DataContext="{Binding StimuliManager}" />
-            </TabItem>
+                <TabItem Header="Layout" FontSize="18" Width="70" Foreground="#F7C46C">
+                    <controls:LayoutEditView DataContext="{Binding LayoutEditor}" />
+                </TabItem>
 
-            <TabItem Header="Trials" FontSize="18" Width="70" Foreground="#F7C46C">
-                <controls:TrialsManagerControl x:Name="TrialsManager" DataContext="{Binding TrialsManager}" />
-            </TabItem>
+                <TabItem Header="Stimuli" FontSize="18" Width="70" Foreground="#F7C46C">
+                    <controls:StimuliManagerControl x:Name="StimuliManager" DataContext="{Binding StimuliManager}" />
+                </TabItem>
 
-            <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C"/>
-        </TabControl>
+                <TabItem Header="Trials" FontSize="18" Width="70" Foreground="#F7C46C">
+                    <controls:TrialsManagerControl x:Name="TrialsManager" DataContext="{Binding TrialsManager}" />
+                </TabItem>
 
-        <!-- Error banner overlaid on the tab content (Z-order places it above the TabControl content).
-             Margin top value positions it just below the tab strip (~ tab header height).
-             The animation slides it into the top of the current tab page without affecting the tab content's allocated height. -->
-        <controls:ErrorBannerControl x:Name="ErrorBanner"
-                                     VerticalAlignment="Top"
-                                     Margin="8,42,8,0"
-                                     RenderTransformOrigin="0.5,0"
-                                     RenderTransform="{StaticResource TranslateTransformZero}"/>
+                <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C"/>
+            </TabControl>
+
+            <controls:ErrorBannerControl x:Name="ErrorBanner"
+                                         VerticalAlignment="Top"
+                                         Margin="8,42,8,0"
+                                         RenderTransformOrigin="0.5,0"
+                                         RenderTransform="{StaticResource TranslateTransformZero}"/>
+        </Grid>
     </Grid>
 </Window>

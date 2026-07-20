@@ -21,6 +21,7 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
     [ObservableProperty] private string dimensions = string.Empty;
     [ObservableProperty] private string fileSize = string.Empty;
     [ObservableProperty] private string altText = string.Empty;
+    private string filePath = string.Empty;
 
     public ImageStimulusEditViewModel(IatTest iatTest, IProjectPackageService packageService)
         : base(iatTest)
@@ -33,6 +34,7 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
     {
         Id = stimulus.Id;
         FileName = string.IsNullOrEmpty(stimulus.FileName) ? "Image Stimulus" : Path.GetFileName(stimulus.FileName);
+        filePath = stimulus.FileName ?? string.Empty;
         AltText = stimulus.AltText ?? string.Empty;
 
         // Load preview from package service if available
@@ -108,7 +110,7 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
         return new ImageStimulus
         {
             Id = Id,
-            FileName = FileName,
+            FileName = filePath,
             AltText = AltText
         };
     }
