@@ -43,6 +43,8 @@ public partial class StimuliManagerViewModel : ObservableObject
     private object? currentEditViewModel;
 
     private ObservableCollection<Stimulus>? _filteredStimuli;
+
+    private ObservableCollection<StimulusEditViewModel> StimuliLibrary = new ObservableCollection<StimulusEditViewModel>();
     public ObservableCollection<Stimulus>? FilteredStimuli
     {
         get => _filteredStimuli;
@@ -245,6 +247,28 @@ public partial class StimuliManagerViewModel : ObservableObject
         CurrentEditViewModel = null;
         SearchText = string.Empty;
         _filteredStimuli = null;
+
+        // Rebuild the library from the current document
+        StimuliLibrary.Clear();   // or whatever the actual collection property is named
+
+        if (_currentTest is not null)   // or however you hold the shared IatTest
+        {
+            foreach (var stim in _currentTest.AllStimuli)
+            {
+                if (stim is TextStimulus textStim)
+                {
+                    StimuliLibrary.Add(new StimulusEditViewModel(textStim, _currentTest));
+                }
+                else if (stim is ImageStimulus imgStim)
+                {
+                    StimuliLibrary.Add(new ImageStimulusEditViewModel(
+                        imgStim,
+                        _currentTest,
+                        _packageService));   // you need the package service here
+                }
+            }
+        }
+
         OnPropertyChanged(nameof(FilteredStimuli));
     }
 }

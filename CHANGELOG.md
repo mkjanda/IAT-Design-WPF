@@ -39,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added a tab and interface for assigning trials to IAT blocks.
 - Preview of IAT trials in the Blocks tab.
 - Added New, Open, Save, and Save As buttons.
+- Implementation of New, Open, Save, and Save As buttons complete but slightly buggy.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 

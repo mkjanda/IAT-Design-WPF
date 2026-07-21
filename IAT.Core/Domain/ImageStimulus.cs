@@ -45,9 +45,12 @@ namespace IAT.Core.Domain
         public override string GetDisplayPreview() => _fileName;
 
         /// <summary>
-        /// Determines whether the current instance contains valid data for use in a test scenario.
+        /// Validates the properties of the ImageStimulus instance to ensure that they meet the required criteria.
         /// </summary>
         /// <returns>A ValidationResult indicating whether the instance is valid.</returns>
-        public override ValidationResult Validate() => Id != Guid.Empty ? ValidationResult.Success : ValidationResult.Fail("Image ID cannot be empty.");   
+        public override ValidationResult Validate() =>
+        Id != Guid.Empty
+            ? ValidationResult.Success
+            : ValidationResult.Fail("Image stimulus ID cannot be empty.");
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace IAT.Core.Domain;
 
@@ -34,19 +35,39 @@ public partial class IatTest : ObservableObject
     /// A read-only collection of all trials in the test. This property provides a snapshot of the current trials, allowing clients to access the trial data without
     /// directly modifying the underlying collection.
     /// </summary>
-    public IReadOnlyList<Trial> AllTrials => Trials.ToList().AsReadOnly();
+    public List<Trial> AllTrials 
+    {
+        get => Trials.ToList();
+        set { Trials.Clear(); if (value != null) foreach (var t in value) Trials.Add(t); }
+    }
 
     /// <summary>
     /// A read-only list of block objects representing the structure of the test. Each block contains a 
     /// collection of trials, and this property provides a way to access all blocks without allowing direct 
     /// modification of the underlying collection.
     /// </summary>
-    public IReadOnlyList<Block> AllBlocks => Blocks.ToList().AsReadOnly();
+    public List<Block> AllBlocks
+    {
+
+        get => Blocks.ToList();
+        set { Blocks.Clear(); if (value != null) foreach (var b in value) Blocks.Add(b); }
+    }
 
     /// <summary>
     /// Gets a read-only list of all stimuli.
     /// </summary>
-    public IReadOnlyList<Stimulus> AllStimuli => Stimuli.ToList().AsReadOnly();
+    public List<Stimulus> AllStimuli
+    {
+        get => Stimuli.ToList();
+        set
+        {
+            // Stimuli is already public and usually populated from the "Stimuli" array.
+            // Only use this if Stimuli is still empty.
+            if (Stimuli.Count > 0 || value is null) return;
+            Stimuli.Clear();
+            foreach (var s in value) Stimuli.Add(s);
+        }
+    }
 
     /// <summary>
     /// Gets a read-only list of all instruction screens.
@@ -58,7 +79,11 @@ public partial class IatTest : ObservableObject
     /// configurations without allowing direct modifications, ensuring that any changes to the keys are 
     /// managed through controlled methods or properties.
     /// </summary>
-    public IReadOnlyList<Key> AllKeys => Keys.ToList().AsReadOnly();
+    public List<Key> AllKeys
+    {
+        get => Keys.ToList();
+        set { Keys.Clear(); if (value != null) foreach (var k in value) Keys.Add(k); }
+    }
 
     /// <summary>
     /// Gets the collection of trials associated with this instance.
@@ -66,7 +91,7 @@ public partial class IatTest : ObservableObject
     /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
     /// additions or removals of trials. Modifying the collection will not automatically persist changes unless
     /// explicitly handled elsewhere.</remarks>
-    private ObservableCollection<Trial> Trials { get; } = new();
+    public ObservableCollection<Trial> Trials { get; } = new();
 
     /// <summary>
     /// Gets the collection of blocks contained in the document.
@@ -74,7 +99,7 @@ public partial class IatTest : ObservableObject
     /// <remarks>The returned collection is observable, allowing clients to monitor changes such as
     /// additions or removals of blocks. Modifying the collection will update the document's structure
     /// accordingly.</remarks>
-    private ObservableCollection<Block> Blocks { get; } = new();
+    public ObservableCollection<Block> Blocks { get; } = new();
 
     /// <summary>
     /// Gets the collection of stimuli associated with this instance.
@@ -83,19 +108,19 @@ public partial class IatTest : ObservableObject
     /// additions or removals of stimuli. Modifications to the collection will be reflected in any data bindings or
     /// observers. Prefer using AddStimulus / UpdateStimulus / RemoveStimulus for proper cache maintenance.
     /// Direct binding to this collection is supported for UI list views (e.g. StimuliManager ListBox).</remarks>
-    public ObservableCollection<Stimulus> Stimuli { get; } = new();
+    public ObservableCollection<Stimulus> Stimuli { get; } = new();          // already public
 
     /// <summary>
     /// Gets the collection of instruction screens displayed to the user.
     /// </summary>
-    private ObservableCollection<InstructionScreen> InstructionScreens { get; } = new();
+    public ObservableCollection<InstructionScreen> InstructionScreens { get; } = new();
 
     /// <summary>
     /// Gets the collection of keys managed by this instance.
     /// </summary>
     /// <remarks>The returned collection is observable. Changes to the collection, such as adding or removing
     /// keys, will raise collection change notifications. This property never returns null.</remarks>
-    private ObservableCollection<Key> Keys { get; } = new();
+    public ObservableCollection<Key> Keys { get; } = new();
 
 
     /// <summary>
@@ -426,6 +451,7 @@ public partial class IatTest : ObservableObject
         foreach (var screen in source.AllInstructionScreens)
             AddInstructionScreen(screen);
     }
+
 
     private readonly Dictionary<Guid, FormattedText> _formattedTextCache = new();
     private readonly Dictionary<Guid, Block> _blockCache = new();

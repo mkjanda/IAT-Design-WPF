@@ -151,12 +151,19 @@ namespace IAT.ViewModels.Controls
             try
             {
                 var loaded = await _packageService.LoadProjectAsync(path);
+                // --- temporary diagnostics ---
+                System.Diagnostics.Debug.WriteLine($"LOADED Stimuli : {loaded.Stimuli.Count}");
+                System.Diagnostics.Debug.WriteLine($"LOADED Blocks  : {loaded.Blocks.Count}");
+                System.Diagnostics.Debug.WriteLine($"LOADED Trials  : {loaded.Trials.Count}");
+                System.Diagnostics.Debug.WriteLine($"LOADED Keys    : {loaded.Keys.Count}");
+                // -----------------------------
                 _suppressDirty = true;
                 try
                 {
                     _currentTest.ReplaceWith(loaded);
                     CurrentFilePath = path;
                     IsDirty = false;
+
                     NotifyDocumentReset();
                 }
                 finally

@@ -1,5 +1,6 @@
 ﻿using IAT.Core.Domain;
 using IAT.Core.Exceptions;
+using IAT.Core.Models;
 using System.IO;
 using System.IO.Packaging;
 using System.Text.Json;
@@ -72,8 +73,12 @@ public class ProjectPackageService : IProjectPackageService
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
-        Converters = { new JsonPolymorphicStimulusConverter() } // we'll create this next
+        Converters =
+    {
+        new KeyedDirectionJsonConverter()          
+    }
     };
+    
     private readonly Dictionary<Guid, byte[]> _imageCache = new();
     private readonly Dictionary<Guid, string> _imageTypes = new();
     private readonly IImagePackageService _imagePackageService;
@@ -138,26 +143,45 @@ public class ProjectPackageService : IProjectPackageService
     /// <param name="filePath">The path to the project file to load. The file must exist and be accessible.</param>
     /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous load operation. The task result contains the loaded IAT test project.</returns>
-    public async Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct)
+    public async Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct = default)
     {
         using var package = Package.Open(filePath, FileMode.Open);
 
-        // Get the main test JSON part
-        Uri testPartUri = PackUriHelper.CreatePartUri(new Uri("test.json", UriKind.Relative));
+        var testPartUri = PackUriHelper.CreatePartUri(new Uri("test.json", UriKind.Relative));
         if (!package.PartExists(testPartUri))
-        {
             throw new FileNotFoundException("Test data not found in package.");
-        }
 
-        PackagePart testPart = package.GetPart(testPartUri);
-        using Stream testStream = testPart.GetStream();
+        await using var testStream = package.GetPart(testPartUri).GetStream();
+        var test = await JsonSerializer.DeserializeAsync<IatTest>(testStream, _jsonOptions, ct)
+                   ?? throw new JsonException("Failed to deserialize IatTest.");
 
-        // Deserialize the IatTest from JSON
-        IatTest? test = await JsonSerializer.DeserializeAsync<IatTest>(testStream, _jsonOptions, ct);
-        if (test == null)
+        // 1. Populate image cache while the package is still open
+        foreach (var stim in test.Stimuli.OfType<ImageStimulus>())
         {
-            throw new JsonException("Failed to deserialize IatTest from package.");
+            foreach (var ext in new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif" })
+            {
+                var uri = PackUriHelper.CreatePartUri(new Uri($"images/{stim.Id}{ext}", UriKind.Relative));
+                if (!package.PartExists(uri)) continue;
+
+                await using var partStream = package.GetPart(uri).GetStream();
+                using var ms = new MemoryStream();
+                await partStream.CopyToAsync(ms, ct);
+                _imageCache[stim.Id] = ms.ToArray();
+                _imageTypes[stim.Id] = ext.TrimStart('.');
+                stim.PackageUri = uri;
+                break;
+            }
         }
+
+        // 2. Rebuild the internal lookup caches
+        test.RebuildCaches();
+
+        // 3. Wire the back-references that the domain expects
+        foreach (var stim in test.Stimuli)
+            stim.IatTest = test;
+        foreach (var block in test.Blocks)
+            block.IatTest = test;
+
 
         return test;
     }
@@ -198,6 +222,8 @@ public class ProjectPackageService : IProjectPackageService
     /// <returns>A string representing the image type associated with the specified stimulus identifier, or null if no image type
     /// is found.</returns>
     public string GetImageType(Guid stimulusId) => _imageTypes.GetValueOrDefault(stimulusId) ?? string.Empty;
+
+
 
 
     /// <summary>
