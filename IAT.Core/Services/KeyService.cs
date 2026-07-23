@@ -84,10 +84,11 @@ namespace IAT.Core.Services
         {
             var key = test.AllKeys.FirstOrDefault(k => k.Id == keyId);
             if (key == null || !key.IsCombined)
-                return key ?? new Key { Id = keyId, Text = "" };
+                return key ?? new Key { Id = keyId, Style = new TextStyle(), Text = "" };
             var resolvedKey = new Key
             {
                 Id = key.Id,
+                Style = new TextStyle(),
                 IsCombined = false,
                 Text = string.Join(key.Separator, 
                     key.ComponentIds.Select(id => test.AllKeys.FirstOrDefault(k => k.Id == id)?.Text ?? ""))

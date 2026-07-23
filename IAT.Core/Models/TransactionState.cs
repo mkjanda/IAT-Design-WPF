@@ -55,17 +55,17 @@ namespace IAT.Core.Models
         /// and other relevant settings. The ConfigFile is typically used to initialize the test environment and 
         /// ensure that the test is configured correctly according to the specifications defined in the configuration file.
         /// </summary>
-        public IATConfigFile ConfigFile { get; set; } = null;
+        public IATConfigFile? ConfigFile { get; set; }
 
         /// <summary>
         /// THe manifest of deployment files.
         /// </summary>
-        public Manifest FileManifest { get; set; } = null;
+        public Manifest? FileManifest { get; set; }
 
         /// <summary>
         /// Gets or sets the manifest that defines the structure and metadata for the slide.
         /// </summary>
-        public Manifest SlideManifest { get; set; } = new();
+        public Manifest? SlideManifest { get; set; }
 
         /// <summary>
         /// Gets or sets the RSA key information used for encryption operations.

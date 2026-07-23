@@ -7,11 +7,23 @@ using FluentValidation;
 
 namespace IAT.Core.Services.Export
 {
+    /// <summary>
+    /// Defines the contract for a service that prepares IAT tests for server upload by validating, processing 
+    /// blocks, and building the configuration file.
+    /// </summary>
     public interface ITestExportService
     {
+        /// <summary>
+        /// Prepares an IAT test for server upload by validating, processing blocks, and building the configuration file.
+        /// </summary>
+        /// <param name="test">The IAT test to prepare for upload.</param>
+        /// <returns>An export result containing the configuration file and manifest.</returns>
         Task<ExportResult> PrepareForServerUploadAsync(IatTest test);
     }
 
+    /// <summary>
+    /// Implements the ITestExportService interface to provide functionality for preparing IAT tests for server upload.
+    /// </summary>
     public class TestExportService : ITestExportService
     {
         private readonly IStimulusExportProcessor _stimulusProcessor;

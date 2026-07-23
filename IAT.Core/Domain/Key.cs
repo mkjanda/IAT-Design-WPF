@@ -61,7 +61,7 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets or sets the text style applied to the content.
         /// </summary>
-        public TextStyle Style { get; set; } 
+        public required TextStyle Style { get; set; } 
 
         /// <summary>
         /// Gets or sets the font family name used for text rendering.

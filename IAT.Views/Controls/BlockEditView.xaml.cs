@@ -17,6 +17,9 @@ namespace IAT.Views.Controls
         /// </summary>
         private bool _isHandlingSizeChanged;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlockEditView"/> class.
+        /// </summary>
         public BlockEditView()
         {
             InitializeComponent();

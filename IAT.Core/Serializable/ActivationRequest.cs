@@ -43,6 +43,9 @@ namespace IAT.Core.Serializable
         [XmlElement("Title", Form = XmlSchemaForm.Unqualified)]
         public required string Title { get; init; } = String.Empty;
 
+        /// <summary>
+        /// Gets the organization associated with this instance.
+        /// </summary>
         public ActivationRequest() { }
     }
 }

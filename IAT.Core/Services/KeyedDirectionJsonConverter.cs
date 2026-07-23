@@ -10,6 +10,14 @@ namespace IAT.Core.Services;
 /// </summary>
 public sealed class KeyedDirectionJsonConverter : JsonConverter<KeyedDirection>
 {
+    /// <summary>
+    /// Reads and converts the JSON representation of a KeyedDirection object.
+    /// </summary>
+    /// <param name="reader">The reader to read the JSON from.</param>
+    /// <param name="typeToConvert">The type to convert.</param>
+    /// <param name="options">The serializer options.</param>
+    /// <returns>The deserialized KeyedDirection object.</returns>
+    /// <exception cref="JsonException"></exception>
     public override KeyedDirection Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         using var doc = JsonDocument.ParseValue(ref reader);
@@ -28,6 +36,12 @@ public sealed class KeyedDirectionJsonConverter : JsonConverter<KeyedDirection>
         };
     }
 
+    /// <summary>
+    /// Writes a KeyedDirection object as JSON.
+    /// </summary>
+    /// <param name="writer">The writer to write the JSON to.</param>
+    /// <param name="value">The KeyedDirection value to write.</param>
+    /// <param name="options">The serializer options.</param>
     public override void Write(Utf8JsonWriter writer, KeyedDirection value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();

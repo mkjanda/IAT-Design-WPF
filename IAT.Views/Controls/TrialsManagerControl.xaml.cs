@@ -12,6 +12,9 @@ namespace IAT.Views.Controls
     /// </summary>
     public partial class TrialsManagerControl : UserControl
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TrialsManagerControl"/> class.
+        /// </summary>
         public TrialsManagerControl()
         {
             InitializeComponent();

@@ -143,6 +143,10 @@ namespace IAT.Core.Domain
                 UserSizeOverrides[kv.Key] = kv.Value;
         }
 
+        /// <summary>
+        /// Applies the rectangle values from a LayoutRects instance to the corresponding properties of this Layout object. 
+        /// </summary>
+        /// <param name="source">The LayoutRects instance containing the rectangle values to apply. </param>
         public void ApplyRects(LayoutRects source)
         {
             InteriorRect = source.Interior;

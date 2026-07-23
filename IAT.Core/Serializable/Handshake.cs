@@ -9,8 +9,11 @@ using IAT.Core.Enumerations;
 
 namespace IAT.Core.Serializable
 {
+    /// <summary>
+    /// Represents a command to initiate a cryptographic handshake, encapsulating the handshake data to be processed.
+    /// </summary>
+    /// <param name="inHand">The handshake data to be processed.</param>
     public record HandshakeCommand(Handshake inHand) : IRequest<TransactionResult>;
-
 
     /// <summary>
     /// Represents the data exchanged during a cryptographic handshake, including public key, modulus, and encrypted or

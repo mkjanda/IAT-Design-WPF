@@ -6,26 +6,44 @@ using System.Windows.Threading;
 
 namespace IAT.Views.Controls
 {
+    /// <summary>
+    /// Interaction logic for ErrorBannerControl.xaml
+    /// </summary>
     public partial class ErrorBannerControl : UserControl
     {
+        /// <summary>
+        /// DependencyProperty for the Title of the error banner.
+        /// </summary>
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(ErrorBannerControl), new PropertyMetadata("Error"));
-
+        
+        /// <summary>
+        /// DependencyProperty for the Message of the error banner.
+        /// </summary>
         public static readonly DependencyProperty MessageProperty =
             DependencyProperty.Register(nameof(Message), typeof(string), typeof(ErrorBannerControl));
 
+        /// <summary>
+        /// Gets or sets the Title of the error banner.
+        /// </summary>
         public string Title
         {
             get => (string)GetValue(TitleProperty);
             set => SetValue(TitleProperty, value);
         }
 
+        /// <summary>
+        /// Gets or sets the Message of the error banner.
+        /// </summary>
         public string Message
         {
             get => (string)GetValue(MessageProperty); 
             set => SetValue(MessageProperty, value);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ErrorBannerControl"/> class.
+        /// </summary>
         public ErrorBannerControl()
         {
             InitializeComponent();

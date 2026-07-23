@@ -38,6 +38,9 @@ public partial class LikertResponse : ResponseDefinition
 /// </summary>
 public partial class MultipleChoiceResponse : ResponseDefinition
 {
+    /// <summary>
+    /// Gets the collection of choices for the multiple choice response. Each choice is represented as a string.
+    /// </summary>
     public ObservableCollection<string> Choices { get; } = new();
 }
 
@@ -46,6 +49,9 @@ public partial class MultipleChoiceResponse : ResponseDefinition
 /// </summary>
 public partial class MultiSelectResponse : ResponseDefinition
 {
+    /// <summary>
+    /// Gets the collection of choices for the multi-select response. Each choice is represented as a string.
+    /// </summary>
     public ObservableCollection<string> Choices { get; } = new();
     [ObservableProperty] private int? _minSelections;
     [ObservableProperty] private int? _maxSelections;

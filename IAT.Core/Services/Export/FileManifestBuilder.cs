@@ -21,6 +21,7 @@ namespace IAT.Core.Services.Export
         /// Adds a file resource to the collection with the specified path, resource identifier, type, MIME type, and
         /// optional content.
         /// </summary>
+        /// <param name="manifest">The manifest instance to which the file will be added. Cannot be null.</param>
         /// <param name="path">The relative or absolute path where the file will be stored. Cannot be null or empty.</param>
         /// <param name="resourceType">The type of the file resource to add. Specifies how the file will be categorized.</param>
         /// <param name="mimeType">The MIME type of the file, such as "image/png" or "application/pdf". Cannot be null or empty.</param>
@@ -30,6 +31,7 @@ namespace IAT.Core.Services.Export
         /// <summary>
         /// Sets the content for the specified resource identifier.
         /// </summary>
+        /// <param name="manifest">The manifest instance containing the resource. Cannot be null.</param>
         /// <param name="resourceId">The identifier of the resource whose content is to be set.</param>
         /// <param name="content">The byte array containing the content to assign to the resource. Cannot be null.</param>
         void SetContent(Manifest manifest, int resourceId, byte[] content);
@@ -47,6 +49,7 @@ namespace IAT.Core.Services.Export
         /// Adds a file entry to the file manifest with the specified path, resource identifier, resource type, MIME
         /// type, and optional content.
         /// </summary>
+        /// <param name="manifest">The manifest instance to which the file will be added. Cannot be null.</param>
         /// <param name="path">The relative or absolute path where the file will be stored in the manifest. Cannot be null or empty.</param>
         /// <param name="resourceType">The type of the file resource to add. Specifies how the file is categorized within the manifest.</param>
         /// <param name="mimeType">The MIME type of the file, such as "application/pdf" or "image/png". Cannot be null or empty.</param>
@@ -67,6 +70,7 @@ namespace IAT.Core.Services.Export
         /// </summary>
         /// <remarks>If no file with the specified resource identifier exists, this method performs no
         /// action.</remarks>
+        /// <param name="manifest">The manifest instance containing the resource. Cannot be null.</param>
         /// <param name="resourceId">The unique identifier of the resource whose file content is to be updated.</param>
         /// <param name="content">The byte array containing the new content to assign to the file. Cannot be null.</param>
         public void SetContent(Manifest manifest, int resourceId, byte[] content)

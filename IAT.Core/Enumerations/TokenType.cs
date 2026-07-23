@@ -12,6 +12,25 @@ namespace IAT.Core.Enumerations
     /// specialized encodings like Base64 with UTF-8 support.</remarks>
     public enum TokenType
     {
-        none, value, hex, base64, base64_utf8
+        /// <summary>
+        /// Indicates that no specific token type is defined or applicable.
+        /// </summary>
+        none,
+        /// <summary>
+        /// Indicates that the token represents a standard value.
+        /// </summary>
+        value,
+        /// <summary>
+        /// Indicates that the token is encoded in hexadecimal format.
+        /// </summary>
+        hex,
+        /// <summary>
+        /// Indicates that the token is encoded in Base64 format.
+        /// </summary>
+        base64,
+        /// <summary>
+        /// Indicates that the token is encoded in Base64 format with UTF-8 support.
+        /// </summary>
+        base64_utf8
     }
 }

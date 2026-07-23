@@ -21,7 +21,7 @@ public sealed class ResultPacket
     /// Gets or sets the unique identifier for the result.
     /// </summary>
     [XmlAttribute("ResultId", Form = XmlSchemaForm.Unqualified)]
-    public string ResultId { get; set; }
+    public string ResultId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the administrative time value associated with the current instance.

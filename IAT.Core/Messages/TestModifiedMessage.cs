@@ -6,6 +6,9 @@
     /// </summary>
     public sealed class TestModifiedMessage
     {
+        /// <summary>
+        /// Gets the singleton instance of the <see cref="TestModifiedMessage"/> class.
+        /// </summary>
         public static TestModifiedMessage Instance { get; } = new();
 
         private TestModifiedMessage() { }

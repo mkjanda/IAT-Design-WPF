@@ -13,6 +13,9 @@ using IAT.Core.Services.Network;
 
 namespace IAT.Core.Handlers
 {
+    /// <summary>
+    /// Handles the ItemSlidesReadyCommand by downloading item slide data and updating the transaction state accordingly.
+    /// </summary>
     public class ItemSlidesReadyHandler : IRequestHandler<ItemSlidesReadyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
@@ -71,12 +74,16 @@ namespace IAT.Core.Handlers
                 {
                     using var receipt = new MemoryStream(t.Result);
                     var slideData = new List<byte[]>();
-                    var fileList = _transactionState.SlideManifest.Contents.Where(fe => fe.FileEntityType == FileEntity.EFileEntityType.File).Cast<ManifestFile>()
-                        .Where(mf => mf.ResourceType == FileResourceType.itemSlide).ToList();
-                    foreach (var file in fileList)
+
+                    if (_transactionState.SlideManifest != null)
                     {
-                        file.Content = new byte[file.Size];
-                        receipt.Read(file.Content, 0, (int)file.Size);
+                        var fileList = _transactionState.SlideManifest.Contents.Where(fe => fe.FileEntityType == FileEntity.EFileEntityType.File).Cast<ManifestFile>()
+                            .Where(mf => mf.ResourceType == FileResourceType.itemSlide).ToList();
+                        foreach (var file in fileList)
+                        {
+                            file.Content = new byte[file.Size];
+                            receipt.Read(file.Content, 0, (int)file.Size);
+                        }
                     }
                     await _webSocketService.CloseSocketAsync();
                     return TransactionResult.Success;

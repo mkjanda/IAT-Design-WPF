@@ -26,10 +26,12 @@ namespace IAT.Core.Handlers
         /// </summary>
         /// <param name="wss">The WebSocket service used to manage the connection.</param>
         /// <param name="dialogService">The dialog service used to display notifications to the user.</param>
-        public AbortTransactionHandler(IWebSocketService wss, IDialogService dialogService)
+        /// <param name="transactionState">The state of the current transaction.</param>
+        public AbortTransactionHandler(IWebSocketService wss, IDialogService dialogService, TransactionState transactionState)
         {
             _wss = wss;
             _dialogService = dialogService;
+            _transactionState = transactionState;
         }
 
         /// <summary>

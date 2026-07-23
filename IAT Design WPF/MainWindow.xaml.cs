@@ -12,6 +12,9 @@ namespace IAT_Design_WPF
     /// </summary>
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindow"/> class.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
@@ -32,12 +35,22 @@ namespace IAT_Design_WPF
                 });
         }
 
+        /// <summary>
+        /// Handles the selection of the Stimuli tab.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The routed event arguments.</param>
         public void OnStimuliTabSelected(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as TestDesignerViewModel;
             viewModel?.StimuliTabSelectedCommand.Execute(null);
         }
 
+        /// <summary>
+        /// Handles the selection of the Blocks tab.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The routed event arguments.</param>
         public void OnBlocksTabSelected(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as TestDesignerViewModel;

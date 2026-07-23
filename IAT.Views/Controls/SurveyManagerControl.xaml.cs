@@ -8,6 +8,9 @@ namespace IAT.Views.Controls;
 /// </summary>
 public partial class SurveyManagerControl : UserControl
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SurveyManagerControl"/> class.
+    /// </summary>
     public SurveyManagerControl()
     {
         InitializeComponent();

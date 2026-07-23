@@ -11,6 +11,9 @@ namespace IAT.Core.Domain;
 /// </summary>
 public partial class Survey : ObservableObject
 {
+    /// <summary>
+    /// Gets or sets the unique identifier for the survey.
+    /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
     [ObservableProperty]
@@ -41,6 +44,9 @@ public partial class Survey : ObservableObject
 [JsonDerivedType(typeof(SurveyQuestion), "Question")]
 public abstract partial class SurveyItem : ObservableObject
 {
+    /// <summary>
+    /// Gets or sets the unique identifier for the survey item.
+    /// </summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 }
 

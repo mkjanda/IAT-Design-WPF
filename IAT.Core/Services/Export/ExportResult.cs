@@ -3,6 +3,9 @@ using IAT.Core.Serializable;
 
 namespace IAT.Core.Services.Export
 {
+    /// <summary>
+    /// Represents the result of an export operation, containing the configuration file and file manifest for the exported test.
+    /// </summary>
     public class ExportResult
     {
         /// <summary>

@@ -47,6 +47,10 @@ namespace IAT.Core.Handlers
         /// outcome of the transaction.</returns>
         public async Task<TransactionResult> Handle(EncryptionKeyReceivedCommand request, CancellationToken cancellationToken)
         {
+            if (_transactionState.ConfigFile == null)
+            {
+                _transactionState.ConfigFile = new ConfigFile.IATConfigFile();
+            }   
             _transactionState.ConfigFile.ClientID = _transactionState.ClientId;
             _transactionState.ConfigFile.UploadTimeMillis = _transactionState.UploadTimeMillis;
             _transactionState.ConfigFile.Name = _transactionState.IATName;
@@ -66,8 +70,14 @@ namespace IAT.Core.Handlers
                 Size = memoryStream.Length,
                 Content = memoryStream.ToArray()
             });
-            manifest.AddFiles(_transactionState.FileManifest.Contents.Cast<ManifestFile>());
-            manifest.AddFiles(_transactionState.SlideManifest.Contents.Cast<ManifestFile>());
+            if (_transactionState.FileManifest != null)
+            {
+                manifest.AddFiles(_transactionState.FileManifest.Contents.Cast<ManifestFile>());
+            }
+            if (_transactionState.SlideManifest != null)
+            {
+                manifest.AddFiles(_transactionState.SlideManifest.Contents.Cast<ManifestFile>());
+            }
             await _webSocketService.SendMessage(manifest);
             return TransactionResult.Unset;
         }

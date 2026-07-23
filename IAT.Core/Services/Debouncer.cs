@@ -2,6 +2,14 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+/// <summary>
+/// A utility class that allows for debouncing of actions. It ensures that the specified action is only executed 
+/// after a certain delay period has passed without any new calls to Refresh. This is particularly useful in scenarios 
+/// where you want to limit the frequency of an action being performed, such as handling rapid user input events (e.g., 
+/// key presses, mouse movements) and only executing the action after the user has stopped interacting for a specified 
+/// duration. The action will be executed on the captured synchronization context, making it safe for UI updates. 
+/// Dispose should be called when the Debouncer is no longer needed to clean up resources.
+/// </summary>
 public sealed class Debouncer : IDisposable
 {
     private readonly TimeSpan _delay;

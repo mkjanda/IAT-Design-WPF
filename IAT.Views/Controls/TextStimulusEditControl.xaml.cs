@@ -13,6 +13,9 @@ namespace IAT.Views.Controls
     {
         private const string PlaceholderText = "New Text Stimulus";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextStimulusEditControl"/> class.
+        /// </summary>
         public TextStimulusEditControl()
         {
             InitializeComponent();

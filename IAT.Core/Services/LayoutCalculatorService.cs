@@ -69,22 +69,6 @@ public class LayoutCalculatorService : ILayoutCalculatorService
     }
 
     /// <summary>
-    /// Expands the specified rectangle by the difference between its current size and the target size, centering the
-    /// expansion equally on all sides.
-    /// </summary>
-    /// <remarks>If the target size is smaller than the rectangle's current size in either dimension, the
-    /// rectangle will be deflated accordingly. The expansion or contraction is distributed equally on all sides to
-    /// maintain the rectangle's center.</remarks>
-    /// <param name="rect">The rectangle to be inflated. The rectangle's size and position are modified by this method.</param>
-    /// <param name="sz">The target size to which the rectangle should be inflated. Both width and height must be greater than or equal
-    /// to the rectangle's current size.</param>
-    //    private void Inflate(Rect rect, Size sz)
-    //  {
-    //    var inflateSz = new Size((sz.Width - rect.Size.Width) / 2, (sz.Height - rect.Size.Height) / 2);
-    //  rect.Inflate(inflateSz);
-    //    }
-
-    /// <summary>
     /// Applies a user-defined size override to a specified region within the given layout configuration.
     /// </summary>
     /// <remarks>If the specified size is smaller than the minimum allowed dimensions, the size is adjusted to
@@ -98,11 +82,18 @@ public class LayoutCalculatorService : ILayoutCalculatorService
         layout.UserSizeOverrides[layoutItem] = rect;
     }
 
-        public Rect GetFinalRect(Layout layout, LayoutItem li)
+    /// <summary>
+    /// Calculates the final bounding rectangle for a specified layout item within the given layout configuration, 
+    /// taking into account any user-defined size overrides.
+    /// </summary>
+    /// <param name="layout">The layout configuration containing the layout items and any user-defined size overrides. Cannot be null.</param>
+    /// <param name="li">The layout item for which to calculate the final bounding rectangle. Cannot be null.</param>
+    /// <returns>The final bounding rectangle for the specified layout item, considering any user-defined size overrides.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified layout item is not recognized.</exception>
+    public Rect GetFinalRect(Layout layout, LayoutItem li)
     {
         if (layout.UserSizeOverrides.TryGetValue(li, out var sz))
         {
-            Rect r;
             switch (li)
             {
                 case LayoutItem.Interior:
@@ -218,18 +209,52 @@ public class LayoutCalculatorService : ILayoutCalculatorService
 }
 
 
-
+/// <summary>
+/// Represents the final layout rectangles for various UI elements after applying the layout 
+/// configuration and any user-defined size overrides.
+/// </summary>
 public record LayoutRects
 {
+    /// <summary>
+    /// Gets the rectangle representing the interior area of the layout, which serves as the main container 
+    /// for other UI elements.
+    /// </summary>
     public Rect Interior { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the stimulus area of the layout.
+    /// </summary>
     public Rect Stimulus { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the left key area of the layout.
+    /// </summary>
     public Rect LeftKey { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the right key area of the layout.
+    /// </summary>      
     public Rect RightKey { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the error mark area of the layout.
+    /// </summary>
     public Rect ErrorMark { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the block instructions area of the layout.
+    /// </summary>
     public Rect BlockInstructions { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the mock item instructions area of the layout.
+    /// </summary>
     public Rect MockItemInstructions { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the keyed instructions area of the layout.
+    /// </summary>
     public Rect KeyedInstructions { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the text instructions area of the layout.
+    /// </summary>  
     public Rect TextInstructions { get; init; }
+    /// <summary>
+    /// Gets the rectangle representing the continue instructions area of the layout.
+    /// </summary>
     public Rect ContinueInstructions { get; init; }
 
     /// <summary>

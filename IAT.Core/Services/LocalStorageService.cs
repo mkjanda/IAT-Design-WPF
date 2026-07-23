@@ -45,7 +45,24 @@ namespace IAT.Core.Services
         /// </summary>
         /// <remarks>Use this enumeration to represent and check the current activation state, such as
         /// whether email verification is required or if there is a version inconsistency.</remarks>
-        public enum ActivationStatus { NotActivated, EMailNotVerified, Activated, InconsistentVersion };
+        public enum ActivationStatus { 
+            /// <summary>
+            /// The user or entity has not been activated.
+            /// </summary>
+            NotActivated,
+            /// <summary>
+            /// The user's email has not been verified.
+            /// </summary>
+            EMailNotVerified,
+            /// <summary>
+            /// The user or entity is activated.
+            /// </summary>
+            Activated,
+            /// <summary>
+            /// There is a version inconsistency.
+            /// </summary>
+            InconsistentVersion
+        };
         private static readonly byte[] key = { 59, 207,  78,  40, 237, 240, 82, 223, 61, 99, 218, 147, 77, 174, 189, 80,
                                                 240, 128, 216, 112, 182, 247, 222, 212, 104, 30, 54, 76, 56, 193, 227, 140 };
         private static readonly byte[] storageKey = { 49, 132, 90, 177, 63, 214, 120, 45, 173, 200, 34, 167, 88, 155, 201, 114,

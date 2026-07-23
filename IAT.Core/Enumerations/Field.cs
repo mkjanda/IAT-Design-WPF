@@ -42,10 +42,6 @@ namespace IAT.Core.Enumerations
         /// </summary>
         public static Field UserName = new _UserName("ClientName", false);
 
-        /// <summary>
-        /// Gets a value indicating whether the content is encrypted.
-        /// </summary>
-        public bool Encrypted { get; private set; }
 
         /// <summary>
         /// Returns the corresponding field for the specified string name.

@@ -19,13 +19,6 @@ namespace IAT.Core.Services;
 /// image types are suitable for use in WPF applications and related imaging workflows.</remarks>
 public interface IImageGenerationService
 {
-    /// <summary>
-    /// Renders the visual representation of the specified key as a bitmap image.
-    /// </summary>
-    /// <param name="keyId">The unique identifier of the key to render. This value must correspond to a valid key in the system.</param>
-    /// <returns>A RenderTargetBitmap containing the rendered image of the key. Returns null if the key does not exist or cannot be
-    /// rendered.</returns>
-//    RenderTargetBitmap RenderKeyToBitmap(Guid keyId, Rect boundingRect);
 
     /// <summary>
     /// Renders the specified formatted text as a bitmap image.
@@ -60,12 +53,6 @@ public interface IImageGenerationService
     /// <param name="rects">The layout rectangles defining the positions and sizes of the slide elements. Must not be null.</param>
     /// <returns>A BitmapSource representing the rendered slide. Returns null if the slide cannot be rendered.</returns>
     BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId, LayoutRects rects);
-
-    /// <summary>
-    /// Renders an outline image of the key and returns it as a bitmap source.
-    /// </summary>
-    /// <returns>A <see cref="BitmapSource"/> representing the rendered outline of the key.</returns>
-  //  BitmapSource RenderKeyOutline();
 
     /// <summary>
     /// Returns a new bitmap that is a resized version of the specified source bitmap, using the given target width and
@@ -167,6 +154,7 @@ public class ImageGenerationService : IImageGenerationService
     /// responsible for managing the lifetime of the returned BitmapSource if used outside the method's
     /// scope.</remarks>
     /// <param name="text">An object that defines the text content, style, and layout to be rendered as a bitmap. Cannot be null.</param>
+    /// <param name="boundingRect">The bounding rectangle that defines the size and position for rendering the text. Must not be null.</param>
     /// <returns>A BitmapSource containing the rendered text image. The bitmap reflects the specified font, color, and
     /// layout.</returns>
     public BitmapSource RenderTextToBitmap(IFormattedText text, Rect boundingRect)

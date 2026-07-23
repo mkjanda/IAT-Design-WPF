@@ -340,8 +340,15 @@ namespace IAT.Core.Serializable
         /// with XML serialization attributes to control the element names during serialization.</remarks>
         public struct IntValueSerializable
         {
+            /// <summary>
+            /// Gets or sets the string key associated with the integer value.
+            /// </summary>
             [XmlElement("Key")]
             public String Key { get; set; }
+
+            /// <summary>
+            /// Gets or sets the integer value associated with the string key.
+            /// </summary>
             [XmlElement("Value")]
             public int Value { get; set; }
         }   
@@ -394,8 +401,15 @@ namespace IAT.Core.Serializable
         /// element attributes to control serialization of its members.</remarks>
         public struct LongValueSerializable
         {
+            /// <summary>
+            /// Gets or sets the string key associated with the long integer value.
+            /// </summary>
             [XmlElement("Key")]
             public String Key { get; set; }
+
+            /// <summary>
+            /// Gets or sets the long integer value associated with the string key.
+            /// </summary>
             [XmlElement("Value")]
             public long Value { get; set; }
         }
@@ -449,8 +463,15 @@ namespace IAT.Core.Serializable
         /// element attributes to control the XML output during serialization.</remarks>
         public struct StringValueSerializable
         {
+            /// <summary>
+            /// Gets or sets the string key associated with the string value.
+            /// </summary>
             [XmlElement("Key")]
             public String Key { get; set; }
+
+            /// <summary>
+            /// Gets or sets the string value associated with the string key.
+            /// </summary>
             [XmlElement("Value")]
             public String Value { get; set; }
         }       
@@ -524,9 +545,8 @@ namespace IAT.Core.Serializable
         public bool IsLastTransaction { get; set; } = true;
 
         /// <summary>
-        /// Initializes a new instance of the TransactionRequest class using the specified local storage service.
+        /// Initializes a new instance of the TransactionRequest class with default values.
         /// </summary>
-        /// <param name="localStorage">The local storage service used to retrieve product and activation keys. Cannot be null.</param>
         public TransactionRequest()
         {
             Transaction = TransactionType.Unset;

@@ -7,7 +7,10 @@ using System.Xml.Schema;
 
 namespace IAT.Core.ConfigFile;
 
-
+/// <summary>
+/// Represents a survey configuration, including the number of items, caption presence, name, timeout, 
+/// caption details, and survey items.
+/// </summary>
 public class Survey
 {
     /// <summary>

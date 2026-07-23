@@ -64,7 +64,7 @@ public class ItemSlideExportProcessor : IItemSlideExportProcessor
         };
         foreach (var block in context.Test.AllBlocks)
         {
-            foreach (var trial in block.TrialIds.Select(tId => context.Test.GetTrialById(tId)))
+            foreach (var trial in block.TrialIds.Select(tId => context.Test.GetTrialById(tId)).Where(t => t is not null))
             {
                 var bmp = _imageGenerationService.RenderSlide(context.Test, block.Id, trial.Id, context.LayoutRects);
                 var filename = $"slide_{block.Id}_{trial.Id}.png";

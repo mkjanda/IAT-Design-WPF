@@ -23,11 +23,11 @@ public class SurveyItem
     /// Gets or sets the text to display for this survey item.
     /// </summary>
     [XmlElement(ElementName = "Text", Form = XmlSchemaForm.Unqualified)]
-    public String Text { get; set; }
+    public required string Text { get; set; }
 
     /// <summary>
     /// Gets or sets the response data associated with the current operation.
     /// </summary>
     [XmlElement(ElementName = "Response", Form = XmlSchemaForm.Unqualified, Type = typeof(Response))]
-    public Response Response { get; set; }
+    public required Response Response { get; set; }
 }

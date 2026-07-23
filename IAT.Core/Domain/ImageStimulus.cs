@@ -36,6 +36,10 @@ namespace IAT.Core.Domain
         /// </summary>
         public string FileName { get; set;  } = string.Empty;
 
+        /// <summary>
+        /// Gets the text to be displayed for the image stimulus, which is derived from the file name. This property extracts 
+        /// the file name from the full path and provides it as a displayable string.
+        /// </summary>
         public string Text => FileName.Substring(FileName.LastIndexOf(Path.DirectorySeparatorChar));
 
         /// <summary>

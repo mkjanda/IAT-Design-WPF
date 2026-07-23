@@ -12,6 +12,11 @@ namespace IAT.Views.Converters;
 /// </summary>
 public sealed class BoolToVisibilityConverter : IValueConverter
 {
+    /// <summary>
+    /// Converts a boolean to Visibility.
+    /// true → Visible, false → Collapsed.
+    /// Pass ConverterParameter="Invert" to reverse the mapping.
+    /// </summary>
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var flag = value is true;
@@ -21,6 +26,11 @@ public sealed class BoolToVisibilityConverter : IValueConverter
         return flag ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Converts a Visibility back to boolean.
+    /// Visible → true, Collapsed → false.
+    /// Pass ConverterParameter="Invert" to reverse the mapping.
+    /// </summary>
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var visible = value is Visibility.Visible;

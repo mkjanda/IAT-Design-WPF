@@ -18,6 +18,9 @@ namespace IAT.Views.Controls
     /// </summary>
     public partial class ImageStimulusEditControl : UserControl
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ImageStimulusEditControl"/> class.
+        /// </summary>
         public ImageStimulusEditControl()
         {
             InitializeComponent();

@@ -272,11 +272,11 @@ public partial class TrialsManagerViewModel : ObservableObject
         Key leftKey;
         if (SelectedBlock.LeftResponseId != Guid.Empty)
         {
-            leftKey = _currentTest.GetKeyById(SelectedBlock.LeftResponseId) ?? new Key { Id = SelectedBlock.LeftResponseId };
+            leftKey = _currentTest.GetKeyById(SelectedBlock.LeftResponseId) ?? new Key { Id = SelectedBlock.LeftResponseId, Style = new TextStyle() };
         }
         else
         {
-            leftKey = new Key { Id = Guid.NewGuid(), LayoutItem = LayoutItem.LeftKey };
+            leftKey = new Key { Id = Guid.NewGuid(), LayoutItem = LayoutItem.LeftKey, Style = new TextStyle() };
             SelectedBlock.LeftResponseId = leftKey.Id;
         }
         leftKey.Text = LeftKeyText?.Trim() ?? string.Empty;
@@ -287,11 +287,11 @@ public partial class TrialsManagerViewModel : ObservableObject
         Key rightKey;
         if (SelectedBlock.RightResponseId != Guid.Empty)
         {
-            rightKey = _currentTest.GetKeyById(SelectedBlock.RightResponseId) ?? new Key { Id = SelectedBlock.RightResponseId };
+            rightKey = _currentTest.GetKeyById(SelectedBlock.RightResponseId) ?? new Key { Id = SelectedBlock.RightResponseId, Style = new TextStyle() };
         }
         else
         {
-            rightKey = new Key { Id = Guid.NewGuid(), LayoutItem = LayoutItem.RightKey };
+            rightKey = new Key { Id = Guid.NewGuid(), LayoutItem = LayoutItem.RightKey, Style = new TextStyle() };
             SelectedBlock.RightResponseId = rightKey.Id;
         }
         rightKey.Text = RightKeyText?.Trim() ?? string.Empty;

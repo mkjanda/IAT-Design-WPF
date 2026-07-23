@@ -158,6 +158,11 @@ public partial class IatTest : ObservableObject
         return stimulus;
     }
 
+    /// <summary>
+    /// Updates an existing stimulus in the collection and cache. If the stimulus with the same ID exists, it 
+    /// is replaced with the new stimulus.
+    /// </summary>
+    /// <param name="stim">The stimulus to update.</param>
     public void UpdateStimulus(Stimulus stim)
     {
         if (stim is null) return;

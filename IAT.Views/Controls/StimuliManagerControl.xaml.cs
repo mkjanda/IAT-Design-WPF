@@ -11,6 +11,9 @@ namespace IAT.Views.Controls
     /// </summary>
     public partial class StimuliManagerControl : UserControl
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StimuliManagerControl"/> class.
+        /// </summary>
         public StimuliManagerControl()
         { 
             InitializeComponent();

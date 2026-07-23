@@ -18,10 +18,20 @@ using IAT.ViewModels.Controls;
 
 namespace IAT_Design_WPF
 {
+    /// <summary>
+    /// Interaction logic for App.xaml
+    /// </summary>
     public partial class App : Application
     {
-        public static IServiceProvider Services { get; private set; }
+        /// <summary>
+        /// Gets the service provider for dependency injection.
+        /// </summary>
+        public static IServiceProvider Services { get; private set; } 
 
+        /// <summary>
+        /// Handles the startup event of the application.
+        /// </summary>
+        /// <param name="e">The startup event arguments.</param>
         protected async override void OnStartup(StartupEventArgs e)
         {
             /*        // 1. VelopackApp MUST run FIRST — this sets up the locator and is required

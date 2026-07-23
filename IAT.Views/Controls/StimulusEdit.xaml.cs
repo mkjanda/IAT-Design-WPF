@@ -5,9 +5,17 @@ using System.Windows.Controls;
 
 namespace IAT.Views.Controls
 {
+    /// <summary>
+    /// Interaction logic for StimulusEdit.xaml
+    /// </summary>
     public partial class StimulusEdit : UserControl
     {
         private IatTest _currentTest;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StimulusEdit"/> class.
+        /// </summary>
+        /// <param name="currentTest">The current IAT test instance.</param>
         public StimulusEdit(IatTest currentTest)
         {
             InitializeComponent();

@@ -43,12 +43,30 @@ namespace IAT.Core.Messages
     /// </summary>
     public enum NotificationSeverity
     {
+        /// <summary>
+        /// Informational notification, typically styled in a neutral color.    
+        /// </summary>
         Info,
+        /// <summary>
+        /// Successful notification, typically styled in green.
+        /// </summary>
         Success,
+        /// <summary>
+        /// Warning notification, typically styled in yellow or orange.
+        /// </summary>
         Warning,
+        /// <summary>
+        /// Error notification, typically styled in red.
+        /// </summary>
         Error
     }
 
+    /// <summary>
+    /// Abstract base record for user notification messages, providing a common structure for title, message, and severity.
+    /// </summary>
+    /// <param name="Title">The title of the notification (e.g. "Success", "Info").</param>
+    /// <param name="Message">The message content of the notification.</param>
+    /// <param name="Severity">The severity level of the notification for UI styling.</param>
     public abstract record NotificationMessage(string Title, string Message, NotificationSeverity Severity)
     {
         /// <summary>

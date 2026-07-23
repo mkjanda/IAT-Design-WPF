@@ -9,6 +9,9 @@ namespace IAT.Views.Converters;
 /// </summary>
 public sealed class DateOnlyToStringConverter : IValueConverter
 {
+    /// <summary>
+    /// Converts a <see cref="DateOnly"/>? to a yyyy-MM-dd string.
+    /// </summary>
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is DateOnly d)
@@ -16,6 +19,10 @@ public sealed class DateOnlyToStringConverter : IValueConverter
         return string.Empty;
     }
 
+    /// <summary>
+    /// Converts a yyyy-MM-dd string back to a <see cref="DateOnly"/>?.
+    /// Empty / invalid input maps to null.
+    /// </summary>
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var s = (value as string)?.Trim();
