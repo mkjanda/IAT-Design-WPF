@@ -122,6 +122,16 @@ public partial class IatTest : ObservableObject
     /// keys, will raise collection change notifications. This property never returns null.</remarks>
     public ObservableCollection<Key> Keys { get; } = new();
 
+    /// <summary>
+    /// Gets the collection of surveys (questionnaires) associated with this test.
+    /// Surveys can be administered before or after the IAT blocks.
+    /// </summary>
+    public ObservableCollection<Survey> Surveys { get; } = new();
+
+    /// <summary>
+    /// Live collection of surveys. Prefer <see cref="AddSurvey"/> / <see cref="RemoveSurvey"/> for mutation.
+    /// </summary>
+    public ObservableCollection<Survey> SurveysCollection => Surveys;
 
     /// <summary>
     /// Add stimulus to the test and update the stimulus cache. This method ensures that 
@@ -245,6 +255,30 @@ public partial class IatTest : ObservableObject
             _keyCache.Remove(key.Id);
             return key;
         }
+        return null;
+    }
+
+    /// <summary>
+    /// Adds a survey to the collection.
+    /// </summary>
+    /// <param name="survey">The survey to add.</param>
+    public void AddSurvey(Survey survey)
+    {
+        if (survey is null) return;
+        if (!Surveys.Contains(survey))
+            Surveys.Add(survey);
+    }
+
+    /// <summary>
+    /// Removes a survey from the collection.
+    /// </summary>
+    /// <param name="survey">The survey to remove.</param>
+    /// <returns>The removed survey, or null if not found.</returns>
+    public Survey? RemoveSurvey(Survey survey)
+    {
+        if (survey is null) return null;
+        if (Surveys.Remove(survey))
+            return survey;
         return null;
     }
 
@@ -395,6 +429,7 @@ public partial class IatTest : ObservableObject
         Trials.Clear();
         Keys.Clear();
         InstructionScreens.Clear();
+        Surveys.Clear();
 
         _stimulusCache.Clear();
         _blockCache.Clear();
@@ -420,6 +455,7 @@ public partial class IatTest : ObservableObject
         Trials.Clear();
         Keys.Clear();
         InstructionScreens.Clear();
+        Surveys.Clear();
 
         _stimulusCache.Clear();
         _blockCache.Clear();
@@ -450,6 +486,9 @@ public partial class IatTest : ObservableObject
 
         foreach (var screen in source.AllInstructionScreens)
             AddInstructionScreen(screen);
+
+        foreach (var survey in source.Surveys)
+            AddSurvey(survey);
     }
 
 

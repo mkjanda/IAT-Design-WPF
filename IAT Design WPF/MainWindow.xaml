@@ -70,6 +70,10 @@
                     <controls:TrialsManagerControl x:Name="TrialsManager" DataContext="{Binding TrialsManager}" />
                 </TabItem>
 
+                <TabItem Header="Surveys" FontSize="18" Width="80" Foreground="#F7C46C">
+                    <controls:SurveyManagerControl x:Name="SurveyManager" DataContext="{Binding SurveyManager}" />
+                </TabItem>
+
                 <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C"/>
             </TabControl>
 

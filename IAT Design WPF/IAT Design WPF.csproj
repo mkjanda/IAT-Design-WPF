@@ -102,7 +102,7 @@
     <ProjectReference Include="..\IAT.Core\IAT.Core.csproj">
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\IAT.VIewModels\IAT.ViewModels.csproj">
+    <ProjectReference Include="..\IAT.ViewModels\IAT.ViewModels.csproj">
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\IAT.Views\IAT.Views.csproj">
