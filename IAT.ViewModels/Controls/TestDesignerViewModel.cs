@@ -10,7 +10,7 @@ using System.Collections.Specialized;
 namespace IAT.ViewModels.Controls
 {
     /// <summary>
-    /// Main ViewModel for the entire designer (Blocks + Layout + Stimuli + Trials + Deploy tabs).
+    /// Main ViewModel for the entire designer (Blocks + Layout + Stimuli + Trials + Surveys + Deploy tabs).
     /// Owns document-level state (current path, dirty flag, window title) and the New/Open/Save/Save As commands.
     /// Holds references to the per-tab ViewModels that share the same singleton <see cref="IatTest"/>.
     /// </summary>
@@ -34,6 +34,9 @@ namespace IAT.ViewModels.Controls
 
         /// <summary>ViewModel for the Trials tab.</summary>
         public TrialsManagerViewModel TrialsManager { get; }
+
+        /// <summary>ViewModel for the Surveys tab.</summary>
+        public SurveyManagerViewModel SurveyManager { get; }
 
         /// <summary>Full path of the open project file, or null if never saved.</summary>
         [ObservableProperty]
@@ -70,7 +73,8 @@ namespace IAT.ViewModels.Controls
             BlockEditViewModel blockEditor,
             LayoutViewModel layoutEditor,
             StimuliManagerViewModel stimuliManager,
-            TrialsManagerViewModel trialsManager)
+            TrialsManagerViewModel trialsManager,
+            SurveyManagerViewModel surveyManager)
         {
             _packageService = packageService;
             _dialogService = dialogService;
@@ -80,6 +84,7 @@ namespace IAT.ViewModels.Controls
             LayoutEditor = layoutEditor;
             StimuliManager = stimuliManager;
             TrialsManager = trialsManager;
+            SurveyManager = surveyManager;
 
             // Child tabs broadcast edits; mark the document dirty.
             WeakReferenceMessenger.Default.Register<TestModifiedMessage>(this, (_, _) => MarkDirty());
@@ -89,6 +94,7 @@ namespace IAT.ViewModels.Controls
             _currentTest.Stimuli.CollectionChanged += (_, _) => MarkDirty();
             _currentTest.TrialsCollection.CollectionChanged += (_, _) => MarkDirty();
             _currentTest.KeysCollection.CollectionChanged += (_, _) => MarkDirty();
+            _currentTest.Surveys.CollectionChanged += (_, _) => MarkDirty();
         }
 
         private bool _suppressDirty;
@@ -242,6 +248,7 @@ namespace IAT.ViewModels.Controls
             BlockEditor.OnDocumentReset();
             TrialsManager.OnDocumentReset();
             StimuliManager.OnDocumentReset();
+            SurveyManager.OnDocumentReset();
         }
 
         private static string SanitizeFileName(string? name)

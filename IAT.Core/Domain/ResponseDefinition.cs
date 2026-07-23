@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace IAT.Core.Domain;
 
@@ -14,80 +16,82 @@ namespace IAT.Core.Domain;
 [JsonDerivedType(typeof(BoundedTextResponse), "BoundedText")]
 [JsonDerivedType(typeof(BoundedNumberResponse), "BoundedNumber")]
 [JsonDerivedType(typeof(RegexResponse), "Regex")]
-public abstract class ResponseDefinition
+public abstract partial class ResponseDefinition : ObservableObject
 {
 }
 
 /// <summary>
 /// Likert-scale response (numeric range with optional labels and reverse scoring).
 /// </summary>
-public sealed class LikertResponse : ResponseDefinition
+public partial class LikertResponse : ResponseDefinition
 {
-    public int Min { get; set; } = 1;
-    public int Max { get; set; } = 5;
-    public List<string> Labels { get; set; } = new();
-    public bool ReverseScored { get; set; }
+    [ObservableProperty] private int _min = 1;
+    [ObservableProperty] private int _max = 5;
+    [ObservableProperty] private bool _reverseScored;
+
+    /// <summary>Optional labels for each scale point (index 0 = Min). May be empty.</summary>
+    public ObservableCollection<string> Labels { get; } = new();
 }
 
 /// <summary>
 /// Single-select multiple choice.
 /// </summary>
-public sealed class MultipleChoiceResponse : ResponseDefinition
+public partial class MultipleChoiceResponse : ResponseDefinition
 {
-    public List<string> Choices { get; set; } = new();
+    public ObservableCollection<string> Choices { get; } = new();
 }
 
 /// <summary>
 /// Multi-select with optional min/max selection constraints.
 /// </summary>
-public sealed class MultiSelectResponse : ResponseDefinition
+public partial class MultiSelectResponse : ResponseDefinition
 {
-    public List<string> Choices { get; set; } = new();
-    public int? MinSelections { get; set; }
-    public int? MaxSelections { get; set; }
+    public ObservableCollection<string> Choices { get; } = new();
+    [ObservableProperty] private int? _minSelections;
+    [ObservableProperty] private int? _maxSelections;
 }
 
 /// <summary>
-/// Date response with optional bounds.
+/// Date response with optional bounds (ISO yyyy-MM-dd stored as DateOnly).
 /// </summary>
-public sealed class DateResponse : ResponseDefinition
+public partial class DateResponse : ResponseDefinition
 {
-    public DateOnly? MinDate { get; set; }
-    public DateOnly? MaxDate { get; set; }
+    [ObservableProperty] private DateOnly? _minDate;
+    [ObservableProperty] private DateOnly? _maxDate;
 }
 
 /// <summary>
 /// Fixed number of digits (e.g. PIN / code entry).
 /// </summary>
-public sealed class FixedDigitsResponse : ResponseDefinition
+public partial class FixedDigitsResponse : ResponseDefinition
 {
-    public int DigitCount { get; set; } = 4;
+    [ObservableProperty] private int _digitCount = 4;
 }
 
 /// <summary>
 /// Free text with length bounds.
 /// </summary>
-public sealed class BoundedTextResponse : ResponseDefinition
+public partial class BoundedTextResponse : ResponseDefinition
 {
-    public int MinLength { get; set; }
-    public int MaxLength { get; set; } = 500;
+    [ObservableProperty] private int _minLength;
+    [ObservableProperty] private int _maxLength = 500;
 }
 
 /// <summary>
 /// Numeric value with optional bounds and decimal places.
 /// </summary>
-public sealed class BoundedNumberResponse : ResponseDefinition
+public partial class BoundedNumberResponse : ResponseDefinition
 {
-    public double? Min { get; set; }
-    public double? Max { get; set; }
-    public int? DecimalPlaces { get; set; }
+    [ObservableProperty] private double? _min;
+    [ObservableProperty] private double? _max;
+    [ObservableProperty] private int? _decimalPlaces;
 }
 
 /// <summary>
 /// Text validated against a regular expression.
 /// </summary>
-public sealed class RegexResponse : ResponseDefinition
+public partial class RegexResponse : ResponseDefinition
 {
-    public string Pattern { get; set; } = @".+";
-    public string? ValidationMessage { get; set; }
+    [ObservableProperty] private string _pattern = @".+";
+    [ObservableProperty] private string? _validationMessage;
 }

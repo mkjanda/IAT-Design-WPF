@@ -1,22 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
-	  <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj">
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\IAT.ViewModels\IAT.ViewModels.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Templates\" />
+    <ProjectReference Include="..\IAT.Core\IAT.Core.csproj" />
   </ItemGroup>
 
 </Project>

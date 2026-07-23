@@ -83,6 +83,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<BlockEditViewModel>();
             services.AddSingleton<StimuliManagerViewModel>();
             services.AddSingleton<TrialsManagerViewModel>();
+            services.AddSingleton<SurveyManagerViewModel>();
             services.AddSingleton<TestDesignerViewModel>();
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
