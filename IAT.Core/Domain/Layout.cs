@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using IAT.Core.Enumerations;
+using IAT.Core.Services;
 
 namespace IAT.Core.Domain
 {
@@ -25,52 +26,52 @@ namespace IAT.Core.Domain
         /// <summary>
         /// Gets or sets the rectangle that defines the interior area available for content layout.
         /// </summary>
-        public Rect InteriorRect { get; private set; } = _defaultInteriorRect;
+        public Rect InteriorRect { get; set; } = _defaultInteriorRect;
 
         /// <summary>
         /// Gets or sets the rectangular area in which the stimulus is displayed.
         /// </summary>
-        public Rect StimulusRect { get; private set; } = _defaultStimulusRect;
+        public Rect StimulusRect { get; set; } = _defaultStimulusRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for the left key area.
         /// </summary>
-        public Rect LeftKeyRect { get; private set; } = _defaultLeftKeyRect;
+        public Rect LeftKeyRect { get; set; } = _defaultLeftKeyRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for the right key area.
         /// </summary>
-        public Rect RightKeyRect { get; private set; } = _defaultRightKeyRect;
+        public Rect RightKeyRect { get; set; } = _defaultRightKeyRect;
 
         /// <summary>
         /// Gets or sets the rectangle that defines the area used to display an error mark.
         /// </summary>
-        public Rect ErrorMarkRect { get; private set; } = _defaultErrorMarkRect;
+        public Rect ErrorMarkRect { get; set; } = _defaultErrorMarkRect;
 
         /// <summary>
         /// Gets  or sets the rectangle that defines the area for displaying block instructions.
         /// </summary>
-        public Rect BlockInstructionsRect { get; private set; } = _defaultBlockInstructionsRect;
+        public Rect BlockInstructionsRect { get; set; } = _defaultBlockInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for displaying mock item instructions.
         /// </summary>
-        public Rect MockItemInstructionsRect { get; private set; } = _defaultMockItemInstructionsRect;
+        public Rect MockItemInstructionsRect { get; set; } = _defaultMockItemInstructionsRect;
 
         /// <summary>
         /// Gets or sets the rectangular region used for displaying keyed instructions.
         /// </summary>
-        public Rect KeyedInstructionsRect { get; private set; } = _defaultKeyedInstructionsRect;
+        public Rect KeyedInstructionsRect { get; set; } = _defaultKeyedInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle that defines the area for displaying text instructions.
         /// </summary>
-        public Rect TextInstructionsRect { get; private set; } = _defaultTextInstructionsRect;
+        public Rect TextInstructionsRect { get; set; } = _defaultTextInstructionsRect;
 
         /// <summary>
         /// Gets or sets the bounding rectangle for displaying continue instructions.
         /// </summary>
-        public Rect ContinueInstructionsRect { get; private set; } = _defaultContinueInstructionsRect;
+        public Rect ContinueInstructionsRect { get; set; } = _defaultContinueInstructionsRect;
 
         TextStyle DefaultKeyStyle { get; } = new TextStyle { FontFamily = "Segoe UI", FontSize = 24, FontColor = Colors.Black };
 
@@ -80,18 +81,21 @@ namespace IAT.Core.Domain
         /// dimensions for those elements. This allows users to customize the layout by providing specific size overrides for individual elements, 
         /// which can be applied during layout calculations to adjust the interface according to user preferences or requirements.
         /// </summary>
-        public Dictionary<LayoutItem, Size> UserSizeOverrides = new();
+        public Dictionary<LayoutItem, Rect> UserSizeOverrides { get; set; } = new();
 
         private static readonly Rect _defaultInteriorRect = new Rect(0, 0, 600, 600);
         private static readonly Rect _defaultStimulusRect = new Rect(30, 140, 540, 300);
         private static readonly Rect _defaultLeftKeyRect = new Rect(0, 0, 200, 120);
         private static readonly Rect _defaultRightKeyRect = new Rect(400, 0, 200, 120);
         private static readonly Rect _defaultErrorMarkRect = new Rect(275, 450, 50, 50);
-        private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 320, 570, 80);
+        private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 520, 570, 80);
         private static readonly Rect _defaultMockItemInstructionsRect = new Rect(15, 510, 570, 60);
         private static readonly Rect _defaultKeyedInstructionsRect = new Rect(15, 135, 570, 410);
         private static readonly Rect _defaultTextInstructionsRect = new Rect(15, 15, 570, 530);
         private static readonly Rect _defaultContinueInstructionsRect = new Rect(15, 570, 570, 30);
+
+
+
 
         /// <summary>
         /// Restores all configurable rectangles to their default values.
@@ -137,6 +141,20 @@ namespace IAT.Core.Domain
             UserSizeOverrides.Clear();
             foreach (var kv in source.UserSizeOverrides)
                 UserSizeOverrides[kv.Key] = kv.Value;
+        }
+
+        public void ApplyRects(LayoutRects source)
+        {
+            InteriorRect = source.Interior;
+            StimulusRect = source.Stimulus;
+            LeftKeyRect = source.LeftKey;
+            RightKeyRect = source.RightKey;
+            ErrorMarkRect = source.ErrorMark;
+            BlockInstructionsRect = source.BlockInstructions;
+            MockItemInstructionsRect = source.MockItemInstructions;
+            KeyedInstructionsRect = source.KeyedInstructions;
+            TextInstructionsRect = source.TextInstructions;
+            ContinueInstructionsRect = source.ContinueInstructions;
         }
     }
 }

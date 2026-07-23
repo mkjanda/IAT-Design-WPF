@@ -77,6 +77,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Made a simple repair to App.xaml, setting its corresponding object's namespace correctly to IAT_Design_WPF. The previous entry had begun to block compilation. 
 - The trial preview of the block design view no resizes correctly with the window.
 - The preview panel of the block tab now sizes correctly with the window.
+- The save/load functionality of the Layout Editor has been repaired.
 ### Security
 - Enhanced the security of product activation to a public/private AES key exchange. Product activation is necessitated by allowing the user to upload images to the server for display. A product key and verified email address are essential to organizational self-protection.
 - Altered the handshaking algorithm with the server. It is now limited to a challenge/response exchange revolving around the AES encryption of a random string. This eliminates a web socket transaction from the process, and cuts "security for the sake of security."

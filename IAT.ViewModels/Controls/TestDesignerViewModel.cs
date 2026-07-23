@@ -129,6 +129,7 @@ namespace IAT.ViewModels.Controls
                 _currentTest.Reset();
                 CurrentFilePath = null;
                 IsDirty = false;
+                LayoutEditor.ReloadGeometry();
                 NotifyDocumentReset();
             }
             finally
@@ -162,6 +163,7 @@ namespace IAT.ViewModels.Controls
                 {
                     _currentTest.ReplaceWith(loaded);
                     CurrentFilePath = path;
+                    LayoutEditor.ReloadGeometry();
                     IsDirty = false;
 
                     NotifyDocumentReset();
@@ -181,6 +183,7 @@ namespace IAT.ViewModels.Controls
         [RelayCommand]
         private async Task SaveAsync()
         {
+            LayoutEditor.FlushToDomain();
             if (string.IsNullOrWhiteSpace(CurrentFilePath))
             {
                 await SaveAsAsync();
@@ -201,6 +204,7 @@ namespace IAT.ViewModels.Controls
             if (path is null)
                 return;
 
+            LayoutEditor.FlushToDomain();
             if (await SaveToPathAsync(path))
             {
                 CurrentFilePath = path;

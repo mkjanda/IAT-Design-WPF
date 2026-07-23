@@ -32,8 +32,7 @@ namespace IAT.ViewModels
         [ObservableProperty] private double mockItemInstructionsWidth;
         [ObservableProperty] private double mockItemInstructionsHeight;
         [ObservableProperty] private double keyedInstructionsWidth;
-        [ObservableProperty] private double keyedInstructionsHeight;
-        [ObservableProperty] private double textInstructionsWidth;
+        [ObservableProperty] private double keyedInstructionsHeight; [ObservableProperty] private double textInstructionsWidth;
         [ObservableProperty] private double textInstructionsHeight;
         [ObservableProperty] private double continueInstructionsWidth;
         [ObservableProperty] private double continueInstructionsHeight;
@@ -123,12 +122,12 @@ namespace IAT.ViewModels
         {
             try
             {
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(InteriorWidth, InteriorHeight));
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(StimulusWidth, StimulusHeight));
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(KeyWidth, KeyHeight));
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(KeyWidth, KeyHeight));
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(ErrorMarkWidth, ErrorMarkHeight));
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(BlockInstructionsWidth, BlockInstructionsHeight));
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Rect(0, 0, InteriorWidth, InteriorHeight));
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Rect(StimulusX, StimulusY, StimulusWidth, StimulusHeight));
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Rect(LeftKeyX, LeftKeyY, KeyWidth, KeyHeight));
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Rect(RightKeyX, RightKeyY, KeyWidth, KeyHeight));
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Rect(ErrorMarkX, ErrorMarkY, ErrorMarkWidth, ErrorMarkHeight));
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Rect(BlockInstructionsX, BlockInstructionsY, BlockInstructionsWidth, BlockInstructionsHeight));
 
                 StatusMessage = $"Layout saved — stage {InteriorWidth:0}×{InteriorHeight:0} px";
             }
@@ -202,12 +201,16 @@ namespace IAT.ViewModels
                 if (layoutWidth <= 0)
                     layoutWidth = value; // avoid divide-by-zero on first override
 
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(value, Math.Max(1, InteriorHeight)));
-                LeftKeyX = ((LeftKeyX + (KeyWidth / 2)) / layoutWidth) * value - (KeyWidth / 2);
-                StimulusX = ((StimulusX + (StimulusWidth / 2)) / layoutWidth) * value - (StimulusWidth / 2);
-                RightKeyX = ((RightKeyX + (KeyWidth / 2)) / layoutWidth) * value - (KeyWidth / 2);
-                ErrorMarkX = ((ErrorMarkX + (ErrorMarkWidth / 2)) / layoutWidth) * value - (ErrorMarkWidth / 2);
-                BlockInstructionsX = ((BlockInstructionsX + (BlockInstructionsWidth / 2)) / layoutWidth) * value - (BlockInstructionsWidth / 2);
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Rect(0, 0, value, Math.Max(1, InteriorHeight)));
+                LeftKeyX = ((LeftKeyX + (KeyWidth / 2)) * value / layoutWidth) - (KeyWidth * value / layoutWidth / 2);
+                RightKeyX = ((RightKeyX + (KeyWidth / 2)) * value / layoutWidth) - (KeyWidth * value / layoutWidth / 2);
+                KeyWidth *= value / layoutWidth;
+                StimulusX = ((StimulusX + (StimulusWidth / 2)) * value / layoutWidth) - (StimulusWidth * value / layoutWidth / 2);
+                StimulusWidth *= value / layoutWidth;
+                ErrorMarkX = ((ErrorMarkX + (ErrorMarkWidth / 2)) * value / layoutWidth) - (ErrorMarkWidth * value / layoutWidth / 2);
+                ErrorMarkWidth *= value / layoutWidth;
+                BlockInstructionsX = ((BlockInstructionsX + (BlockInstructionsWidth / 2)) * value / layoutWidth)  - (BlockInstructionsWidth * value / layoutWidth / 2);
+                BlockInstructionsWidth *= value / layoutWidth;
                 FitToWindow(_lastAvailableSize); // recompute scale factor to keep preview size stable
             }
             catch
@@ -229,12 +232,16 @@ namespace IAT.ViewModels
                 if (layoutHeight <= 0)
                     layoutHeight = value;
 
-                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Size(Math.Max(1, InteriorWidth), value));
-                LeftKeyY = ((LeftKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight / 2);
-                StimulusY = ((StimulusY + (StimulusHeight / 2)) / layoutHeight) * value - (StimulusHeight / 2);
-                RightKeyY = ((RightKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight / 2);
-                ErrorMarkY = ((ErrorMarkY + (ErrorMarkHeight / 2)) / layoutHeight) * value - (ErrorMarkHeight / 2);
-                BlockInstructionsY = ((BlockInstructionsY + (BlockInstructionsHeight / 2)) / layoutHeight) * value - (BlockInstructionsHeight / 2);
+                _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Interior, new Rect(0, 0, Math.Max(1, InteriorWidth), value));
+                LeftKeyY = ((LeftKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight * value / layoutHeight / 2);
+                RightKeyY = ((RightKeyY + (KeyHeight / 2)) / layoutHeight) * value - (KeyHeight * value / layoutHeight / 2);
+                KeyHeight *= value / layoutHeight;
+                StimulusY = ((StimulusY + (StimulusHeight / 2)) / layoutHeight) * value - (StimulusHeight * value / layoutHeight / 2);
+                StimulusHeight *= value / layoutHeight;
+                ErrorMarkY = ((ErrorMarkY + (ErrorMarkHeight / 2)) / layoutHeight) * value - (ErrorMarkHeight * value / layoutHeight / 2);
+                ErrorMarkHeight *= value / layoutHeight;
+                BlockInstructionsY = ((BlockInstructionsY + (BlockInstructionsHeight / 2)) / layoutHeight) * value - (BlockInstructionsHeight * value / layoutHeight / 2);
+                BlockInstructionsHeight *= value / layoutHeight;
                 FitToWindow(_lastAvailableSize); // recompute scale factor to keep preview size stable
             }
             catch
@@ -255,6 +262,15 @@ namespace IAT.ViewModels
         [ObservableProperty] private double errorMarkY;
         [ObservableProperty] private double blockInstructionsX;
         [ObservableProperty] private double blockInstructionsY;
+        [ObservableProperty] private double mockItemInstructionsX;
+        [ObservableProperty] private double mockItemInstructionsY;
+        [ObservableProperty] private double keyedInstructionsX;
+        [ObservableProperty] private double keyedInstructionsY;
+        [ObservableProperty] private double textInstructionsX;
+        [ObservableProperty] private double textInstructionsY;
+        [ObservableProperty] private double continueInstructionsX;
+        [ObservableProperty] private double continueInstructionsY;
+
 
         public double DesignWidth => InteriorWidth * ScaleFactor;
         public double DesignHeight => InteriorHeight * ScaleFactor;
@@ -356,33 +372,25 @@ namespace IAT.ViewModels
             var rects = _calculator.GetFinalRects(_test.Layout);
             InteriorWidth = rects.Interior.Width;
             InteriorHeight = rects.Interior.Height;
-            StimulusWidth = rects.Stimulus.Width;
-            StimulusHeight = rects.Stimulus.Height;
-            KeyWidth = rects.LeftKey.Width;
-            KeyHeight = rects.LeftKey.Height;
-            ErrorMarkWidth = rects.ErrorMark.Width;
-            ErrorMarkHeight = rects.ErrorMark.Height;
-            BlockInstructionsWidth = rects.BlockInstructions.Width;
-            BlockInstructionsHeight = rects.BlockInstructions.Height;
-            MockItemInstructionsWidth = rects.MockItemInstructions.Width;
-            MockItemInstructionsHeight = rects.MockItemInstructions.Height;
-            KeyedInstructionsWidth = rects.KeyedInstructions.Width;
-            KeyedInstructionsHeight = rects.KeyedInstructions.Height;
-            TextInstructionsWidth = rects.TextInstructions.Width;
-            TextInstructionsHeight = rects.TextInstructions.Height;
-            ContinueInstructionsWidth = rects.ContinueInstructions.Width;
-            ContinueInstructionsHeight = rects.ContinueInstructions.Height;
+            StimulusX = rects.Stimulus.X; StimulusY = rects.Stimulus.Y; 
+            StimulusWidth = rects.Stimulus.Width; StimulusHeight = rects.Stimulus.Height;
+            LeftKeyX = rects.LeftKey.X; LeftKeyY = rects.LeftKey.Y; 
+            RightKeyX = rects.RightKey.X; RightKeyY = rects.RightKey.Y; 
+            ErrorMarkX = rects.ErrorMark.X; ErrorMarkY = rects.ErrorMark.Y; 
+            KeyWidth = rects.LeftKey.Width; KeyHeight = rects.LeftKey.Height;
+            ErrorMarkX = rects.ErrorMark.X; ErrorMarkY = rects.ErrorMark.Y;
+            ErrorMarkWidth = rects.ErrorMark.Width; ErrorMarkHeight = rects.ErrorMark.Height;
+            BlockInstructionsX = rects.BlockInstructions.X; BlockInstructionsY = rects.BlockInstructions.Y;
+            BlockInstructionsWidth = rects.BlockInstructions.Width; BlockInstructionsHeight = rects.BlockInstructions.Height;
+            MockItemInstructionsX = rects.MockItemInstructions.X; MockItemInstructionsY = rects.MockItemInstructions.Y;
+            MockItemInstructionsWidth = rects.MockItemInstructions.Width; MockItemInstructionsHeight = rects.MockItemInstructions.Height;
+            KeyedInstructionsX = rects.KeyedInstructions.X; KeyedInstructionsY = rects.KeyedInstructions.Y;
+            KeyedInstructionsWidth = rects.KeyedInstructions.Width; KeyedInstructionsHeight = rects.KeyedInstructions.Height;
+            TextInstructionsX = rects.TextInstructions.X; TextInstructionsY = rects.TextInstructions.Y;
+            TextInstructionsWidth = rects.TextInstructions.Width; TextInstructionsHeight = rects.TextInstructions.Height;
+            ContinueInstructionsX = rects.ContinueInstructions.X; ContinueInstructionsY = rects.ContinueInstructions.Y;
+            ContinueInstructionsWidth = rects.ContinueInstructions.Width; ContinueInstructionsHeight = rects.ContinueInstructions.Height;
 
-            StimulusX = rects.Stimulus.X;
-            StimulusY = rects.Stimulus.Y;
-            LeftKeyX = rects.LeftKey.X;
-            LeftKeyY = rects.LeftKey.Y;
-            RightKeyX = rects.RightKey.X;
-            RightKeyY = rects.RightKey.Y;
-            ErrorMarkX = rects.ErrorMark.X;
-            ErrorMarkY = rects.ErrorMark.Y;
-            BlockInstructionsX = rects.BlockInstructions.X;
-            BlockInstructionsY = rects.BlockInstructions.Y;
 
             if (StimulusX == 0 && StimulusY == 0 && ErrorMarkX == 0)
                 RecalculateDefaultPositions();
@@ -394,84 +402,84 @@ namespace IAT.ViewModels
 
         partial void OnStimulusWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(value, StimulusHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Rect(StimulusX, StimulusY, value, StimulusHeight));
         }
 
         partial void OnStimulusHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Size(StimulusWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.Stimulus, new Rect(StimulusX, StimulusY, StimulusWidth, value));
         }
 
         partial void OnKeyWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(value, KeyHeight));
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(value, KeyHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Rect(LeftKeyX, LeftKeyY, value, KeyHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Rect(RightKeyX, RightKeyY, value, KeyHeight));
         }
 
         partial void OnKeyHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Size(KeyWidth, value));
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Size(KeyWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Rect(LeftKeyX, LeftKeyY, KeyWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Rect(RightKeyX, RightKeyY, KeyWidth, value));
         }
 
         partial void OnErrorMarkWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(value, ErrorMarkHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Rect(ErrorMarkX, ErrorMarkY, value, ErrorMarkHeight));
         }
 
         partial void OnErrorMarkHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Size(ErrorMarkWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Rect(ErrorMarkX, ErrorMarkY, ErrorMarkWidth, value));
         }
 
         partial void OnBlockInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(value, BlockInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Rect(BlockInstructionsX, BlockInstructionsY, value, BlockInstructionsHeight));
         }
 
         partial void OnBlockInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Size(BlockInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.BlockInstructions, new Rect(BlockInstructionsX, BlockInstructionsY, BlockInstructionsWidth, value));
         }
 
         partial void OnMockItemInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Size(value, MockItemInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Rect(MockItemInstructionsX, MockItemInstructionsY, value, MockItemInstructionsHeight));
         }
 
         partial void OnMockItemInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Size(MockItemInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Rect(MockItemInstructionsX, MockItemInstructionsY, MockItemInstructionsWidth, value));
         }
 
         partial void OnKeyedInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Size(value, KeyedInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Rect(KeyedInstructionsX, KeyedInstructionsY, value, KeyedInstructionsHeight));
         }
 
         partial void OnKeyedInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Size(KeyedInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Rect(KeyedInstructionsX, KeyedInstructionsY, KeyedInstructionsWidth, value));
         }
 
         partial void OnTextInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Size(value, TextInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Rect(TextInstructionsX, TextInstructionsY, value, TextInstructionsHeight));
         }
 
         partial void OnTextInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Size(TextInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Rect(TextInstructionsX, TextInstructionsY, TextInstructionsWidth, value));
         }
 
         partial void OnContinueInstructionsWidthChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Size(value, ContinueInstructionsHeight));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Rect(ContinueInstructionsX, ContinueInstructionsY, value, ContinueInstructionsHeight));
         }
 
         partial void OnContinueInstructionsHeightChanged(double value)
         {
-            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Size(ContinueInstructionsWidth, value));
+            _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Rect(ContinueInstructionsX, ContinueInstructionsY, ContinueInstructionsWidth, value));
         }
 
         // ── Trial / block preview API ─────────────────────────────────────────
@@ -709,5 +717,11 @@ namespace IAT.ViewModels
             image.Freeze();
             return image;
         }
+        public void FlushToDomain()
+        {
+            LayoutRects rects = _calculator.GetFinalRects(_test.Layout);
+            _test.Layout.ApplyRects(rects); 
+        }
     }
+
 }
