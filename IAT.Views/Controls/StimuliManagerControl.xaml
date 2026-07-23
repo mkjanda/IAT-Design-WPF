@@ -8,6 +8,18 @@
              Background="#1E1E1E">
 
     <UserControl.Resources>
+        <conv:StimulusEditTemplateSelector x:Key="StimulusEditSelector">
+            <conv:StimulusEditTemplateSelector.TextEditTemplate>
+                <DataTemplate>
+                    <local:TextStimulusEditControl DataContext="{Binding}"/>
+                </DataTemplate>
+            </conv:StimulusEditTemplateSelector.TextEditTemplate>
+            <conv:StimulusEditTemplateSelector.ImageEditTemplate>
+                <DataTemplate>
+                    <local:ImageStimulusEditControl DataContext="{Binding}"/>
+                </DataTemplate>
+            </conv:StimulusEditTemplateSelector.ImageEditTemplate>
+        </conv:StimulusEditTemplateSelector>
 
         <!-- Simple DataTemplate for domain Stimulus objects in the ListBox -->
         <DataTemplate DataType="{x:Type domain:TextStimulus}">
