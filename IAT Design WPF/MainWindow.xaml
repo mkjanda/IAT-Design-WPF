@@ -74,7 +74,9 @@
                     <controls:SurveyManagerControl x:Name="SurveyManager" DataContext="{Binding SurveyManager}" />
                 </TabItem>
 
-                <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C"/>
+                <TabItem Header="Deploy" FontSize="18" Width="70" Foreground="#F7C46C">
+                    <controls:DeployManagerControl x:Name="DeployManager" DataContext="{Binding DeployManager}" />
+                </TabItem>
             </TabControl>
 
             <controls:ErrorBannerControl x:Name="ErrorBanner"

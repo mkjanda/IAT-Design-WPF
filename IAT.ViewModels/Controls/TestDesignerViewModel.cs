@@ -38,6 +38,9 @@ namespace IAT.ViewModels.Controls
         /// <summary>ViewModel for the Surveys tab.</summary>
         public SurveyManagerViewModel SurveyManager { get; }
 
+        /// <summary>ViewModel for the Deploy tab.</summary>
+        public DeployManagerViewModel DeployManager { get; }
+
         /// <summary>Full path of the open project file, or null if never saved.</summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(WindowTitle))]
@@ -74,7 +77,8 @@ namespace IAT.ViewModels.Controls
             LayoutViewModel layoutEditor,
             StimuliManagerViewModel stimuliManager,
             TrialsManagerViewModel trialsManager,
-            SurveyManagerViewModel surveyManager)
+            SurveyManagerViewModel surveyManager,
+            DeployManagerViewModel deployManager)
         {
             _packageService = packageService;
             _dialogService = dialogService;
@@ -85,6 +89,7 @@ namespace IAT.ViewModels.Controls
             StimuliManager = stimuliManager;
             TrialsManager = trialsManager;
             SurveyManager = surveyManager;
+            DeployManager = deployManager;
 
             // Child tabs broadcast edits; mark the document dirty.
             WeakReferenceMessenger.Default.Register<TestModifiedMessage>(this, (_, _) => MarkDirty());

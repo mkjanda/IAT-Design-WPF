@@ -41,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added New, Open, Save, and Save As buttons.
 - Implementation of New, Open, Save, and Save As buttons complete but slightly buggy.
 - Added an interface for creating and editing surveys. Survey items have one of several response types, including multiple choice, text entry, and Likert scale. Images can be included in surveys as well as a header that will have an editable format.
+- Initial XAML, backing view and view model classes for the Deploy interface have been written.
+- The Deploy interface has been successfully integrated into the application.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 

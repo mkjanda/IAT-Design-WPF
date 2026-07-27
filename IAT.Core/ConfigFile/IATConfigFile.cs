@@ -135,7 +135,7 @@ public class IATConfigFile
     /// Gets or sets the layout configuration for this instance.
     /// </summary>
     [XmlElement("Layout", Form = XmlSchemaForm.Unqualified, Type = typeof(Layout))]
-    public Layout Layout { get; set; }
+    public Layout Layout { get; set; } = new Layout();
 
     /// <summary>
     /// Gets or sets the collection of surveys as base64-encoded XML strings.

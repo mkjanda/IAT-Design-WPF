@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:domain="clr-namespace:IAT.Core.Domain;assembly=IAT.Core"
              xmlns:vm="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
-             xmlns:conv="clr-namespace:IAT.ViewModels.Converters;assembly=IAT.ViewModels"
+             xmlns:conv="clr-namespace:IAT.Views.Converters;assembly=IAT.Views"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="#1E1E1E">
@@ -160,10 +160,10 @@
             <StackPanel>
                 <TextBlock Text="Date Response" Foreground="#4EC9B0" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Text="Min date (yyyy-MM-dd, blank = none)" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
-                <TextBox Text="{Binding MinDate, Converter={StaticResource DateOnlyToStringConverter}, UpdateSourceTrigger=PropertyChanged}"
+                <TextBox Text="{Binding MinDate, Converter={StaticResource DateOnlyToString}, UpdateSourceTrigger=PropertyChanged}"
                          Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6" Margin="0,0,0,8"/>
                 <TextBlock Text="Max date (yyyy-MM-dd, blank = none)" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
-                <TextBox Text="{Binding MaxDate, Converter={StaticResource DateOnlyToStringConverter}, UpdateSourceTrigger=PropertyChanged}"
+                <TextBox Text="{Binding MaxDate, Converter={StaticResource DateOnlyToString}, UpdateSourceTrigger=PropertyChanged}"
                          Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6"/>
             </StackPanel>
         </DataTemplate>
@@ -317,19 +317,19 @@
                              Text="{Binding SurveyName, UpdateSourceTrigger=PropertyChanged}"
                              Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
                              Padding="8,6" Margin="0,0,12,0"
-                             IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBoolConverter}, FallbackValue=False}"/>
+                             IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBool}, FallbackValue=False}"/>
 
                     <TextBlock Grid.Row="0" Grid.Column="1" Text="Timeout (sec)" Foreground="#AAA" FontSize="12" Margin="0,0,0,4"/>
                     <TextBox Grid.Row="1" Grid.Column="1"
                              Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
                              Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
                              Padding="8,6" Margin="0,0,12,0"
-                             IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBoolConverter}, FallbackValue=False}"/>
+                             IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBool}, FallbackValue=False}"/>
 
                     <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <CheckBox IsChecked="{Binding AllQuestionsOptional}"
                                   VerticalAlignment="Center"
-                                  IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBoolConverter}, FallbackValue=False}"/>
+                                  IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBool}, FallbackValue=False}"/>
                         <TextBlock Text="All optional" Foreground="#CCC" Margin="6,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
@@ -386,16 +386,16 @@
                     <StackPanel>
                         <!-- Common text field (Header / Instruction / Question) -->
                         <TextBlock Text="Text" Foreground="#AAA" FontSize="12" Margin="0,0,0,4"
-                                   Visibility="{Binding ShowItemTextEditor, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                   Visibility="{Binding ShowItemTextEditor, Converter={StaticResource BoolToVisibility}}"/>
                         <TextBox Text="{Binding ItemText, UpdateSourceTrigger=PropertyChanged}"
                                  TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60"
                                  Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
                                  Padding="8" Margin="0,0,0,12"
-                                 Visibility="{Binding ShowItemTextEditor, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                 Visibility="{Binding ShowItemTextEditor, Converter={StaticResource BoolToVisibility}}"/>
 
                         <!-- Optional override (questions only) -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16"
-                                    Visibility="{Binding ItemIsOptional, Converter={StaticResource NullToVisibilityConverter}}">
+                                    Visibility="{Binding ItemIsOptional, Converter={StaticResource NullToVisibility}}">
                             <CheckBox IsChecked="{Binding ItemIsOptional}" VerticalAlignment="Center"/>
                             <TextBlock Text="This question is optional (overrides survey default)"
                                        Foreground="#CCC" Margin="6,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
@@ -403,12 +403,12 @@
 
                         <!-- Response type selector (questions only) -->
                         <TextBlock Text="Response Type" Foreground="#AAA" FontSize="12" Margin="0,0,0,4"
-                                   Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                   Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibility}}"/>
                         <ComboBox SelectedValue="{Binding SelectedResponseType}"
                                   SelectedValuePath="Content"
                                   Style="{StaticResource DarkComboBox}"
                                   Margin="0,0,0,12"
-                                  Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibilityConverter}}">
+                                  Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibility}}">
                             <ComboBoxItem Content="Likert"/>
                             <ComboBoxItem Content="MultipleChoice"/>
                             <ComboBoxItem Content="MultiSelect"/>
@@ -424,16 +424,16 @@
                                 Command="{Binding ChangeResponseTypeCommand}"
                                 CommandParameter="{Binding SelectedResponseType}"
                                 Style="{StaticResource AccentButton}" Height="32" Margin="0,0,0,16"
-                                Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibility}}"/>
 
                         <!-- Type-specific response editor (implicit DataTemplates above) -->
                         <Border Background="#252526" CornerRadius="4" Padding="12"
-                                Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibilityConverter}}">
+                                Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibility}}">
                             <ContentControl Content="{Binding CurrentResponse}"/>
                         </Border>
 
                         <!-- Image item editor -->
-                        <StackPanel Visibility="{Binding IsImageItemSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel Visibility="{Binding IsImageItemSelected, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock Text="Survey Image" Foreground="#C586C0" FontWeight="SemiBold" Margin="0,0,0,10"/>
                             <TextBlock Text="{Binding CurrentImageFileName}" Foreground="#AAA" FontSize="12"
                                        TextTrimming="CharacterEllipsis" Margin="0,0,0,8"/>

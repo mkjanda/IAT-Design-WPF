@@ -1,37 +1,30 @@
-﻿using FluentValidation;
-using System.Windows;
-using Velopack;
-using Microsoft.Extensions.DependencyInjection;
-using IAT.Core.Services;
+﻿using com.sun.org.slf4j.@internal;
+using FluentValidation;
+using IAT.Core.Domain;
+using IAT.Core.Handlers;
 using IAT.Core.Models;
-using System.CodeDom;
+using IAT.Core.Serializable;
+using IAT.Core.Services;
+using IAT.Core.Services.Export;
+using IAT.Core.Services.Network;
+using IAT.Core.Validation;
+using IAT.ViewModels;
+using IAT.ViewModels.Controls;
 using IAT.Views;
 using IAT_Design_WPF.Services;
-using IAT.Core.Serializable;
-using IAT.Core.Handlers;
-using IAT.ViewModels;
-using IAT.Core.Services.Network;
-using IAT.Core.Services.Export;
-using IAT.Core.Domain;
-using IAT.Core.Validation;
-using IAT.ViewModels.Controls;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.CodeDom;
+using System.Windows;
+using Velopack;
 
 namespace IAT_Design_WPF
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
-        /// <summary>
-        /// Gets the service provider for dependency injection.
-        /// </summary>
-        public static IServiceProvider Services { get; private set; } 
+        public static IServiceProvider Services { get; private set; }
 
-        /// <summary>
-        /// Handles the startup event of the application.
-        /// </summary>
-        /// <param name="e">The startup event arguments.</param>
         protected async override void OnStartup(StartupEventArgs e)
         {
             /*        // 1. VelopackApp MUST run FIRST — this sets up the locator and is required
@@ -57,7 +50,13 @@ namespace IAT_Design_WPF
 
             services.AddSingleton<TransactionState>();
 
+            services.AddLogging(builder =>
+            {
+                builder.AddDebug();               // shows up in VS Output → Debug
+                builder.SetMinimumLevel(LogLevel.Debug);
+            });
 
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
             // Register your services here as we build them
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
@@ -94,6 +93,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<StimuliManagerViewModel>();
             services.AddSingleton<TrialsManagerViewModel>();
             services.AddSingleton<SurveyManagerViewModel>();
+            services.AddSingleton<DeployManagerViewModel>();
             services.AddSingleton<TestDesignerViewModel>();
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());

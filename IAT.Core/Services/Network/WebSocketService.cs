@@ -110,7 +110,6 @@ namespace IAT.Core.Services.Network
                 { TransactionType.EMailAlreadyVerified, (request) => new EMailAlreadyVerifiedCommand(request) },
                 { TransactionType.EncryptionKeyReceived, (request) => new EncryptionKeyReceivedCommand(request) },
                 { TransactionType.IATBeingDeployed, (request) => new IATBeingDeployedCommand(request) },
-                { TransactionType.PasswordInvalid, (request) => new InvalidPasswordCommand(request) },
                 { TransactionType.ItemSlideDownloadReady, (request) => new ItemSlidesReadyCommand(request) },
                 { TransactionType.NoActivationsRemain, (request) => new NoActivationsCommand(request) },
                 { TransactionType.NoSuchClient, (request) => new NoSuchClientCommand(request) },

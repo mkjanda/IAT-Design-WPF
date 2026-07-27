@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Templates\**" />
+    <EmbeddedResource Remove="Templates\**" />
+    <None Remove="Templates\**" />
+    <Page Remove="Templates\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\IAT.Core\IAT.Core.csproj">
       <Private>True</Private>
     </ProjectReference>
@@ -16,7 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Templates\" />
+    <Folder Include="Resources\" />
+	  <Folder Include="Converters\" />
   </ItemGroup>
 
 </Project>

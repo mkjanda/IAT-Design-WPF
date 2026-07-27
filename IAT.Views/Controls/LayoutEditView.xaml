@@ -9,7 +9,6 @@
              Background="#1E1E1E">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style x:Key="ResizeThumbStyle" TargetType="{x:Type primitives:Thumb}">
             <Setter Property="Width" Value="10"/>
             <Setter Property="Height" Value="10"/>
@@ -17,7 +16,7 @@
             <Setter Property="IsEnabled" Value="{Binding IsLayoutEditMode}"/>
             <Setter Property="IsHitTestVisible" Value="{Binding IsLayoutEditMode}"/>
             <!-- Fully hidden unless Edit Mode is on — not merely disabled -->
-            <Setter Property="Visibility" Value="{Binding IsLayoutEditMode, Converter={StaticResource BoolToVis}}"/>
+            <Setter Property="Visibility" Value="{Binding IsLayoutEditMode, Converter={StaticResource BoolToVisibility}}"/>
             <Setter Property="Opacity" Value="0.95"/>
             <Setter Property="Panel.ZIndex" Value="10"/>
             <Setter Property="Cursor" Value="SizeAll"/>
@@ -56,7 +55,7 @@
                             ClipToBounds="False"
                             Tag="BlockInstructions"
                             Cursor="SizeAll"
-                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrush}}"
                             PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
@@ -82,7 +81,7 @@
                             ClipToBounds="False"
                             Tag="Stimulus"
                             Cursor="SizeAll"
-                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrush}}"
                             PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
@@ -108,7 +107,7 @@
                             ClipToBounds="False"
                             Tag="LeftKey"
                             Cursor="SizeAll"
-                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrush}}"
                             PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
@@ -134,7 +133,7 @@
                             ClipToBounds="False"
                             Tag="RightKey"
                             Cursor="SizeAll"
-                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrush}}"
                             PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">
@@ -160,7 +159,7 @@
                             ClipToBounds="False"
                             Tag="ErrorMark"
                             Cursor="SizeAll"
-                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrushConverter}}"
+                            BorderBrush="{Binding IsLayoutEditMode, Converter={StaticResource BoolToBorderBrush}}"
                             PreviewMouseLeftButtonDown="OnElementMouseLeftButtonDown"
                             MouseMove="OnElementMouseMove"
                             PreviewMouseLeftButtonUp="OnElementMouseLeftButtonUp">

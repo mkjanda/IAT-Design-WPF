@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
 using System.Collections;
+using com.sun.org.apache.bcel.@internal.generic;
 
 namespace IAT.Core.Services
 {
@@ -67,7 +68,6 @@ namespace IAT.Core.Services
                                                 240, 128, 216, 112, 182, 247, 222, 212, 104, 30, 54, 76, 56, 193, 227, 140 };
         private static readonly byte[] storageKey = { 49, 132, 90, 177, 63, 214, 120, 45, 173, 200, 34, 167, 88, 155, 201, 114,
                                                         200, 56, 173, 241, 93, 162, 205, 149, 67, 218, 132, 19, 253, 110, 244, 175 };
-        private static readonly int KeyBytes = 32;
         private static readonly int NonceBytes = 12;
         private static readonly int TagBytes = 16;
 
@@ -166,7 +166,7 @@ namespace IAT.Core.Services
             {
 
                     String value;
-                    value = ActivationDocument?.Root?.Elements()?.Where(elem => elem.Name == key.Name)?.Select(elem => elem.Value)?.FirstOrDefault() ?? string.Empty;
+                value = ActivationDocument?.Root?.Elements()?.Where(elem => elem.Name == key.Name)?.Select(elem => elem.Value)?.FirstOrDefault() ?? string.Empty;
                     if (value == string.Empty)
                         return string.Empty; 
                     if (key.Encrypted)
