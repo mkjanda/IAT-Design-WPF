@@ -1,3 +1,5 @@
+## Elmo
+
 # IAT-Design-WPF
 
 A WPF application for designing and managing Implicit Association Tests (IATs). This tool allows users to create, validate, and persist IAT test configurations, including stimuli (images and text), blocks, trials, and instructions, using a package-based file format.
