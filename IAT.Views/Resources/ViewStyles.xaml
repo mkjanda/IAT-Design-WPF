@@ -22,6 +22,24 @@
         </Setter>
     </Style>
 
+    <Style x:Key="BlackButton" TargetType="Button" BasedOn="{StaticResource AccentButton}">
+        <Setter Property="Background" Value="#1E1E1E"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style x:Key="WhiteButton" TargetType="Button" BasedOn="{StaticResource AccentButton}">
+        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="Foreground" Value="#1E1E1E"/>
+    </Style>
+    <Style x:Key="PleasantButton" TargetType="Button" BasedOn="{StaticResource AccentButton}">
+        <Setter Property="Background" Value="#00BFA5"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style x:Key="UnpleasantButton" TargetType="Button" BasedOn="{StaticResource AccentButton}">
+        <Setter Property="Background" Value="#E0E0E0"/>
+        <Setter Property="Foreground" Value="#1E1E1E"/>
+    </Style>
+
+
     <!-- Dark TextBox Style -->
     <Style x:Key="DarkTextBox" TargetType="TextBox">
         <Setter Property="Background" Value="#2D2D2D"/>

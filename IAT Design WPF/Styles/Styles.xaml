@@ -92,6 +92,25 @@
         <Setter Property="Foreground" Value="#1E1E1E"/>
     </Style>
 
+
+    <Style x:Key="BlackButton" TargetType="Button" BasedOn="{StaticResource PaletteButton}">
+        <Setter Property="Background" Value="#1E1E1E"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style x:Key="WhiteButton" TargetType="Button" BasedOn="{StaticResource PaletteButton}">
+        <Setter Property="Background" Value="#F5F5F5"/>
+        <Setter Property="Foreground" Value="#1E1E1E"/>
+    </Style>
+    <Style x:Key="PleasantButton" TargetType="Button" BasedOn="{StaticResource PaletteButton}">
+        <Setter Property="Background" Value="#00BFA5"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style x:Key="UnpleasantButton" TargetType="Button" BasedOn="{StaticResource PaletteButton}">
+        <Setter Property="Background" Value="#E0E0E0"/>
+        <Setter Property="Foreground" Value="#1E1E1E"/>
+    </Style>
+
+    
     <!-- ==================== LIBRARY LISTBOX ==================== -->
     <Style x:Key="StimuliLibraryListBox" TargetType="ListBox">
         <Setter Property="Background" Value="Transparent"/>

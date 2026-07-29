@@ -93,7 +93,7 @@
                     <ComboBox ItemsSource="{x:Static vm:InstructionManagerViewModel.TypeOptions}"
                               SelectedItem="{Binding SelectedType, Mode=TwoWay}"
                               Style="{StaticResource DarkComboBox}"
-                              Height="32" Margin="0,0,0,12"/>
+                              Margin="0,0,0,12"/>
 
                     <!-- Instruction text -->
                     <TextBlock Text="Instruction Text" Style="{StaticResource DarkLabel}"/>
@@ -111,7 +111,6 @@
                              Style="{StaticResource DarkTextBox}"
                              TextWrapping="Wrap"
                              AcceptsReturn="True"
-                             MinHeight="48"
                              Margin="0,0,0,16"
                              ToolTip="Participants always press Space to continue. Customize the prompt text here."/>
 
@@ -139,7 +138,7 @@
                         </Grid>
                         <TextBox Text="{Binding LeftKeyValue, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource DarkTextBox}"
-                                 Height="32" Margin="0,0,0,12"
+                                 Margin="0,0,0,12"
                                  IsEnabled="{Binding IsLeftKeyEditable}"
                                  ToolTip="Key value shown to participants. Editable only for keys created here (not used by any block in the Trials tab)."/>
 
@@ -165,7 +164,7 @@
                         </Grid>
                         <TextBox Text="{Binding RightKeyValue, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource DarkTextBox}"
-                                 Height="32" Margin="0,0,0,16"
+                                 Margin="0,0,0,16"
                                  IsEnabled="{Binding IsRightKeyEditable}"
                                  ToolTip="Key value shown to participants. Editable only for keys created here (not used by any block in the Trials tab)."/>
                     </StackPanel>
@@ -220,7 +219,7 @@
                     <TextBlock Text="Assigned to Blocks" Style="{StaticResource SectionHeader}" Margin="0,8,0,8"/>
                     <Border Background="#2A2A2A" CornerRadius="4" Padding="10" Margin="0,0,0,10"
                             MaxHeight="180">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MinHeight="48">
                             <ItemsControl ItemsSource="{Binding BlockAssignments}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:BlockAssignmentItem}">
@@ -233,23 +232,16 @@
                             </ItemsControl>
                         </ScrollViewer>
                     </Border>
-                    <Grid Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                    <StackPanel>
                         <Button Content="Assign to Selected Blocks"
-                                Grid.Column="0"
                                 Command="{Binding AssignToSelectedBlocksCommand}"
                                 Style="{StaticResource AccentButton}"
-                                Height="32"/>
+                                Height="32" Padding="0 0 6 0" Margin="0 0 0 6"/>
                         <Button Content="Remove from Selected Blocks"
-                                Grid.Column="2"
-                                Command="{Binding RemoveFromSelectedBlocksCommand}"
-                                Background="#1C1C1C" Foreground="#E0E0E0"
-                                Height="32"/>
-                    </Grid>
+                                Command="{Binding RemoveFromSelectedBlocksCommand}" Style="{StaticResource UnpleasantButton}"
+
+                                Height="32" Padding="0 0 6 0" Margin="0 0 0 6"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <TextBlock Text="Select or add an instruction screen."
@@ -275,6 +267,7 @@
                                 Height="{Binding InteriorHeight}"
                                 BorderBrush="#444" BorderThickness="1"
                                 SnapsToDevicePixels="True">
+                            
                             <Grid>
                                 <!-- Text-only: full-area text, body top-aligned in the content band -->
                                 <DockPanel Margin="24"

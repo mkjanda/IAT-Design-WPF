@@ -66,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Modified Layout Editor to fit its host correctly, size correctly, and reposition its components correctly when its dimensions change.
 - Error fixes on Layout Editor involving repositioning of elements and deflating their sizes.
 - The error banner in the main window is now used for reporting errors to the user instead of dialog boxes.
+- Cosmetic improvements made to InstructionManagerControl.
 ### Deprecated
 ### Removed
 - Removed support for older versions of .NET, as the application now requires .NET 10.0 or later to take advantage of the latest features and improvements. 

@@ -1,4 +1,3 @@
-## Elmo
 
 # IAT-Design-WPF
 
