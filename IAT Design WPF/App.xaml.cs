@@ -1,4 +1,3 @@
-﻿using com.sun.org.slf4j.@internal;
 using FluentValidation;
 using IAT.Core.Domain;
 using IAT.Core.Handlers;
@@ -15,7 +14,6 @@ using IAT_Design_WPF.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.CodeDom;
 using System.Windows;
 using Velopack;
 
@@ -23,9 +21,9 @@ namespace IAT_Design_WPF
 {
     public partial class App : Application
     {
-        public static IServiceProvider Services { get; private set; }
+        public static IServiceProvider Services { get; private set; } = null!;
 
-        protected async override void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             /*        // 1. VelopackApp MUST run FIRST — this sets up the locator and is required
                     VelopackApp.Build()
@@ -57,6 +55,7 @@ namespace IAT_Design_WPF
             });
 
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
+
             // Register your services here as we build them
             services.AddSingleton<ILocalStorageService, LocalStorageService>();
             services.AddSingleton<IXmlDeserializationService, XmlDeserializationService>();
@@ -85,6 +84,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<IValidator<Stimulus>, StimulusValidator>();
             services.AddSingleton<IValidator<InstructionScreen>, InstructionScreenValidator>();
             services.AddSingleton<IValidator<Trial>, TrialValidator>();
+
             // Domain model first — shared singleton used by all designer tabs
             services.AddSingleton<IatTest>();
 
@@ -93,10 +93,9 @@ namespace IAT_Design_WPF
             services.AddSingleton<StimuliManagerViewModel>();
             services.AddSingleton<TrialsManagerViewModel>();
             services.AddSingleton<SurveyManagerViewModel>();
+            services.AddSingleton<InstructionManagerViewModel>();
             services.AddSingleton<DeployManagerViewModel>();
             services.AddSingleton<TestDesignerViewModel>();
-
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
 
             Services = services.BuildServiceProvider();
 

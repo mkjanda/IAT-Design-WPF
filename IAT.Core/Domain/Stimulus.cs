@@ -1,4 +1,4 @@
-﻿using IAT.Core.Enumerations;
+using IAT.Core.Enumerations;
 using System.Text.Json.Serialization;
 
 namespace IAT.Core.Domain;
@@ -34,7 +34,7 @@ public abstract partial class Stimulus
     public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.None;
 
     /// <summary>
-    /// Gets or sets the type of the stimulus (e.g., Image, Text).
+    /// Validates the stimulus.
     /// </summary>
     /// <returns>A ValidationResult indicating whether the stimulus is valid.</returns>
     public abstract ValidationResult Validate();
@@ -44,4 +44,9 @@ public abstract partial class Stimulus
     /// </summary>
     /// <returns>A string representing the stimulus for display.</returns>
     public abstract string GetDisplayPreview();
+
+    /// <summary>
+    /// Gets or sets the display text for the stimulus (for text stimuli this is the content; for images it is typically the file name).
+    /// </summary>
+    public abstract string Text { get; set; }
 }

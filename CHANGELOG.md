@@ -43,6 +43,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added an interface for creating and editing surveys. Survey items have one of several response types, including multiple choice, text entry, and Likert scale. Images can be included in surveys as well as a header that will have an editable format.
 - Initial XAML, backing view and view model classes for the Deploy interface have been written.
 - The Deploy interface has been successfully integrated into the application.
+- Instruction screen interface designed and implemented. It allows for the definition of three different types of screens, adding them to blocks, and previewing them.
+- Instruction screen preview has been added to the block tab.
 ### Changed
 - Updated dependencies to latest versions
 - Modified the architecture to better support the new features and improvements, including changes to the way data is handled and processed within the application. 

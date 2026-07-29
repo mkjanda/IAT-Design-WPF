@@ -111,11 +111,9 @@ namespace IAT.Core.Domain
             RightKeyRect = _defaultRightKeyRect;
             ErrorMarkRect = _defaultErrorMarkRect;
             BlockInstructionsRect = _defaultBlockInstructionsRect;
-            MockItemInstructionsRect = _defaultMockItemInstructionsRect;
-            KeyedInstructionsRect = _defaultKeyedInstructionsRect;
-            TextInstructionsRect = _defaultTextInstructionsRect;
-            ContinueInstructionsRect = _defaultContinueInstructionsRect;
             UserSizeOverrides.Clear();
+            // Text / Keyed / Mock / Continue instruction rects are derived from interior + keys + error mark.
+            LayoutCalculatorService.ApplyDerivedInstructionRects(this);
         }
 
         /// <summary>

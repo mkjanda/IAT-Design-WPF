@@ -35,7 +35,9 @@ namespace IAT.Core.Domain
         public bool IsExpandable => false;
 
         /// <summary>
-        /// Gets or sets the key used to continue an operation or process.
+        /// The key used to continue past this instruction screen.
+        /// Currently fixed to Space (" ") for all screens — this matches standard IAT practice
+        /// and avoids UX problems with invisible characters or free-text input.
         /// </summary>
         public string ContinueKey = " ";
 

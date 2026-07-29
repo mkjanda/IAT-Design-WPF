@@ -420,6 +420,26 @@ public partial class IatTest : ObservableObject
     }
 
     /// <summary>
+    /// Removes an instruction screen from the collection and cache, and strips its Id
+    /// from every block's <see cref="Block.InstructionsIds"/> list.
+    /// </summary>
+    /// <param name="screen">The screen to remove.</param>
+    /// <returns>The removed screen, or null if it was not present.</returns>
+    public InstructionScreen? RemoveInstructionScreen(InstructionScreen screen)
+    {
+        if (screen is null) return null;
+        if (!InstructionScreens.Remove(screen))
+            return null;
+
+        _instructionCache.Remove(screen.Id);
+
+        foreach (var block in Blocks)
+            block.InstructionsIds.Remove(screen.Id);
+
+        return screen;
+    }
+
+    /// <summary>
     /// Resets this test to an empty "New IAT Test" state without replacing the instance.
     /// Child ViewModels that hold a reference to this singleton remain valid; their bound
     /// ObservableCollections raise CollectionChanged as items are removed.

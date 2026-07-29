@@ -1,0 +1,384 @@
+<UserControl x:Class="IAT.Views.Controls.InstructionManagerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:domain="clr-namespace:IAT.Core.Domain;assembly=IAT.Core"
+             xmlns:vm="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
+             xmlns:conv="clr-namespace:IAT.Views.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1200"
+             Background="#1E1E1E">
+
+    <UserControl.Resources>
+        <conv:InstructionScreenTypeConverter x:Key="ScreenTypeConverter"/>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#F7C46C"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style x:Key="DarkLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240"/>
+            <!-- Fixed width sized to comfortably fit the two side-by-side action buttons
+                 while still forcing long instruction text to wrap -->
+            <ColumnDefinition Width="380"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ========== LEFT: Instruction Screens list ========== -->
+        <Border Grid.Column="0" Background="#252526" BorderBrush="#3C3C3C" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <TextBlock Text="Instruction Screens" Style="{StaticResource SectionHeader}"
+                           Margin="12,12,12,8" DockPanel.Dock="Top"/>
+
+                <StackPanel DockPanel.Dock="Bottom" Margin="8,8,8,12" Orientation="Vertical">
+                    <Button Content="+ Text Screen"
+                            Command="{Binding AddTextScreenCommand}"
+                            Style="{StaticResource AccentButton}"
+                            Height="30" Margin="0,0,0,4"/>
+                    <Button Content="+ Keyed Screen"
+                            Command="{Binding AddKeyedScreenCommand}"
+                            Style="{StaticResource AccentButton}"
+                            Height="30" Margin="0,0,0,4"/>
+                    <Button Content="+ Mock Item Screen"
+                            Command="{Binding AddMockItemScreenCommand}"
+                            Style="{StaticResource AccentButton}"
+                            Height="30" Margin="0,0,0,4"/>
+                    <Button Content="Delete Screen"
+                            Command="{Binding DeleteScreenCommand}"
+                            Background="#3C3C3C" Foreground="#E0E0E0"
+                            Height="30"/>
+                </StackPanel>
+
+                <ListBox ItemsSource="{Binding InstructionScreens}"
+                         SelectedItem="{Binding SelectedScreen, Mode=TwoWay}"
+                         Background="Transparent" BorderThickness="0"
+                         Margin="4,0,4,4"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type domain:InstructionScreen}">
+                            <StackPanel Margin="6,8">
+                                <TextBlock Text="{Binding Text}"
+                                           Foreground="#E0E0E0" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Converter={StaticResource ScreenTypeConverter}}"
+                                           Foreground="#888888" FontSize="11" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- ========== CENTER: Properties ========== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="16">
+            <StackPanel>
+                <TextBlock Text="Properties" Style="{StaticResource SectionHeader}"/>
+
+                <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+                    <!-- Type -->
+                    <TextBlock Text="Type" Style="{StaticResource DarkLabel}"/>
+                    <ComboBox ItemsSource="{x:Static vm:InstructionManagerViewModel.TypeOptions}"
+                              SelectedItem="{Binding SelectedType, Mode=TwoWay}"
+                              Style="{StaticResource DarkComboBox}"
+                              Height="32" Margin="0,0,0,12"/>
+
+                    <!-- Instruction text -->
+                    <TextBlock Text="Instruction Text" Style="{StaticResource DarkLabel}"/>
+                    <TextBox x:Name="InstructionTextBox"
+                             Text="{Binding InstructionText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource DarkTextBox}" VerticalContentAlignment="Top"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             MinHeight="100" Margin="0,0,0,12"
+                             GotFocus="InstructionTextBox_GotFocus"
+                             LostFocus="InstructionTextBox_LostFocus"/>
+
+                    <!-- Continue prompt (key is fixed to Space — standard for IATs) -->
+                    <TextBlock Text="Continue Instructions" Style="{StaticResource DarkLabel}"/>
+                    <TextBox Text="{Binding ContinueInstructionsText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource DarkTextBox}"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             MinHeight="48"
+                             Margin="0,0,0,16"
+                             ToolTip="Participants always press Space to continue. Customize the prompt text here."/>
+
+                    <!-- Keyed / Mock shared: response keys -->
+                    <StackPanel Visibility="{Binding IsKeyedOrMock, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="Left Response Key" Style="{StaticResource DarkLabel}"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Keys}"
+                                      SelectedItem="{Binding SelectedLeftKey, Mode=TwoWay}"
+                                      Style="{StaticResource DarkComboBox}"
+                                      Height="32"
+                                      DisplayMemberPath="Text"/>
+                            <Button Grid.Column="2"
+                                    Content="+"
+                                    Command="{Binding AddNewLeftKeyCommand}"
+                                    Style="{StaticResource AccentButton}"
+                                    Width="32" Height="32"
+                                    ToolTip="Create a new free-floating key (not tied to any block) and assign it as the left response. You can then set its value below."/>
+                        </Grid>
+                        <TextBox Text="{Binding LeftKeyValue, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource DarkTextBox}"
+                                 Height="32" Margin="0,0,0,12"
+                                 IsEnabled="{Binding IsLeftKeyEditable}"
+                                 ToolTip="Key value shown to participants. Editable only for keys created here (not used by any block in the Trials tab)."/>
+
+                        <TextBlock Text="Right Response Key" Style="{StaticResource DarkLabel}"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Keys}"
+                                      SelectedItem="{Binding SelectedRightKey, Mode=TwoWay}"
+                                      Style="{StaticResource DarkComboBox}"
+                                      Height="32"
+                                      DisplayMemberPath="Text"/>
+                            <Button Grid.Column="2"
+                                    Content="+"
+                                    Command="{Binding AddNewRightKeyCommand}"
+                                    Style="{StaticResource AccentButton}"
+                                    Width="32" Height="32"
+                                    ToolTip="Create a new free-floating key (not tied to any block) and assign it as the right response. You can then set its value below."/>
+                        </Grid>
+                        <TextBox Text="{Binding RightKeyValue, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource DarkTextBox}"
+                                 Height="32" Margin="0,0,0,16"
+                                 IsEnabled="{Binding IsRightKeyEditable}"
+                                 ToolTip="Key value shown to participants. Editable only for keys created here (not used by any block in the Trials tab)."/>
+                    </StackPanel>
+
+                    <!-- Mock Item only -->
+                    <StackPanel Visibility="{Binding IsMockItem, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="Stimulus" Style="{StaticResource DarkLabel}"/>
+                        <ComboBox ItemsSource="{Binding Stimuli}"
+                                  SelectedItem="{Binding SelectedStimulus, Mode=TwoWay}"
+                                  Style="{StaticResource DarkComboBox}"
+                                  Height="32" Margin="0,0,0,16"
+                                  DisplayMemberPath="Text"/>
+
+                        <!-- Correct response: which side this mock stimulus is keyed to -->
+                        <TextBlock Text="Correct Response" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
+                        <TextBlock Text="Which side is the correct answer for this practice item?"
+                                   Foreground="#888" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <Border Background="#2A2A2A" CornerRadius="4" Padding="10,8" Margin="0,0,0,12"
+                                BorderBrush="#3C3C3C" BorderThickness="1">
+                            <!-- No GroupName: ViewModel owns exclusivity so None stays selected by default
+                                 instead of WPF auto-checking the first radio when the panel becomes visible. -->
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="None"
+                                             IsChecked="{Binding IsDirectionNone, Mode=TwoWay}"
+                                             Foreground="#E0E0E0" Margin="0,0,20,0"
+                                             VerticalContentAlignment="Center"
+                                             ToolTip="No correct side designated (default)"/>
+                                <RadioButton Content="Left"
+                                             IsChecked="{Binding IsDirectionLeft, Mode=TwoWay}"
+                                             Foreground="#E0E0E0" Margin="0,0,20,0"
+                                             VerticalContentAlignment="Center"
+                                             ToolTip="Correct response is the left key"/>
+                                <RadioButton Content="Right"
+                                             IsChecked="{Binding IsDirectionRight, Mode=TwoWay}"
+                                             Foreground="#E0E0E0"
+                                             VerticalContentAlignment="Center"
+                                             ToolTip="Correct response is the right key"/>
+                            </StackPanel>
+                        </Border>
+
+                        <CheckBox Content="Outline Correct Response"
+                                  IsChecked="{Binding OutlineCorrectResponse, Mode=TwoWay}"
+                                  Foreground="#E0E0E0" Margin="0,0,0,6"
+                                  ToolTip="Draw a highlight around the correct response key in the preview and on-screen."/>
+                        <CheckBox Content="Show Error Mark"
+                                  IsChecked="{Binding ShowErrorMark, Mode=TwoWay}"
+                                  Foreground="#E0E0E0" Margin="0,0,0,16"
+                                  ToolTip="Show the red error ✕ (as if an incorrect response was made)."/>
+                    </StackPanel>
+
+                    <!-- Assigned to Blocks -->
+                    <TextBlock Text="Assigned to Blocks" Style="{StaticResource SectionHeader}" Margin="0,8,0,8"/>
+                    <Border Background="#2A2A2A" CornerRadius="4" Padding="10" Margin="0,0,0,10"
+                            MaxHeight="180">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding BlockAssignments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:BlockAssignmentItem}">
+                                        <CheckBox Content="{Binding DisplayName}"
+                                                  IsChecked="{Binding IsAssigned, Mode=TwoWay}"
+                                                  Foreground="#E0E0E0"
+                                                  Margin="0,3"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Content="Assign to Selected Blocks"
+                                Grid.Column="0"
+                                Command="{Binding AssignToSelectedBlocksCommand}"
+                                Style="{StaticResource AccentButton}"
+                                Height="32"/>
+                        <Button Content="Remove from Selected Blocks"
+                                Grid.Column="2"
+                                Command="{Binding RemoveFromSelectedBlocksCommand}"
+                                Background="#1C1C1C" Foreground="#E0E0E0"
+                                Height="32"/>
+                    </Grid>
+                </StackPanel>
+
+                <TextBlock Text="Select or add an instruction screen."
+                           Foreground="#888888"
+                           Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}"
+                           Margin="0,24,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ========== RIGHT: Live Preview (Interior aspect) ========== -->
+        <Border Grid.Column="2" Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1,0,0,0">
+            <DockPanel>
+                <TextBlock Text="Live Preview" Style="{StaticResource SectionHeader}"
+                           Margin="12,12,12,8" DockPanel.Dock="Top"/>
+                <TextBlock DockPanel.Dock="Top" Margin="12,0,12,8" Foreground="#888888" FontSize="11"
+                           Text="{Binding StageSizeLabel}"/>
+
+                <!-- Host that preserves Interior aspect ratio -->
+                <Grid Margin="12,0,12,12" ClipToBounds="True">
+                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Background="White"
+                                Width="{Binding InteriorWidth}"
+                                Height="{Binding InteriorHeight}"
+                                BorderBrush="#444" BorderThickness="1"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- Text-only: full-area text, body top-aligned in the content band -->
+                                <DockPanel Margin="24"
+                                           Visibility="{Binding IsKeyedOrMock, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
+                                    <TextBlock DockPanel.Dock="Bottom"
+                                               Text="{Binding PreviewContinueText}"
+                                               FontSize="14" Foreground="#333"
+                                               HorizontalAlignment="Center" Margin="0,16,0,0"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding PreviewBodyText}"
+                                               FontSize="22" FontWeight="SemiBold" Foreground="#111"
+                                               HorizontalAlignment="Center" VerticalAlignment="Top"
+                                               TextWrapping="Wrap" TextAlignment="Center"/>
+                                </DockPanel>
+
+                                <!-- Keyed / Mock: keys + body (+ stimulus / error for mock) -->
+                                <Grid Visibility="{Binding IsKeyedOrMock, Converter={StaticResource BoolToVisibility}}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Top keys (outline drawn when Mock Item designates a correct side) -->
+                                    <Grid Grid.Row="0" Margin="16,16,16,8">
+                                        <Border HorizontalAlignment="Left"
+                                                Padding="10,4"
+                                                CornerRadius="4"
+                                                BorderThickness="3"
+                                                Background="Transparent">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsLeftKeyOutlined}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding PreviewLeftKeyText}"
+                                                       FontSize="28" FontWeight="Bold" Foreground="#111"/>
+                                        </Border>
+                                        <Border HorizontalAlignment="Right"
+                                                Padding="10,4"
+                                                CornerRadius="4"
+                                                BorderThickness="3"
+                                                Background="Transparent">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsRightKeyOutlined}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding PreviewRightKeyText}"
+                                                       FontSize="28" FontWeight="Bold" Foreground="#111"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Body band: stimulus (mock) and/or instruction text — top of the rect -->
+                                    <StackPanel Grid.Row="1" VerticalAlignment="Top" Margin="24,8,24,0">
+                                        <!-- Image stimulus preview -->
+                                        <Image Source="{Binding PreviewStimulusImage}"
+                                               MaxHeight="180" MaxWidth="280"
+                                               Stretch="Uniform"
+                                               HorizontalAlignment="Center"
+                                               Visibility="{Binding IsPreviewStimulusImage, Converter={StaticResource BoolToVisibility}}"/>
+                                        <!-- Text stimulus (or image fallback) -->
+                                        <TextBlock Text="{Binding PreviewStimulusText}"
+                                                   FontSize="32" FontWeight="SemiBold" Foreground="#111"
+                                                   HorizontalAlignment="Center"
+                                                   Visibility="{Binding IsPreviewStimulusText, Converter={StaticResource BoolToVisibility}}"/>
+                                        <TextBlock Text="{Binding PreviewBodyText}"
+                                                   FontSize="18" Foreground="#222"
+                                                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                                                   TextAlignment="Center"
+                                                   Margin="0,12,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Error mark -->
+                                    <TextBlock Grid.Row="2"
+                                               Text="✕" FontSize="36" FontWeight="Bold"
+                                               Foreground="#E53935"
+                                               HorizontalAlignment="Center"
+                                               Visibility="{Binding ShowErrorMark, Converter={StaticResource BoolToVisibility}}"/>
+
+                                    <!-- Continue -->
+                                    <TextBlock Grid.Row="3"
+                                               Text="{Binding PreviewContinueText}"
+                                               FontSize="13" Foreground="#444"
+                                               HorizontalAlignment="Center"
+                                               Margin="16,8,16,16"
+                                               TextWrapping="Wrap"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Viewbox>
+                </Grid>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

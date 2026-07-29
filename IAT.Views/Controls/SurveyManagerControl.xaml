@@ -12,6 +12,45 @@
 
     <UserControl.Resources>
 
+        <!-- Dark theme ListBoxItem — light text on dark background, accent selection -->
+        <Style x:Key="DarkListBoxItem" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#007ACC"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#3A3A3A"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#0E639C"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Item type badges -->
         <DataTemplate DataType="{x:Type domain:SurveyHeader}">
             <DockPanel Margin="4,6">
@@ -80,6 +119,7 @@
                 <ListBox ItemsSource="{Binding Labels}"
                          SelectedItem="{Binding DataContext.SelectedChoice, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                          Background="#2A2A2A" BorderBrush="#444" BorderThickness="1"
+                         ItemContainerStyle="{StaticResource DarkListBoxItem}"
                          MinHeight="60" MaxHeight="120" Margin="0,0,0,6"/>
                 <DockPanel>
                     <Button Content="Remove" Command="{Binding DataContext.RemoveChoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -102,6 +142,7 @@
                 <ListBox ItemsSource="{Binding Choices}"
                          SelectedItem="{Binding DataContext.SelectedChoice, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                          Background="#2A2A2A" BorderBrush="#444" BorderThickness="1"
+                         ItemContainerStyle="{StaticResource DarkListBoxItem}"
                          MinHeight="80" MaxHeight="160" Margin="0,0,0,6"/>
                 <DockPanel>
                     <Button Content="Remove" Command="{Binding DataContext.RemoveChoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -141,6 +182,7 @@
                 <ListBox ItemsSource="{Binding Choices}"
                          SelectedItem="{Binding DataContext.SelectedChoice, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
                          Background="#2A2A2A" BorderBrush="#444" BorderThickness="1"
+                         ItemContainerStyle="{StaticResource DarkListBoxItem}"
                          MinHeight="80" MaxHeight="140" Margin="0,0,0,6"/>
                 <DockPanel>
                     <Button Content="Remove" Command="{Binding DataContext.RemoveChoiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

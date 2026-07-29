@@ -1,49 +1,34 @@
-﻿using IAT.Core.Domain;
+using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using System.Windows;
 
 namespace IAT.Core.Services;
 
 /// <summary>
-/// Service responsible for calculating the final layout rectangles for various UI elements based on the provided layout configuration and 
-/// any user overrides. This service applies default layout settings, allows for user-defined size overrides for specific regions, and computes 
-/// the final rectangles that should be used for rendering the test interface. The service ensures that all layout adjustments are applied 
-/// consistently and that the resulting rectangles are valid for use in the test interface.
+/// Service responsible for calculating the final layout rectangles for various UI elements based on the provided layout configuration and
+/// any user overrides. Derived regions (text / keyed / mock / continue instructions) are computed from the interior and related elements
+/// unless the designer has explicitly overridden them.
 /// </summary>
 public interface ILayoutCalculatorService
 {
     /// <summary>
     /// Applies default values to the specified layout configuration.
     /// </summary>
-    /// <param name="layout">The layout configuration to which default values will be applied. Cannot be null.</param>
     void ApplyDefaults(Layout layout);
 
     /// <summary>
     /// Applies user-defined size overrides to the specified region within the given layout configuration.
     /// </summary>
-    /// <remarks>If the specified region does not exist in the layout, no changes are made. This method
-    /// updates only the size of the region, preserving other layout settings.</remarks>
-    /// <param name="layout">The layout configuration to which the user overrides will be applied. Cannot be null.</param>
-    /// <param name="layoutItem">The layout item within the layout to update. Cannot be null.</param>
-    /// <param name="rect">The new rectangle to apply to the specified layout item.</param>
     void ApplyUserOverrides(Layout layout, LayoutItem layoutItem, Rect rect);
 
     /// <summary>
     /// Calculates the final bounding rectangle for the specified layout item within the given layout configuration.
     /// </summary>
-    /// <param name="layout">The layout configuration that defines the arrangement and sizing rules for layout items.</param>
-    /// <param name="li">The layout item for which to calculate the final bounding rectangle.</param>
-    /// <returns>A Rect structure representing the final position and size of the layout item as determined by the layout
-    /// configuration.</returns>
     Rect GetFinalRect(Layout layout, LayoutItem li);
 
     /// <summary>
     /// Calculates the final layout rectangles based on the specified layout configuration.
     /// </summary>
-    /// <param name="layout">The layout configuration that defines the arrangement and sizing rules to apply when computing the final
-    /// rectangles. Cannot be null.</param>
-    /// <returns>A LayoutRects object containing the computed rectangles for the layout. The returned object reflects the final
-    /// positions and sizes as determined by the provided configuration.</returns>
     LayoutRects GetFinalRects(Layout layout);
 }
 
@@ -51,219 +36,225 @@ public interface ILayoutCalculatorService
 /// Provides services for calculating and applying layout configurations, including default settings, user overrides,
 /// and final layout rectangles.
 /// </summary>
-/// <remarks>This service is intended for use in scenarios where dynamic layout adjustments are required, such as
-/// user-driven resizing or restoring default arrangements. It coordinates the application of user size overrides and
-/// computes the resulting layout rectangles based on the current configuration.</remarks>
 public class LayoutCalculatorService : ILayoutCalculatorService
 {
+    /// <summary>Padding on every side when deriving text instructions from the interior.</summary>
+    public const double TextInstructionsPadding = 15.0;
+
+    /// <summary>Padding around the keyed-instructions region (below keys, and against left/right/bottom edges).</summary>
+    public const double KeyedInstructionsPadding = 15.0;
+
+    /// <summary>Height of the continue-instructions strip — enough for a single line of text.</summary>
+    public const double ContinueInstructionsHeight = 28.0;
+
+    /// <summary>Gap between the bottom of the continue strip and the bottom of the interior.</summary>
+    public const double ContinueInstructionsBottomOffset = 8.0;
+
+    // ── Derived-region helpers ──────────────────────────────────────────────
+
     /// <summary>
-    /// Restores the specified layout configuration to its default settings and clears any user-defined size overrides.
+    /// Text instructions: fill most of the interior with uniform padding.
     /// </summary>
-    /// <remarks>After calling this method, all customizations made to the layout's size settings are removed,
-    /// and the layout reverts to its original default state.</remarks>
-    /// <param name="layout">The layout configuration to reset. Cannot be null.</param>
+    public static Rect ComputeTextInstructionsRect(Rect interior)
+    {
+        var pad = TextInstructionsPadding;
+        var width = Math.Max(0, interior.Width - 2 * pad);
+        var height = Math.Max(0, interior.Height - 2 * pad);
+        return new Rect(interior.X + pad, interior.Y + pad, width, height);
+    }
+
+    /// <summary>
+    /// Continue instructions: full interior width, one line tall, slightly above the bottom edge.
+    /// Left = 0, Right = interior.Width, Bottom ≈ interior.Height − offset.
+    /// </summary>
+    public static Rect ComputeContinueInstructionsRect(Rect interior)
+    {
+        var height = ContinueInstructionsHeight;
+        var offset = ContinueInstructionsBottomOffset;
+        var y = Math.Max(0, interior.Height - offset - height);
+        var width = Math.Max(0, interior.Width);
+        return new Rect(0, y, width, height);
+    }
+
+    /// <summary>
+    /// Keyed instructions: below both response keys, spanning the interior with light padding.
+    /// Top = max(leftKey.Bottom, rightKey.Bottom) + pad;
+    /// Left/Right/Bottom = interior edges inset by pad.
+    /// </summary>
+    public static Rect ComputeKeyedInstructionsRect(Rect interior, Rect leftKey, Rect rightKey)
+    {
+        var pad = KeyedInstructionsPadding;
+        var top = Math.Max(leftKey.Bottom, rightKey.Bottom) + pad;
+        var left = pad;
+        var right = Math.Max(left, interior.Width - pad);
+        var bottom = Math.Max(top, interior.Height - pad);
+        return new Rect(left, top, Math.Max(0, right - left), Math.Max(0, bottom - top));
+    }
+
+    /// <summary>
+    /// Mock-item instructions: band between the error mark and the continue strip.
+    /// Top = errorMark.Bottom, Left = 0, Right = interior.Width, Bottom = continueInstructions.Top.
+    /// </summary>
+    public static Rect ComputeMockItemInstructionsRect(Rect interior, Rect errorMark, Rect continueInstructions)
+    {
+        var top = errorMark.Bottom;
+        var bottom = Math.Max(top, continueInstructions.Top);
+        var width = Math.Max(0, interior.Width);
+        return new Rect(0, top, width, Math.Max(0, bottom - top));
+    }
+
+    /// <summary>
+    /// Recomputes every derived instruction region on <paramref name="layout"/> from its current
+    /// interior / key / error geometry. Useful after <see cref="Layout.RestoreDefaults"/>.
+    /// </summary>
+    public static void ApplyDerivedInstructionRects(Layout layout)
+    {
+        var interior = layout.InteriorRect;
+        layout.TextInstructionsRect = ComputeTextInstructionsRect(interior);
+        layout.ContinueInstructionsRect = ComputeContinueInstructionsRect(interior);
+        layout.KeyedInstructionsRect = ComputeKeyedInstructionsRect(
+            interior, layout.LeftKeyRect, layout.RightKeyRect);
+        layout.MockItemInstructionsRect = ComputeMockItemInstructionsRect(
+            interior, layout.ErrorMarkRect, layout.ContinueInstructionsRect);
+    }
+
+    // ── ILayoutCalculatorService ────────────────────────────────────────────
+
+    /// <inheritdoc />
     public void ApplyDefaults(Layout layout)
     {
         layout.RestoreDefaults();
         layout.UserSizeOverrides.Clear();
+        ApplyDerivedInstructionRects(layout);
     }
 
-    /// <summary>
-    /// Applies a user-defined size override to a specified region within the given layout configuration.
-    /// </summary>
-    /// <remarks>If the specified size is smaller than the minimum allowed dimensions, the size is adjusted to
-    /// a minimum width and height of 50 units. Subsequent calls with the same region name will overwrite previous
-    /// overrides.</remarks>
-    /// <param name="layout">The layout configuration to which the size override will be applied. Cannot be null.</param>
-    /// <param name="layoutItem">The layout item within the layout to override. Cannot be null.</param>
-    /// <param name="rect">The new rectangle to apply to the specified layout item. Width and height values less than 50 are automatically set to 50.</param>
+    /// <inheritdoc />
     public void ApplyUserOverrides(Layout layout, LayoutItem layoutItem, Rect rect)
     {
         layout.UserSizeOverrides[layoutItem] = rect;
     }
 
-    /// <summary>
-    /// Calculates the final bounding rectangle for a specified layout item within the given layout configuration, 
-    /// taking into account any user-defined size overrides.
-    /// </summary>
-    /// <param name="layout">The layout configuration containing the layout items and any user-defined size overrides. Cannot be null.</param>
-    /// <param name="li">The layout item for which to calculate the final bounding rectangle. Cannot be null.</param>
-    /// <returns>The final bounding rectangle for the specified layout item, considering any user-defined size overrides.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if the specified layout item is not recognized.</exception>
+    /// <inheritdoc />
     public Rect GetFinalRect(Layout layout, LayoutItem li)
     {
-        if (layout.UserSizeOverrides.TryGetValue(li, out var sz))
-        {
-            switch (li)
-            {
-                case LayoutItem.Interior:
-                    return new Rect(0, 0, sz.Width, sz.Height);
-                case LayoutItem.Stimulus:
-                    return new Rect(layout.StimulusRect.Location.X - (sz.Width - layout.StimulusRect.Size.Width) / 2,
-                        layout.StimulusRect.Location.Y - (sz.Height - layout.StimulusRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.LeftKey:
-                    return new Rect(layout.LeftKeyRect.Location.X - (sz.Width - layout.LeftKeyRect.Size.Width) / 2,
-                        layout.LeftKeyRect.Location.Y - (sz.Height - layout.LeftKeyRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.RightKey:
-                    return new Rect(layout.RightKeyRect.Location.X - (sz.Width - layout.RightKeyRect.Size.Width) / 2,
-                        layout.RightKeyRect.Location.Y - (sz.Height - layout.RightKeyRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.ErrorMark:
-                    return new Rect(layout.ErrorMarkRect.Location.X - (sz.Width - layout.ErrorMarkRect.Size.Width) / 2,
-                        layout.ErrorMarkRect.Location.Y - (sz.Height - layout.ErrorMarkRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.BlockInstructions:
-                    return new Rect(layout.BlockInstructionsRect.Location.X - (sz.Width - layout.BlockInstructionsRect.Size.Width) / 2,
-                        layout.BlockInstructionsRect.Location.Y - (sz.Height - layout.BlockInstructionsRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.MockItemInstructions:
-                    return new Rect(layout.MockItemInstructionsRect.Location.X - (sz.Width - layout.MockItemInstructionsRect.Size.Width) / 2,
-                        layout.MockItemInstructionsRect.Location.Y - (sz.Height - layout.MockItemInstructionsRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.KeyedInstructions:
-                    return new Rect(layout.KeyedInstructionsRect.Location.X - (sz.Width - layout.KeyedInstructionsRect.Size.Width) / 2,
-                        layout.KeyedInstructionsRect.Location.Y - (sz.Height - layout.KeyedInstructionsRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.TextInstructions:
-                    return new Rect(layout.TextInstructionsRect.Location.X - (sz.Width - layout.TextInstructionsRect.Size.Width) / 2,
-                        layout.TextInstructionsRect.Location.Y - (sz.Height - layout.TextInstructionsRect.Size.Height) / 2, sz.Width, sz.Height);
-                case LayoutItem.ContinueInstructions:
-                    return new Rect((layout.InteriorRect.Size.Width - sz.Width) / 2, layout.InteriorRect.Size.Height - sz.Height,
-                        sz.Width, sz.Height);
-            }
-        }
-        // If no user override exists for the specified layout item, return the default rectangle from the layout configuration.
-        return li switch
-        {
-            LayoutItem.Interior => layout.InteriorRect,
-            LayoutItem.Stimulus => layout.StimulusRect,
-            LayoutItem.LeftKey => layout.LeftKeyRect,
-            LayoutItem.RightKey => layout.RightKeyRect,
-            LayoutItem.ErrorMark => layout.ErrorMarkRect,
-            LayoutItem.BlockInstructions => layout.BlockInstructionsRect,
-            LayoutItem.MockItemInstructions => layout.MockItemInstructionsRect,
-            LayoutItem.KeyedInstructions => layout.KeyedInstructionsRect,
-            LayoutItem.TextInstructions => layout.TextInstructionsRect,
-            LayoutItem.ContinueInstructions => layout.ContinueInstructionsRect,
-            _ => throw new ArgumentOutOfRangeException(nameof(li), $"Unsupported layout item: {li}")
-        };
+        // Prefer the batch path so derived regions stay consistent with each other.
+        return GetFinalRects(layout).GetRectByLayoutItem(li);
     }
 
-
-    /// <summary>
-    /// Calculates the final layout rectangles for all UI elements based on the specified layout configuration and any
-    /// user-defined size overrides.
-    /// </summary>
-    /// <remarks>User-defined size overrides in the layout parameter take precedence over the default
-    /// rectangle sizes. The returned rectangles reflect all adjustments specified in the configuration.</remarks>
-    /// <param name="layout">The layout configuration containing the initial rectangles and any user size overrides to apply.</param>
-    /// <returns>A LayoutRects object containing the computed rectangles for each UI element after applying all relevant
-    /// overrides.</returns>
+    /// <inheritdoc />
     public LayoutRects GetFinalRects(Layout layout)
     {
-        LayoutRects rects = new LayoutRects()
-        {
-            Interior = layout.InteriorRect,
-            Stimulus = layout.StimulusRect,
-            LeftKey = layout.LeftKeyRect,
-            RightKey = layout.RightKeyRect,
-            ErrorMark = layout.ErrorMarkRect,
-            BlockInstructions = layout.BlockInstructionsRect,
-            MockItemInstructions = layout.MockItemInstructionsRect,
-            KeyedInstructions = layout.KeyedInstructionsRect,
-            TextInstructions = layout.TextInstructionsRect,
-            ContinueInstructions = layout.ContinueInstructionsRect
-        };
+        // 1. Start from stored geometry.
+        var interior = layout.InteriorRect;
+        var stimulus = layout.StimulusRect;
+        var leftKey = layout.LeftKeyRect;
+        var rightKey = layout.RightKeyRect;
+        var errorMark = layout.ErrorMarkRect;
+        var blockInstructions = layout.BlockInstructionsRect;
 
+        var textOverridden = false;
+        var continueOverridden = false;
+        var keyedOverridden = false;
+        var mockOverridden = false;
+        Rect? textOverride = null;
+        Rect? continueOverride = null;
+        Rect? keyedOverride = null;
+        Rect? mockOverride = null;
+
+        // 2. Apply user overrides for base (non-derived) and flag derived overrides.
         foreach (var (layoutItem, rect) in layout.UserSizeOverrides)
+        {
             switch (layoutItem)
             {
                 case LayoutItem.Interior:
-                    rects = rects with { Interior = rect };
+                    interior = new Rect(0, 0, rect.Width, rect.Height);
                     break;
                 case LayoutItem.Stimulus:
-                    rects = rects with { Stimulus = rect };
+                    stimulus = rect;
                     break;
                 case LayoutItem.LeftKey:
-                    rects = rects with { LeftKey = rect };
+                    leftKey = rect;
                     break;
                 case LayoutItem.RightKey:
-                    rects = rects with { RightKey = rect };
+                    rightKey = rect;
                     break;
                 case LayoutItem.ErrorMark:
-                    rects = rects with { ErrorMark = rect };
+                    errorMark = rect;
                     break;
                 case LayoutItem.BlockInstructions:
-                    rects = rects with { BlockInstructions = rect };
-                    break;
-                case LayoutItem.MockItemInstructions:
-                    rects = rects with { MockItemInstructions = rect };
-                    break;
-                case LayoutItem.KeyedInstructions:
-                    rects = rects with { KeyedInstructions = rect };
+                    blockInstructions = rect;
                     break;
                 case LayoutItem.TextInstructions:
-                    rects = rects with { TextInstructions = rect };
+                    textOverridden = true;
+                    textOverride = rect;
                     break;
                 case LayoutItem.ContinueInstructions:
-                    rects = rects with { ContinueInstructions = rect };
+                    continueOverridden = true;
+                    continueOverride = rect;
+                    break;
+                case LayoutItem.KeyedInstructions:
+                    keyedOverridden = true;
+                    keyedOverride = rect;
+                    break;
+                case LayoutItem.MockItemInstructions:
+                    mockOverridden = true;
+                    mockOverride = rect;
                     break;
             }
-        return rects;
+        }
+
+        // 3. Derive instruction regions from the final base geometry (order matters).
+        var continueInstructions = continueOverridden
+            ? continueOverride!.Value
+            : ComputeContinueInstructionsRect(interior);
+
+        var keyedInstructions = keyedOverridden
+            ? keyedOverride!.Value
+            : ComputeKeyedInstructionsRect(interior, leftKey, rightKey);
+
+        var mockItemInstructions = mockOverridden
+            ? mockOverride!.Value
+            : ComputeMockItemInstructionsRect(interior, errorMark, continueInstructions);
+
+        var textInstructions = textOverridden
+            ? textOverride!.Value
+            : ComputeTextInstructionsRect(interior);
+
+        return new LayoutRects
+        {
+            Interior = interior,
+            Stimulus = stimulus,
+            LeftKey = leftKey,
+            RightKey = rightKey,
+            ErrorMark = errorMark,
+            BlockInstructions = blockInstructions,
+            MockItemInstructions = mockItemInstructions,
+            KeyedInstructions = keyedInstructions,
+            TextInstructions = textInstructions,
+            ContinueInstructions = continueInstructions
+        };
     }
 }
 
-
 /// <summary>
-/// Represents the final layout rectangles for various UI elements after applying the layout 
-/// configuration and any user-defined size overrides.
+/// Final layout rectangles after applying configuration and user-defined size overrides.
 /// </summary>
 public record LayoutRects
 {
-    /// <summary>
-    /// Gets the rectangle representing the interior area of the layout, which serves as the main container 
-    /// for other UI elements.
-    /// </summary>
     public Rect Interior { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the stimulus area of the layout.
-    /// </summary>
     public Rect Stimulus { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the left key area of the layout.
-    /// </summary>
     public Rect LeftKey { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the right key area of the layout.
-    /// </summary>      
     public Rect RightKey { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the error mark area of the layout.
-    /// </summary>
     public Rect ErrorMark { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the block instructions area of the layout.
-    /// </summary>
     public Rect BlockInstructions { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the mock item instructions area of the layout.
-    /// </summary>
     public Rect MockItemInstructions { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the keyed instructions area of the layout.
-    /// </summary>
     public Rect KeyedInstructions { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the text instructions area of the layout.
-    /// </summary>  
     public Rect TextInstructions { get; init; }
-    /// <summary>
-    /// Gets the rectangle representing the continue instructions area of the layout.
-    /// </summary>
     public Rect ContinueInstructions { get; init; }
 
     /// <summary>
-    /// Returns the rectangle corresponding to the specified layout item. This method provides a convenient way to access
-    /// the rectangle for a given layout item without directly referencing the properties.
+    /// Returns the rectangle corresponding to the specified layout item.
     /// </summary>
-    /// <param name="layoutItem">The layout item for which to retrieve the rectangle.</param>
-    /// <returns>The rectangle corresponding to the specified layout item.</returns>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public Rect GetRectByLayoutItem(LayoutItem layoutItem) => layoutItem switch
     {
         LayoutItem.Interior => Interior,
@@ -278,5 +269,4 @@ public record LayoutRects
         LayoutItem.ContinueInstructions => ContinueInstructions,
         _ => throw new ArgumentOutOfRangeException(nameof(layoutItem), $"Unsupported layout item: {layoutItem}")
     };
-
 }

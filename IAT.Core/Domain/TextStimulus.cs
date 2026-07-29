@@ -1,4 +1,4 @@
-﻿using IAT.Core.Enumerations;
+using IAT.Core.Enumerations;
 using IAT.Core.Models;
 
 namespace IAT.Core.Domain;
@@ -15,7 +15,7 @@ public sealed class TextStimulus : Stimulus, IFormattedText
     /// <summary>
     /// Gets or sets the text content.
     /// </summary>
-    public string Text { get; set; } = string.Empty;
+    public override string Text { get; set; } = string.Empty;
 
     /// <summary>
     /// The styling information for the text stimulus, including font, size, color, and other formatting options. 

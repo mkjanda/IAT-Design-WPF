@@ -66,29 +66,39 @@
                                             CenterY="{Binding InteriorHeight, Converter={StaticResource HalfValueConverter}}" />
                         </Canvas.RenderTransform>
 
-                        <!-- Block Instructions: live text from the Blocks properties editor -->
-                        <Border Canvas.Left="{Binding BlockInstructionsX}"
-                                Canvas.Top="{Binding BlockInstructionsY}"
-                                Width="{Binding BlockInstructionsWidth}"
-                                Height="{Binding BlockInstructionsHeight}"
+                        <!-- Instruction / block body text.
+                             Geometry is ActiveInstructions* — switched by LayoutViewModel to:
+                               TextInstructionScreen  → TextInstructionsRect
+                               KeyedInstructionScreen → KeyedInstructionsRect
+                               MockItemInstructionScreen → MockItemInstructionsRect
+                               trial / block mode     → BlockInstructionsRect -->
+                        <Border Canvas.Left="{Binding ActiveInstructionsX}"
+                                Canvas.Top="{Binding ActiveInstructionsY}"
+                                Width="{Binding ActiveInstructionsWidth}"
+                                Height="{Binding ActiveInstructionsHeight}"
                                 BorderThickness="0"
                                 Background="Transparent"
                                 ClipToBounds="True">
+                            <!-- Top-aligned so tall regions (Keyed / clamped Mock) never float the
+                                 body text through the middle of the stage / stimulus area. -->
                             <TextBlock Text="{Binding PreviewBlockInstructionsText}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextAlignment="Center" TextWrapping="Wrap"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Top"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
                                        FontSize="16" Foreground="#222"
-                                       Margin="6"/>
+                                       Margin="8,4"/>
                         </Border>
 
-                        <!-- Stimulus Area: selected trial's stimulus, sized to the layout rectangle -->
+                        <!-- Stimulus Area: trial / Mock Item only — collapsed for Text & Keyed instructions -->
                         <Border Canvas.Left="{Binding StimulusX}"
                                 Canvas.Top="{Binding StimulusY}"
                                 Width="{Binding StimulusWidth}"
                                 Height="{Binding StimulusHeight}"
                                 BorderThickness="0"
                                 ClipToBounds="True"
-                                Background="Transparent">
+                                Background="Transparent"
+                                Visibility="{Binding IsStimulusAreaVisible, Converter={StaticResource BoolToVis}}">
                             <Grid>
                                 <TextBlock Text="{Binding PreviewStimulusText}"
                                            FontFamily="{Binding PreviewStimulusFontFamily}"
@@ -111,49 +121,90 @@
                             </Grid>
                         </Border>
 
-                        <!-- Left Key: key text; highlighted when trial is left-keyed -->
+                        <!-- Left Key: Keyed / Mock / trial only — hidden for Text instruction screens -->
                         <Border Canvas.Left="{Binding LeftKeyX}"
                                 Canvas.Top="{Binding LeftKeyY}"
                                 Width="{Binding KeyWidth}"
                                 Height="{Binding KeyHeight}"
-                                BorderThickness="0"
                                 Background="Transparent"
-                                ClipToBounds="True">
+                                BorderThickness="3"
+                                CornerRadius="4"
+                                ClipToBounds="True"
+                                Padding="4"
+                                Visibility="{Binding IsResponseKeysVisible, Converter={StaticResource BoolToVis}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLeftKeyOutlined}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#007ACC"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <TextBlock Text="{Binding LeftKeyPreviewText}"
                                        Foreground="{Binding LeftKeyPreviewBrush}"
                                        FontWeight="{Binding LeftKeyPreviewFontWeight}"
                                        FontSize="18"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextWrapping="Wrap" TextAlignment="Center"
-                                       Margin="4"/>
+                                       TextWrapping="Wrap" TextAlignment="Center"/>
                         </Border>
 
-                        <!-- Right Key: key text; highlighted when trial is right-keyed -->
+                        <!-- Right Key: Keyed / Mock / trial only — hidden for Text instruction screens -->
                         <Border Canvas.Left="{Binding RightKeyX}"
                                 Canvas.Top="{Binding RightKeyY}"
                                 Width="{Binding KeyWidth}"
                                 Height="{Binding KeyHeight}"
-                                BorderThickness="0"
                                 Background="Transparent"
-                                ClipToBounds="True">
+                                BorderThickness="3"
+                                CornerRadius="4"
+                                ClipToBounds="True"
+                                Padding="4"
+                                Visibility="{Binding IsResponseKeysVisible, Converter={StaticResource BoolToVis}}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRightKeyOutlined}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#007ACC"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <TextBlock Text="{Binding RightKeyPreviewText}"
                                        Foreground="{Binding RightKeyPreviewBrush}"
                                        FontWeight="{Binding RightKeyPreviewFontWeight}"
                                        FontSize="18"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextWrapping="Wrap" TextAlignment="Center"
-                                       Margin="4"/>
+                                       TextWrapping="Wrap" TextAlignment="Center"/>
                         </Border>
 
-                        <!-- Error Mark (no chrome border) -->
+                        <!-- Error Mark (shown for Mock Item instructions with ShowErrorMark) -->
                         <Border Canvas.Left="{Binding ErrorMarkX}"
                                 Canvas.Top="{Binding ErrorMarkY}"
                                 Width="{Binding ErrorMarkWidth}"
                                 Height="{Binding ErrorMarkHeight}"
                                 BorderThickness="0"
-                                Background="Transparent">
+                                Background="Transparent"
+                                Visibility="{Binding IsErrorMarkVisible, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="X" Foreground="Red" FontSize="48"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <!-- Continue instructions (instruction-screen preview only) -->
+                        <Border Canvas.Left="{Binding ContinueInstructionsX}"
+                                Canvas.Top="{Binding ContinueInstructionsY}"
+                                Width="{Binding ContinueInstructionsWidth}"
+                                Height="{Binding ContinueInstructionsHeight}"
+                                BorderThickness="0"
+                                Background="Transparent"
+                                ClipToBounds="True"
+                                Visibility="{Binding IsContinueInstructionsVisible, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding PreviewContinueText}"
+                                       FontSize="13" Foreground="#444"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextWrapping="Wrap" TextAlignment="Center"
+                                       Margin="8,0"/>
                         </Border>
                     </Canvas>
                 </Grid>
@@ -171,20 +222,22 @@
 
                 <Label Content="Instructions Text" Foreground="White" Margin="0,12,0,0"/>
                 <TextBox Text="{Binding BlockInstructionsText, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True" TextWrapping="Wrap" Height="80"/>
+                         AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                         IsEnabled="{Binding IsBlockInstructionsEditable}"
+                         ToolTip="Block-level instructions shown with trials. Disabled while an instruction screen (I#) is selected — edit those on the Instructions tab."/>
             </StackPanel>
         </Border>
 
-        <!-- BOTTOM: Trials grid — selection drives the layout preview -->
+        <!-- BOTTOM: Sequence grid — instructions first, then trials; selection drives preview -->
         <Grid Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Margin="16,0,16,16"
               VerticalAlignment="Bottom" Height="200">
             <Border Background="#1F1F1F" CornerRadius="4">
                 <DockPanel>
-                    <TextBlock Text="Trials — select a row to preview its stimulus"
+                    <TextBlock Text="Sequence — instructions (I#) appear first; select a row to preview"
                                Foreground="#AAAAAA" FontSize="11"
                                Margin="12,8,12,4" DockPanel.Dock="Top"/>
-                    <DataGrid ItemsSource="{Binding SelectedBlock.Trials}"
-                              SelectedItem="{Binding SelectedTrial, Mode=TwoWay}"
+                    <DataGrid ItemsSource="{Binding SequenceRows}"
+                              SelectedItem="{Binding SelectedSequenceRow, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               Background="Transparent"
                               RowBackground="Transparent"
@@ -199,7 +252,6 @@
                               GridLinesVisibility="Horizontal"
                               BorderThickness="0"
                               Margin="4">
-                        <!-- Dark column headers so header text is legible on the dark grid -->
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Background" Value="#252526"/>
@@ -212,10 +264,31 @@
                                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsInstruction}" Value="True">
+                                        <Setter Property="Foreground" Value="#F7C46C"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Trial #" Binding="{Binding TrialNumber}" Width="70"/>
-                            <DataGridTextColumn Header="Stimulus Id" Binding="{Binding StimulusId}" Width="*"/>
-                            <DataGridTextColumn Header="Direction" Binding="{Binding KeyedDirection}" Width="100"/>
+                            <DataGridTextColumn Header="Trial #" Binding="{Binding NumberDisplay}" Width="70">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsInstruction}" Value="True">
+                                                <Setter Property="Foreground" Value="#F7C46C"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Detail" Binding="{Binding Detail}" Width="*"/>
+                            <DataGridTextColumn Header="Type / Direction" Binding="{Binding DirectionDisplay}" Width="120"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

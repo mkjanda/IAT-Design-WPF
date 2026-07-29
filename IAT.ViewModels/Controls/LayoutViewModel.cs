@@ -88,10 +88,59 @@ namespace IAT.ViewModels
         [ObservableProperty] private Brush rightKeyPreviewBrush = Brushes.Black;
 
         /// <summary>Font weight for the left key label.</summary>
-        [ObservableProperty] private FontWeight leftKeyPreviewFontWeight = FontWeights.Normal;
+        [ObservableProperty] private FontWeight leftKeyPreviewFontWeight = FontWeights.Bold;
 
         /// <summary>Font weight for the right key label.</summary>
-        [ObservableProperty] private FontWeight rightKeyPreviewFontWeight = FontWeights.Normal;
+        [ObservableProperty] private FontWeight rightKeyPreviewFontWeight = FontWeights.Bold;
+
+        /// <summary>
+        /// True when the left key should show the blue outline used by the Instructions-tab
+        /// preview (Mock Item + Outline Correct Response + Left, or a left-keyed trial).
+        /// </summary>
+        [ObservableProperty] private bool isLeftKeyOutlined;
+
+        /// <summary>
+        /// True when the right key should show the blue outline used by the Instructions-tab
+        /// preview (Mock Item + Outline Correct Response + Right, or a right-keyed trial).
+        /// </summary>
+        [ObservableProperty] private bool isRightKeyOutlined;
+
+        /// <summary>True when the error-mark glyph should be visible (Mock Item with ShowErrorMark).</summary>
+        [ObservableProperty] private bool isErrorMarkVisible = false;
+
+        /// <summary>
+        /// Continue-prompt text shown in the ContinueInstructions layout band while an
+        /// instruction screen is selected on the Blocks tab. Empty / hidden for trial mode.
+        /// </summary>
+        [ObservableProperty] private string previewContinueText = string.Empty;
+
+        /// <summary>True when the continue-instructions strip should be visible in the Blocks preview.</summary>
+        [ObservableProperty] private bool isContinueInstructionsVisible;
+
+        /// <summary>
+        /// Controls the entire stimulus slot on the Blocks preview. False for Text / Keyed
+        /// instruction screens so "Sample Stimulus" cannot appear under the body text.
+        /// True for trial previews and Mock Item screens that have an assigned stimulus.
+        /// </summary>
+        [ObservableProperty] private bool isStimulusAreaVisible = true;
+
+        /// <summary>
+        /// Controls the left/right response key chrome on the Blocks preview.
+        /// False for Text instruction screens (no keys on that stage). True for
+        /// Keyed / Mock Item instruction previews and for trial mode.
+        /// </summary>
+        [ObservableProperty] private bool isResponseKeysVisible = true;
+
+        /// <summary>
+        /// Canvas position/size for the instruction-body border in the Blocks-tab preview.
+        /// Switched by <see cref="ApplyInstructionPreview"/> to the layout rectangle that matches
+        /// the screen type (TextInstructions / KeyedInstructions / MockItemInstructions),
+        /// and restored to BlockInstructions when showing block/trial content.
+        /// </summary>
+        [ObservableProperty] private double activeInstructionsX;
+        [ObservableProperty] private double activeInstructionsY;
+        [ObservableProperty] private double activeInstructionsWidth;
+        [ObservableProperty] private double activeInstructionsHeight;
 
         /// <summary>
         /// Last host size reported by the preview container. Used to re-fit the scale
@@ -106,6 +155,12 @@ namespace IAT.ViewModels
         /// that would otherwise run against half-initialized state and can re-enter layout.
         /// </summary>
         private bool _isInitializing = true;
+
+        /// <summary>
+        /// When true, geometry property setters must not write <see cref="Layout.UserSizeOverrides"/>.
+        /// Used while applying calculator-derived instruction regions so they stay derived.
+        /// </summary>
+        private bool _suppressGeometryPush;
 
         /// <summary>
         /// Re-entrancy guard for FitToWindow. SizeChanged on the preview host can fire again
@@ -211,6 +266,10 @@ namespace IAT.ViewModels
                 ErrorMarkWidth *= value / layoutWidth;
                 BlockInstructionsX = ((BlockInstructionsX + (BlockInstructionsWidth / 2)) * value / layoutWidth)  - (BlockInstructionsWidth * value / layoutWidth / 2);
                 BlockInstructionsWidth *= value / layoutWidth;
+
+                // Recompute instruction regions that depend on interior / keys / error mark.
+                RefreshDerivedInstructionRects();
+
                 FitToWindow(_lastAvailableSize); // recompute scale factor to keep preview size stable
             }
             catch
@@ -242,6 +301,10 @@ namespace IAT.ViewModels
                 ErrorMarkHeight *= value / layoutHeight;
                 BlockInstructionsY = ((BlockInstructionsY + (BlockInstructionsHeight / 2)) / layoutHeight) * value - (BlockInstructionsHeight * value / layoutHeight / 2);
                 BlockInstructionsHeight *= value / layoutHeight;
+
+                // Recompute instruction regions that depend on interior / keys / error mark.
+                RefreshDerivedInstructionRects();
+
                 FitToWindow(_lastAvailableSize); // recompute scale factor to keep preview size stable
             }
             catch
@@ -349,6 +412,17 @@ namespace IAT.ViewModels
             ErrorMarkY = rects.ErrorMark.Y;
             BlockInstructionsX = rects.BlockInstructions.X;
             BlockInstructionsY = rects.BlockInstructions.Y;
+            MockItemInstructionsX = rects.MockItemInstructions.X;
+            MockItemInstructionsY = rects.MockItemInstructions.Y;
+            KeyedInstructionsX = rects.KeyedInstructions.X;
+            KeyedInstructionsY = rects.KeyedInstructions.Y;
+            TextInstructionsX = rects.TextInstructions.X;
+            TextInstructionsY = rects.TextInstructions.Y;
+            ContinueInstructionsX = rects.ContinueInstructions.X;
+            ContinueInstructionsY = rects.ContinueInstructions.Y;
+
+            // Default active body region is block instructions (trial / block mode).
+            SetActiveInstructionsRect(rects.BlockInstructions);
 
             // If the calculator returned origin-only rects, fall back to rule-based placement.
             if (StimulusX == 0 && StimulusY == 0 && ErrorMarkX == 0)
@@ -391,6 +465,7 @@ namespace IAT.ViewModels
             ContinueInstructionsX = rects.ContinueInstructions.X; ContinueInstructionsY = rects.ContinueInstructions.Y;
             ContinueInstructionsWidth = rects.ContinueInstructions.Width; ContinueInstructionsHeight = rects.ContinueInstructions.Height;
 
+            SetActiveInstructionsRect(rects.BlockInstructions);
 
             if (StimulusX == 0 && StimulusY == 0 && ErrorMarkX == 0)
                 RecalculateDefaultPositions();
@@ -414,22 +489,26 @@ namespace IAT.ViewModels
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Rect(LeftKeyX, LeftKeyY, value, KeyHeight));
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Rect(RightKeyX, RightKeyY, value, KeyHeight));
+            if (!_isInitializing) RefreshDerivedInstructionRects();
         }
 
         partial void OnKeyHeightChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.LeftKey, new Rect(LeftKeyX, LeftKeyY, KeyWidth, value));
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.RightKey, new Rect(RightKeyX, RightKeyY, KeyWidth, value));
+            if (!_isInitializing) RefreshDerivedInstructionRects();
         }
 
         partial void OnErrorMarkWidthChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Rect(ErrorMarkX, ErrorMarkY, value, ErrorMarkHeight));
+            if (!_isInitializing) RefreshDerivedInstructionRects();
         }
 
         partial void OnErrorMarkHeightChanged(double value)
         {
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ErrorMark, new Rect(ErrorMarkX, ErrorMarkY, ErrorMarkWidth, value));
+            if (!_isInitializing) RefreshDerivedInstructionRects();
         }
 
         partial void OnBlockInstructionsWidthChanged(double value)
@@ -444,41 +523,49 @@ namespace IAT.ViewModels
 
         partial void OnMockItemInstructionsWidthChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Rect(MockItemInstructionsX, MockItemInstructionsY, value, MockItemInstructionsHeight));
         }
 
         partial void OnMockItemInstructionsHeightChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.MockItemInstructions, new Rect(MockItemInstructionsX, MockItemInstructionsY, MockItemInstructionsWidth, value));
         }
 
         partial void OnKeyedInstructionsWidthChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Rect(KeyedInstructionsX, KeyedInstructionsY, value, KeyedInstructionsHeight));
         }
 
         partial void OnKeyedInstructionsHeightChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.KeyedInstructions, new Rect(KeyedInstructionsX, KeyedInstructionsY, KeyedInstructionsWidth, value));
         }
 
         partial void OnTextInstructionsWidthChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Rect(TextInstructionsX, TextInstructionsY, value, TextInstructionsHeight));
         }
 
         partial void OnTextInstructionsHeightChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.TextInstructions, new Rect(TextInstructionsX, TextInstructionsY, TextInstructionsWidth, value));
         }
 
         partial void OnContinueInstructionsWidthChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Rect(ContinueInstructionsX, ContinueInstructionsY, value, ContinueInstructionsHeight));
         }
 
         partial void OnContinueInstructionsHeightChanged(double value)
         {
+            if (_isInitializing || _suppressGeometryPush) return;
             _calculator.ApplyUserOverrides(_test.Layout, LayoutItem.ContinueInstructions, new Rect(ContinueInstructionsX, ContinueInstructionsY, ContinueInstructionsWidth, value));
         }
 
@@ -491,6 +578,13 @@ namespace IAT.ViewModels
         /// </summary>
         public void ApplyTrialPreview(Trial? trial)
         {
+            IsErrorMarkVisible = false;
+            // Continue prompt is instruction-screen only.
+            IsContinueInstructionsVisible = false;
+            PreviewContinueText = string.Empty;
+            IsStimulusAreaVisible = true;
+            IsResponseKeysVisible = true;
+
             if (trial is null)
             {
                 ClearStimulusPreview();
@@ -563,6 +657,255 @@ namespace IAT.ViewModels
         }
 
         /// <summary>
+        /// Drives the layout preview from an instruction screen assigned to the current block.
+        /// Body text is placed in the layout rectangle that matches the screen type:
+        /// <list type="bullet">
+        /// <item><see cref="TextInstructionScreen"/> → <c>TextInstructionsRect</c></item>
+        /// <item><see cref="KeyedInstructionScreen"/> → <c>KeyedInstructionsRect</c></item>
+        /// <item><see cref="MockItemInstructionScreen"/> → <c>MockItemInstructionsRect</c></item>
+        /// </list>
+        /// Keyed/Mock also populate keys; Mock fills the stimulus slot and optional error/outline.
+        /// Pass null to clear instruction-specific state and restore the block-instructions region.
+        /// </summary>
+        public void ApplyInstructionPreview(InstructionScreen? screen)
+        {
+            if (screen is null)
+            {
+                IsErrorMarkVisible = false;
+                IsContinueInstructionsVisible = false;
+                PreviewContinueText = string.Empty;
+                ApplyKeyHighlight(KeyedDirection.None);
+                // Restore the body region to BlockInstructions for trial / block mode.
+                SetActiveInstructionsRect(new Rect(
+                    BlockInstructionsX, BlockInstructionsY,
+                    BlockInstructionsWidth, BlockInstructionsHeight));
+                return;
+            }
+
+            // Fresh derived geometry so the body border always matches the layout rules.
+            SyncDerivedInstructionGeometry();
+
+            // Body text → type-specific instructions rectangle.
+            var body = screen.Text?.Trim();
+            PreviewBlockInstructionsText = string.IsNullOrWhiteSpace(body)
+                ? "(empty instruction)"
+                : body;
+
+            // Continue prompt — always shown for instruction screens (Space is fixed).
+            var continueText = screen.ContinueInstructions?.Text?.Trim();
+            PreviewContinueText = string.IsNullOrWhiteSpace(continueText)
+                ? "Press the spacebar to continue"
+                : continueText;
+            IsContinueInstructionsVisible = true;
+
+            IsErrorMarkVisible = false;
+            ApplyKeyHighlight(KeyedDirection.None);
+            // Text / Keyed / empty Mock: no stimulus slot. Mock with a stimulus re-enables below.
+            HideStimulusPreview();
+
+            switch (screen)
+            {
+                case TextInstructionScreen:
+                    // Full interior band — no keys, no stimulus; body text owns the stage.
+                    IsResponseKeysVisible = false;
+                    SetActiveInstructionsRect(new Rect(
+                        TextInstructionsX, TextInstructionsY,
+                        TextInstructionsWidth, TextInstructionsHeight));
+                    break;
+
+                case KeyedInstructionScreen keyed:
+                    // Keyed body fills the stage below the keys; stimulus area stays collapsed.
+                    IsResponseKeysVisible = true;
+                    SetActiveInstructionsRect(new Rect(
+                        KeyedInstructionsX, KeyedInstructionsY,
+                        KeyedInstructionsWidth, KeyedInstructionsHeight));
+                    ApplyInstructionKeys(keyed.LeftResponseId, keyed.RightResponseId);
+                    break;
+
+                case MockItemInstructionScreen mock:
+                    IsResponseKeysVisible = true;
+                    ApplyInstructionKeys(mock.LeftResponseId, mock.RightResponseId);
+                    IsErrorMarkVisible = mock.ShowErrorMark;
+
+                    if (mock.OutlineCorrectResponse && mock.KeyedDirection is not null
+                        && mock.KeyedDirection != KeyedDirection.None)
+                    {
+                        ApplyKeyHighlight(mock.KeyedDirection);
+                    }
+
+                    // Body band = MockItemInstructions, but never higher than the stimulus bottom.
+                    // Without this clamp a high/mis-scaled ErrorMark makes the derived rect span
+                    // the whole stage so the body text runs straight through the stimulus.
+                    var stimulusBottom = StimulusY + StimulusHeight;
+                    var bodyTop = Math.Max(MockItemInstructionsY, stimulusBottom);
+                    var bodyBottom = MockItemInstructionsY + MockItemInstructionsHeight;
+                    if (bodyBottom <= bodyTop)
+                    {
+                        // Degenerate derived band (error mark at/below continue) — use a
+                        // readable strip down to the continue line so the body still appears.
+                        bodyBottom = Math.Max(bodyTop + 48, ContinueInstructionsY);
+                    }
+                    SetActiveInstructionsRect(new Rect(
+                        0,
+                        bodyTop,
+                        InteriorWidth,
+                        Math.Max(0, bodyBottom - bodyTop)));
+
+                    // Stimulus slot — only for Mock Item (matches Instructions-tab stacking).
+                    var stim = _test.GetStimulusById(mock.StimulusId);
+                    if (stim is TextStimulus textStim)
+                    {
+                        PreviewStimulusText = string.IsNullOrWhiteSpace(textStim.Text) ? "(empty)" : textStim.Text;
+                        PreviewStimulusFontFamily = textStim.Style?.FontFamily ?? "Segoe UI";
+                        PreviewStimulusFontSize = textStim.Style?.FontSize > 0 ? textStim.Style.FontSize : 28.0;
+                        PreviewStimulusBrush = new SolidColorBrush(textStim.Style?.FontColor ?? Colors.Black);
+                        PreviewStimulusImage = null;
+                        IsPreviewTextVisible = true;
+                        IsPreviewImageVisible = false;
+                        IsStimulusAreaVisible = true;
+                    }
+                    else if (stim is ImageStimulus imageStim)
+                    {
+                        var image = TryLoadImage(imageStim);
+                        if (image is not null)
+                        {
+                            PreviewStimulusImage = image;
+                            PreviewStimulusText = string.Empty;
+                            IsPreviewTextVisible = false;
+                            IsPreviewImageVisible = true;
+                        }
+                        else
+                        {
+                            PreviewStimulusImage = null;
+                            PreviewStimulusText = imageStim.GetDisplayPreview();
+                            PreviewStimulusFontFamily = "Segoe UI";
+                            PreviewStimulusFontSize = 16;
+                            PreviewStimulusBrush = Brushes.DimGray;
+                            IsPreviewTextVisible = true;
+                            IsPreviewImageVisible = false;
+                        }
+                        IsStimulusAreaVisible = true;
+                    }
+                    // else: leave stimulus hidden (no Sample Stimulus bleed under the body)
+                    break;
+
+                default:
+                    // Unknown instruction subtype — treat like text (no keys).
+                    IsResponseKeysVisible = false;
+                    SetActiveInstructionsRect(new Rect(
+                        TextInstructionsX, TextInstructionsY,
+                        TextInstructionsWidth, TextInstructionsHeight));
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Points the Blocks-tab instruction-body border at the given layout rectangle.
+        /// </summary>
+        private void SetActiveInstructionsRect(Rect rect)
+        {
+            ActiveInstructionsX = rect.X;
+            ActiveInstructionsY = rect.Y;
+            ActiveInstructionsWidth = rect.Width;
+            ActiveInstructionsHeight = rect.Height;
+        }
+
+        /// <summary>
+        /// Recomputes derived instruction regions and keeps the active body border in sync
+        /// when it was already pointing at one of those regions.
+        /// </summary>
+        private void RefreshDerivedInstructionRects()
+        {
+            static bool ApproxEqual(double a, double b) => Math.Abs(a - b) < 0.5;
+
+            bool Matches(double x, double y, double w, double h) =>
+                ApproxEqual(ActiveInstructionsX, x)
+                && ApproxEqual(ActiveInstructionsY, y)
+                && ApproxEqual(ActiveInstructionsWidth, w)
+                && ApproxEqual(ActiveInstructionsHeight, h);
+
+            var wasText = Matches(TextInstructionsX, TextInstructionsY, TextInstructionsWidth, TextInstructionsHeight);
+            var wasKeyed = Matches(KeyedInstructionsX, KeyedInstructionsY, KeyedInstructionsWidth, KeyedInstructionsHeight);
+            var wasMock = Matches(MockItemInstructionsX, MockItemInstructionsY, MockItemInstructionsWidth, MockItemInstructionsHeight);
+
+            SyncDerivedInstructionGeometry();
+
+            if (wasText)
+                SetActiveInstructionsRect(new Rect(TextInstructionsX, TextInstructionsY, TextInstructionsWidth, TextInstructionsHeight));
+            else if (wasKeyed)
+                SetActiveInstructionsRect(new Rect(KeyedInstructionsX, KeyedInstructionsY, KeyedInstructionsWidth, KeyedInstructionsHeight));
+            else if (wasMock)
+                SetActiveInstructionsRect(new Rect(MockItemInstructionsX, MockItemInstructionsY, MockItemInstructionsWidth, MockItemInstructionsHeight));
+        }
+
+        /// <summary>
+        /// Pulls Text / Keyed / Mock / Continue instruction rectangles from the calculator
+        /// (derived from interior + keys + error mark) into the ViewModel and domain layout.
+        /// Does not write <see cref="Layout.UserSizeOverrides"/> so the regions stay derived.
+        /// </summary>
+        private void SyncDerivedInstructionGeometry()
+        {
+            // Drop any accidental overrides on calculated regions so GetFinalRects re-derives them.
+            var overrides = _test.Layout.UserSizeOverrides;
+            overrides.Remove(LayoutItem.TextInstructions);
+            overrides.Remove(LayoutItem.KeyedInstructions);
+            overrides.Remove(LayoutItem.MockItemInstructions);
+            overrides.Remove(LayoutItem.ContinueInstructions);
+
+            // Keep base geometry the calculator uses for keys / error mark in sync with the VM.
+            _test.Layout.LeftKeyRect = new Rect(LeftKeyX, LeftKeyY, KeyWidth, KeyHeight);
+            _test.Layout.RightKeyRect = new Rect(RightKeyX, RightKeyY, KeyWidth, KeyHeight);
+            _test.Layout.ErrorMarkRect = new Rect(ErrorMarkX, ErrorMarkY, ErrorMarkWidth, ErrorMarkHeight);
+            _test.Layout.InteriorRect = new Rect(0, 0, InteriorWidth, InteriorHeight);
+
+            var rects = _calculator.GetFinalRects(_test.Layout);
+
+            _suppressGeometryPush = true;
+            try
+            {
+                TextInstructionsX = rects.TextInstructions.X;
+                TextInstructionsY = rects.TextInstructions.Y;
+                TextInstructionsWidth = rects.TextInstructions.Width;
+                TextInstructionsHeight = rects.TextInstructions.Height;
+
+                KeyedInstructionsX = rects.KeyedInstructions.X;
+                KeyedInstructionsY = rects.KeyedInstructions.Y;
+                KeyedInstructionsWidth = rects.KeyedInstructions.Width;
+                KeyedInstructionsHeight = rects.KeyedInstructions.Height;
+
+                MockItemInstructionsX = rects.MockItemInstructions.X;
+                MockItemInstructionsY = rects.MockItemInstructions.Y;
+                MockItemInstructionsWidth = rects.MockItemInstructions.Width;
+                MockItemInstructionsHeight = rects.MockItemInstructions.Height;
+
+                ContinueInstructionsX = rects.ContinueInstructions.X;
+                ContinueInstructionsY = rects.ContinueInstructions.Y;
+                ContinueInstructionsWidth = rects.ContinueInstructions.Width;
+                ContinueInstructionsHeight = rects.ContinueInstructions.Height;
+            }
+            finally
+            {
+                _suppressGeometryPush = false;
+            }
+
+            _test.Layout.TextInstructionsRect = rects.TextInstructions;
+            _test.Layout.KeyedInstructionsRect = rects.KeyedInstructions;
+            _test.Layout.MockItemInstructionsRect = rects.MockItemInstructions;
+            _test.Layout.ContinueInstructionsRect = rects.ContinueInstructions;
+        }
+
+        private void ApplyInstructionKeys(Guid leftId, Guid rightId)
+        {
+            var left = leftId != Guid.Empty ? _test.GetKeyById(leftId) : null;
+            var right = rightId != Guid.Empty ? _test.GetKeyById(rightId) : null;
+
+            var leftText = left?.Text?.Trim();
+            var rightText = right?.Text?.Trim();
+            LeftKeyPreviewText = string.IsNullOrEmpty(leftText) ? DummyLeftKeyText : leftText;
+            RightKeyPreviewText = string.IsNullOrEmpty(rightText) ? DummyRightKeyText : rightText;
+        }
+
+        /// <summary>
         /// Updates left/right key labels from the block's response key definitions.
         /// Prefer block-linked keys; fall back to any key registered with the matching LayoutItem.
         /// When no block is selected (or a key has no text), shows the dummy placeholders so the
@@ -603,7 +946,8 @@ namespace IAT.ViewModels
         }
 
         /// <summary>
-        /// Updates the Block Instructions rectangle text (from the Blocks-tab editor).
+        /// Updates the Block Instructions rectangle text (from the Blocks-tab editor)
+        /// and points the active body region at <c>BlockInstructionsRect</c>.
         /// Null/whitespace falls back to the dummy placeholder so the rectangle stays readable
         /// when no block is selected or instructions have not been entered yet.
         /// </summary>
@@ -612,40 +956,33 @@ namespace IAT.ViewModels
             PreviewBlockInstructionsText = string.IsNullOrWhiteSpace(text)
                 ? DummyBlockInstructionsText
                 : text.Trim();
+
+            SetActiveInstructionsRect(new Rect(
+                BlockInstructionsX, BlockInstructionsY,
+                BlockInstructionsWidth, BlockInstructionsHeight));
         }
 
         /// <summary>
-        /// Highlights the key that matches the trial's keyed direction (bold + accent color).
-        /// The opposite key stays normal black.
+        /// Highlights the key that matches the trial's (or Mock Item's) keyed direction.
+        /// Matches the Instructions-tab treatment: blue outline border on the correct side,
+        /// both keys stay bold black text. Clears the outline when direction is None.
         /// </summary>
         public void ApplyKeyHighlight(KeyedDirection direction)
         {
-            // Accent blue used elsewhere in the app for selection / primary actions
-            var highlight = new SolidColorBrush(Color.FromRgb(0, 122, 204));
+            IsLeftKeyOutlined = direction == KeyedDirection.Left;
+            IsRightKeyOutlined = direction == KeyedDirection.Right;
 
-            if (direction == KeyedDirection.Left)
-            {
-                LeftKeyPreviewBrush = highlight;
-                LeftKeyPreviewFontWeight = FontWeights.Bold;
-                RightKeyPreviewBrush = Brushes.Black;
-                RightKeyPreviewFontWeight = FontWeights.Normal;
-            }
-            else if (direction == KeyedDirection.Right)
-            {
-                RightKeyPreviewBrush = highlight;
-                RightKeyPreviewFontWeight = FontWeights.Bold;
-                LeftKeyPreviewBrush = Brushes.Black;
-                LeftKeyPreviewFontWeight = FontWeights.Normal;
-            }
-            else
-            {
-                LeftKeyPreviewBrush = Brushes.Black;
-                LeftKeyPreviewFontWeight = FontWeights.Normal;
-                RightKeyPreviewBrush = Brushes.Black;
-                RightKeyPreviewFontWeight = FontWeights.Normal;
-            }
+            // Text stays black + bold on both sides — the outline is the highlight signal,
+            // identical to InstructionManagerControl's keyed/mock preview.
+            LeftKeyPreviewBrush = Brushes.Black;
+            RightKeyPreviewBrush = Brushes.Black;
+            LeftKeyPreviewFontWeight = FontWeights.Bold;
+            RightKeyPreviewFontWeight = FontWeights.Bold;
         }
 
+        /// <summary>
+        /// Resets the stimulus slot to the neutral sample placeholder used in trial / block mode.
+        /// </summary>
         private void ClearStimulusPreview()
         {
             PreviewStimulusText = "Sample Stimulus";
@@ -655,6 +992,20 @@ namespace IAT.ViewModels
             PreviewStimulusImage = null;
             IsPreviewTextVisible = true;
             IsPreviewImageVisible = false;
+        }
+
+        /// <summary>
+        /// Hides the stimulus slot entirely. Used while previewing Text / Keyed instruction
+        /// screens (and Mock Items with no assigned stimulus) so body text cannot run through
+        /// a leftover sample or trial stimulus.
+        /// </summary>
+        private void HideStimulusPreview()
+        {
+            PreviewStimulusText = string.Empty;
+            PreviewStimulusImage = null;
+            IsPreviewTextVisible = false;
+            IsPreviewImageVisible = false;
+            IsStimulusAreaVisible = false;
         }
 
         /// <summary>

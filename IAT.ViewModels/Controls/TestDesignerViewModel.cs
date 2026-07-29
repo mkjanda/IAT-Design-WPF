@@ -38,6 +38,9 @@ namespace IAT.ViewModels.Controls
         /// <summary>ViewModel for the Surveys tab.</summary>
         public SurveyManagerViewModel SurveyManager { get; }
 
+        /// <summary>ViewModel for the Instructions tab.</summary>
+        public InstructionManagerViewModel InstructionManager { get; }
+
         /// <summary>ViewModel for the Deploy tab.</summary>
         public DeployManagerViewModel DeployManager { get; }
 
@@ -78,6 +81,7 @@ namespace IAT.ViewModels.Controls
             StimuliManagerViewModel stimuliManager,
             TrialsManagerViewModel trialsManager,
             SurveyManagerViewModel surveyManager,
+            InstructionManagerViewModel instructionManager,
             DeployManagerViewModel deployManager)
         {
             _packageService = packageService;
@@ -89,6 +93,7 @@ namespace IAT.ViewModels.Controls
             StimuliManager = stimuliManager;
             TrialsManager = trialsManager;
             SurveyManager = surveyManager;
+            InstructionManager = instructionManager;
             DeployManager = deployManager;
 
             // Child tabs broadcast edits; mark the document dirty.
@@ -100,6 +105,7 @@ namespace IAT.ViewModels.Controls
             _currentTest.TrialsCollection.CollectionChanged += (_, _) => MarkDirty();
             _currentTest.KeysCollection.CollectionChanged += (_, _) => MarkDirty();
             _currentTest.Surveys.CollectionChanged += (_, _) => MarkDirty();
+            _currentTest.InstructionScreens.CollectionChanged += (_, _) => MarkDirty();
         }
 
         private bool _suppressDirty;
@@ -254,6 +260,7 @@ namespace IAT.ViewModels.Controls
             TrialsManager.OnDocumentReset();
             StimuliManager.OnDocumentReset();
             SurveyManager.OnDocumentReset();
+            InstructionManager.OnDocumentReset();
         }
 
         private static string SanitizeFileName(string? name)
