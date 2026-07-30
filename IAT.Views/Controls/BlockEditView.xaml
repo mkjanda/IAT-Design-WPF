@@ -179,16 +179,22 @@
                                        TextWrapping="Wrap" TextAlignment="Center"/>
                         </Border>
 
-                        <!-- Error Mark (shown for Mock Item instructions with ShowErrorMark) -->
+                        <!-- Error Mark (shown for Mock Item instructions with ShowErrorMark).
+                             ClipToBounds + Viewbox keep the glyph inside the layout rect so a
+                             large FontSize cannot paint over the stimulus above. -->
                         <Border Canvas.Left="{Binding ErrorMarkX}"
                                 Canvas.Top="{Binding ErrorMarkY}"
                                 Width="{Binding ErrorMarkWidth}"
                                 Height="{Binding ErrorMarkHeight}"
                                 BorderThickness="0"
                                 Background="Transparent"
+                                ClipToBounds="True"
                                 Visibility="{Binding IsErrorMarkVisible, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="X" Foreground="Red" FontSize="48"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Viewbox Stretch="Uniform" Margin="2">
+                                <TextBlock Text="X" Foreground="Red" FontSize="48"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Viewbox>
                         </Border>
 
                         <!-- Continue instructions (instruction-screen preview only) -->

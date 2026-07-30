@@ -26,26 +26,26 @@ public sealed partial class ImageStimulus : Stimulus
     public string AltText { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the file name (or full path) of the image. Display text is derived from this.
+    /// Leaf file name of the image (e.g. "face.png"). Prefer storing only the name, not a full
+    /// disk path — the package owns image bytes by <see cref="Stimulus.Id"/>. Full paths that
+    /// slip in are still stripped by <see cref="Text"/> / <see cref="GetDisplayPreview"/>.
     /// </summary>
     public string FileName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets the text to be displayed for the image stimulus, which is derived from the file name. 
-    /// This property extracts the file name from the full path and provides it as a displayable string.
-    /// Setting is not supported; set <see cref="FileName"/> instead.
+    /// Display text for lists, trial/instruction previews, and search. Always the leaf file name
+    /// via <see cref="Path.GetFileName"/> so a legacy full path in <see cref="FileName"/> never
+    /// leaks into the UI. Setting is not supported; set <see cref="FileName"/> instead.
     /// </summary>
     public override string Text
     {
         get => string.IsNullOrEmpty(FileName) ? string.Empty : Path.GetFileName(FileName);
-        set => throw new NotImplementedException(
-            "The Text property is derived from the FileName and cannot be set directly. Please set the FileName property instead.");
+        set;
     }
 
     /// <summary>
-    /// Returns a string suitable for displaying as a preview of the current item.
+    /// Returns the leaf file name for UI previews (same as <see cref="Text"/>).
     /// </summary>
-    /// <returns>A string containing the file name to be used as a display preview.</returns>
     public override string GetDisplayPreview() => Text;
 
     /// <summary>

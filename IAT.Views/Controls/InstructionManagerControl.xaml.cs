@@ -27,6 +27,23 @@ public partial class InstructionManagerControl : UserControl
     public InstructionManagerControl()
     {
         InitializeComponent();
+
+        // Blocks overwrites the shared LayoutViewModel stage when its sequence selection changes.
+        // Re-push the selected instruction whenever this tab becomes visible again so the
+        // Canvas matches the current screen after visiting Blocks / Layout / Trials.
+        Loaded += (_, _) => RefreshSharedPreview();
+        IsVisibleChanged += (_, e) =>
+        {
+            if (e.NewValue is true)
+                RefreshSharedPreview();
+        };
+        DataContextChanged += (_, _) => RefreshSharedPreview();
+    }
+
+    private void RefreshSharedPreview()
+    {
+        if (DataContext is InstructionManagerViewModel vm)
+            vm.RefreshInstructionPreview();
     }
 
     private void InstructionTextBox_GotFocus(object sender, RoutedEventArgs e)

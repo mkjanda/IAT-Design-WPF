@@ -379,7 +379,7 @@ public partial class SurveyManagerViewModel : ObservableObject
                 _currentTest.AddStimulus(new ImageStimulus
                 {
                     Id = imageId,
-                    FileName = dialog.FileName,
+                    FileName = Path.GetFileName(dialog.FileName),
                     AltText = string.Empty
                 });
             }

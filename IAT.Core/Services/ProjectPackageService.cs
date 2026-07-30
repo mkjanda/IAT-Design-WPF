@@ -1,4 +1,5 @@
-﻿using IAT.Core.Domain;
+﻿using com.sun.corba.se.impl.copyobject;
+using IAT.Core.Domain;
 using IAT.Core.Exceptions;
 using IAT.Core.Models;
 using System.IO;
@@ -117,24 +118,16 @@ public class ProjectPackageService : IProjectPackageService
             await JsonSerializer.SerializeAsync(testStream, test, _jsonOptions, ct);
         }
 
-        // Import stimuli (images and text) into separate parts
-        foreach (var block in test.AllBlocks)
-        {
-            foreach (var trialId in block.TrialIds)
+        foreach (var stim in test.AllStimuli) {
+            if (stim is ImageStimulus imageStim)
             {
-                var trial = test.GetTrialById(trialId) ?? throw new InvalidOperationException($"Trial with ID {trialId} not found in test.");
-                if (test.GetStimulusById(trial.StimulusId) is ImageStimulus imageStimulus)
-                {
-                    // Assume sourceFilePath is available (e.g., from stimulus.FileName or a lookup)
-                    string sourceFilePath = GetSourceFilePath(imageStimulus);
-                    await _imagePackageService.ImportImageStimulusAsync(imageStimulus, sourceFilePath, package, ct);
-                }
-                else if (test.GetStimulusById(trial.StimulusId) is TextStimulus textStimulus)
-                {
-                    await _imagePackageService.ImportTextStimulusAsync(textStimulus, package, ct);
-                }
-            }
+                // Assume sourceFilePath is available (e.g., from stimulus.FileName or a lookup)
+                string sourceFilePath = GetSourceFilePath(imageStim);
+                await _imagePackageService.ImportImageStimulusAsync(imageStim, sourceFilePath, package, ct);
+            } else if (stim is TextStimulus textStim)
+                await _imagePackageService.ImportTextStimulusAsync(textStim, package, ct);
         }
+
     }
 
     /// <summary>

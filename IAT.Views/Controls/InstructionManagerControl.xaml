@@ -251,7 +251,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- ========== RIGHT: Live Preview (Interior aspect) ========== -->
+        <!-- ========== RIGHT: Live Preview (layout-driven Canvas — same geometry as Blocks) ========== -->
         <Border Grid.Column="2" Background="#252526" BorderBrush="#3C3C3C" BorderThickness="1,0,0,0">
             <DockPanel>
                 <TextBlock Text="Live Preview" Style="{StaticResource SectionHeader}"
@@ -259,115 +259,163 @@
                 <TextBlock DockPanel.Dock="Top" Margin="12,0,12,8" Foreground="#888888" FontSize="11"
                            Text="{Binding StageSizeLabel}"/>
 
-                <!-- Host that preserves Interior aspect ratio -->
+                <!--
+                  Single source of truth: LayoutViewModel owns positions, sizes, keys,
+                  stimulus, error mark, continue band, and ActiveInstructions* body region.
+                  Viewbox keeps the logical Interior aspect; no ScaleTransform (Blocks uses
+                  FitToWindow ScaleFactor — here Viewbox is enough and avoids double-scale).
+                -->
                 <Grid Margin="12,0,12,12" ClipToBounds="True">
                     <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Border Background="White"
-                                Width="{Binding InteriorWidth}"
-                                Height="{Binding InteriorHeight}"
                                 BorderBrush="#444" BorderThickness="1"
-                                SnapsToDevicePixels="True">
-                            
-                            <Grid>
-                                <!-- Text-only: full-area text, body top-aligned in the content band -->
-                                <DockPanel Margin="24"
-                                           Visibility="{Binding IsKeyedOrMock, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}">
-                                    <TextBlock DockPanel.Dock="Bottom"
-                                               Text="{Binding PreviewContinueText}"
-                                               FontSize="14" Foreground="#333"
-                                               HorizontalAlignment="Center" Margin="0,16,0,0"
-                                               TextWrapping="Wrap"/>
-                                    <TextBlock Text="{Binding PreviewBodyText}"
-                                               FontSize="22" FontWeight="SemiBold" Foreground="#111"
-                                               HorizontalAlignment="Center" VerticalAlignment="Top"
-                                               TextWrapping="Wrap" TextAlignment="Center"/>
-                                </DockPanel>
+                                SnapsToDevicePixels="True"
+                                Effect="{StaticResource DropShadow}">
+                            <!-- DataContext switches to the shared LayoutViewModel for geometry + content -->
+                            <Canvas Background="#F8F8F8"
+                                    DataContext="{Binding LayoutEditor}"
+                                    Width="{Binding InteriorWidth}"
+                                    Height="{Binding InteriorHeight}">
 
-                                <!-- Keyed / Mock: keys + body (+ stimulus / error for mock) -->
-                                <Grid Visibility="{Binding IsKeyedOrMock, Converter={StaticResource BoolToVisibility}}">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                <!-- Instruction body — ActiveInstructions* switched by ApplyInstructionPreview
+                                     to TextInstructions / KeyedInstructions / clamped MockItemInstructions. -->
+                                <Border Canvas.Left="{Binding ActiveInstructionsX}"
+                                        Canvas.Top="{Binding ActiveInstructionsY}"
+                                        Width="{Binding ActiveInstructionsWidth}"
+                                        Height="{Binding ActiveInstructionsHeight}"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        ClipToBounds="True">
+                                    <TextBlock Text="{Binding PreviewBlockInstructionsText}"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Top"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               FontSize="16" Foreground="#222"
+                                               Margin="8,4"/>
+                                </Border>
 
-                                    <!-- Top keys (outline drawn when Mock Item designates a correct side) -->
-                                    <Grid Grid.Row="0" Margin="16,16,16,8">
-                                        <Border HorizontalAlignment="Left"
-                                                Padding="10,4"
-                                                CornerRadius="4"
-                                                BorderThickness="3"
-                                                Background="Transparent">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLeftKeyOutlined}" Value="True">
-                                                            <Setter Property="BorderBrush" Value="#007ACC"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock Text="{Binding PreviewLeftKeyText}"
-                                                       FontSize="28" FontWeight="Bold" Foreground="#111"/>
-                                        </Border>
-                                        <Border HorizontalAlignment="Right"
-                                                Padding="10,4"
-                                                CornerRadius="4"
-                                                BorderThickness="3"
-                                                Background="Transparent">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsRightKeyOutlined}" Value="True">
-                                                            <Setter Property="BorderBrush" Value="#007ACC"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock Text="{Binding PreviewRightKeyText}"
-                                                       FontSize="28" FontWeight="Bold" Foreground="#111"/>
-                                        </Border>
-                                    </Grid>
-
-                                    <!-- Body band: stimulus (mock) and/or instruction text — top of the rect -->
-                                    <StackPanel Grid.Row="1" VerticalAlignment="Top" Margin="24,8,24,0">
-                                        <!-- Image stimulus preview -->
-                                        <Image Source="{Binding PreviewStimulusImage}"
-                                               MaxHeight="180" MaxWidth="280"
-                                               Stretch="Uniform"
-                                               HorizontalAlignment="Center"
-                                               Visibility="{Binding IsPreviewStimulusImage, Converter={StaticResource BoolToVisibility}}"/>
-                                        <!-- Text stimulus (or image fallback) -->
+                                <!-- Stimulus: Mock Item only (hidden for Text / Keyed) -->
+                                <Border Canvas.Left="{Binding StimulusX}"
+                                        Canvas.Top="{Binding StimulusY}"
+                                        Width="{Binding StimulusWidth}"
+                                        Height="{Binding StimulusHeight}"
+                                        BorderThickness="0"
+                                        ClipToBounds="True"
+                                        Background="Transparent"
+                                        Visibility="{Binding IsStimulusAreaVisible, Converter={StaticResource BoolToVisibility}}">
+                                    <Grid>
                                         <TextBlock Text="{Binding PreviewStimulusText}"
-                                                   FontSize="32" FontWeight="SemiBold" Foreground="#111"
-                                                   HorizontalAlignment="Center"
-                                                   Visibility="{Binding IsPreviewStimulusText, Converter={StaticResource BoolToVisibility}}"/>
-                                        <TextBlock Text="{Binding PreviewBodyText}"
-                                                   FontSize="18" Foreground="#222"
-                                                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                                                   FontFamily="{Binding PreviewStimulusFontFamily}"
+                                                   FontSize="{Binding PreviewStimulusFontSize}"
+                                                   Foreground="{Binding PreviewStimulusBrush}"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap"
                                                    TextAlignment="Center"
-                                                   Margin="0,12,0,0"/>
-                                    </StackPanel>
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8"
+                                                   Visibility="{Binding IsPreviewTextVisible, Converter={StaticResource BoolToVisibility}}"/>
+                                        <Image Source="{Binding PreviewStimulusImage}"
+                                               Stretch="Uniform"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Stretch"
+                                               Margin="2"
+                                               Visibility="{Binding IsPreviewImageVisible, Converter={StaticResource BoolToVisibility}}"/>
+                                    </Grid>
+                                </Border>
 
-                                    <!-- Error mark -->
-                                    <TextBlock Grid.Row="2"
-                                               Text="✕" FontSize="36" FontWeight="Bold"
-                                               Foreground="#E53935"
-                                               HorizontalAlignment="Center"
-                                               Visibility="{Binding ShowErrorMark, Converter={StaticResource BoolToVisibility}}"/>
+                                <!-- Left key -->
+                                <Border Canvas.Left="{Binding LeftKeyX}"
+                                        Canvas.Top="{Binding LeftKeyY}"
+                                        Width="{Binding KeyWidth}"
+                                        Height="{Binding KeyHeight}"
+                                        Background="Transparent"
+                                        BorderThickness="3"
+                                        CornerRadius="4"
+                                        ClipToBounds="True"
+                                        Padding="4"
+                                        Visibility="{Binding IsResponseKeysVisible, Converter={StaticResource BoolToVisibility}}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsLeftKeyOutlined}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding LeftKeyPreviewText}"
+                                               Foreground="{Binding LeftKeyPreviewBrush}"
+                                               FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                               FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               TextWrapping="Wrap" TextAlignment="Center"/>
+                                </Border>
 
-                                    <!-- Continue -->
-                                    <TextBlock Grid.Row="3"
-                                               Text="{Binding PreviewContinueText}"
+                                <!-- Right key -->
+                                <Border Canvas.Left="{Binding RightKeyX}"
+                                        Canvas.Top="{Binding RightKeyY}"
+                                        Width="{Binding KeyWidth}"
+                                        Height="{Binding KeyHeight}"
+                                        Background="Transparent"
+                                        BorderThickness="3"
+                                        CornerRadius="4"
+                                        ClipToBounds="True"
+                                        Padding="4"
+                                        Visibility="{Binding IsResponseKeysVisible, Converter={StaticResource BoolToVisibility}}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRightKeyOutlined}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#007ACC"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding RightKeyPreviewText}"
+                                               Foreground="{Binding RightKeyPreviewBrush}"
+                                               FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                               FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               TextWrapping="Wrap" TextAlignment="Center"/>
+                                </Border>
+
+                                <!-- Error mark (Mock Item + ShowErrorMark).
+                                     Clip + Viewbox so the glyph stays inside the layout rect. -->
+                                <Border Canvas.Left="{Binding ErrorMarkX}"
+                                        Canvas.Top="{Binding ErrorMarkY}"
+                                        Width="{Binding ErrorMarkWidth}"
+                                        Height="{Binding ErrorMarkHeight}"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        ClipToBounds="True"
+                                        Visibility="{Binding IsErrorMarkVisible, Converter={StaticResource BoolToVisibility}}">
+                                    <Viewbox Stretch="Uniform" Margin="2">
+                                        <TextBlock Text="X" Foreground="Red" FontSize="48"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Viewbox>
+                                </Border>
+
+                                <!-- Continue prompt (Space) -->
+                                <Border Canvas.Left="{Binding ContinueInstructionsX}"
+                                        Canvas.Top="{Binding ContinueInstructionsY}"
+                                        Width="{Binding ContinueInstructionsWidth}"
+                                        Height="{Binding ContinueInstructionsHeight}"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        ClipToBounds="True"
+                                        Visibility="{Binding IsContinueInstructionsVisible, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{Binding PreviewContinueText}"
                                                FontSize="13" Foreground="#444"
-                                               HorizontalAlignment="Center"
-                                               Margin="16,8,16,16"
-                                               TextWrapping="Wrap"/>
-                                </Grid>
-                            </Grid>
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               TextWrapping="Wrap" TextAlignment="Center"
+                                               Margin="8,0"/>
+                                </Border>
+                            </Canvas>
                         </Border>
                     </Viewbox>
                 </Grid>

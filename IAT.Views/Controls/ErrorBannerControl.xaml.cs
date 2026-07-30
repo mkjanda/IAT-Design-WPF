@@ -53,7 +53,7 @@ namespace IAT.Views.Controls
         /// <summary>
         /// Call this to show the banner with slide-down animation.
         /// </summary>
-        public void Show(string title, string message, int autoHideSeconds = 8)
+        public void Show(string title, string message, int autoHideSeconds = 15)
         {
             Title = title;
             Message = message;

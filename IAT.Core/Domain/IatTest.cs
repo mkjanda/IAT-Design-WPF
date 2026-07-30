@@ -70,9 +70,22 @@ public partial class IatTest : ObservableObject
     }
 
     /// <summary>
-    /// Gets a read-only list of all instruction screens.
+    /// Gets or sets a list of all instruction screens.
+    /// The setter populates <see cref="InstructionScreens"/> when that collection is still empty
+    /// (same pattern as <see cref="AllStimuli"/> / <see cref="AllKeys"/>), so package load is
+    /// resilient whether the JSON uses the observable collection name or this alias.
     /// </summary>
-    public IReadOnlyList<InstructionScreen> AllInstructionScreens => InstructionScreens.ToList().AsReadOnly();
+    public List<InstructionScreen> AllInstructionScreens
+    {
+        get => InstructionScreens.ToList();
+        set
+        {
+            if (InstructionScreens.Count > 0 || value is null) return;
+            InstructionScreens.Clear();
+            foreach (var s in value)
+                InstructionScreens.Add(s);
+        }
+    }
 
     /// <summary>
     /// Gets a read-only list of all keys used in the test. This collection provides access to the key 

@@ -33,7 +33,7 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
         : this(iatTest, packageService)
     {
         Id = stimulus.Id;
-        FileName = string.IsNullOrEmpty(stimulus.FileName) ? "Image Stimulus" : Path.GetFileName(stimulus.FileName);
+        FileName = string.IsNullOrEmpty(stimulus.FileName) ? "Image Stimulus" : stimulus.Text;
         filePath = stimulus.FileName ?? string.Empty;
         AltText = stimulus.AltText ?? string.Empty;
 
@@ -67,10 +67,12 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
         try
         {
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
-            var newId = await _packageService.AddImageAsync(bytes, Path.GetFileName(dialog.FileName));
+            var leafName = dialog.FileName;
+            var newId = await _packageService.AddImageAsync(bytes, leafName);
 
             Id = newId;
-            FileName = Path.GetFileName(dialog.FileName);
+            filePath = dialog.FileName; // ephemeral source path for optional re-import
+            FileName = leafName;        // durable display name written to the domain
             PreviewImage = BitmapFromBytes(bytes);
             UpdateFileInfo(bytes);
         }
@@ -107,10 +109,14 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
     /// </summary>
     protected override Stimulus CreateDomainStimulus()
     {
+        // Prefer the short display name already on the VM. Fall back to stripping
+        // any legacy full path that may still sit in filePath from an older package.
+        var leaf = !string.IsNullOrWhiteSpace(FileName)  ? FileName: filePath;
+
         return new ImageStimulus
         {
             Id = Id,
-            FileName = filePath,
+            FileName = string.IsNullOrWhiteSpace(leaf) ? "Image Stimulus" : leaf,
             AltText = AltText
         };
     }

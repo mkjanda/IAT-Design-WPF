@@ -6,6 +6,7 @@
         xmlns:controls="clr-namespace:IAT.Views.Controls;assembly=IAT.Views"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
+        Icon="IAT-Design.ico"
         Height="720" Width="1280"
         Background="#252526"
         Foreground="#E0E0E0"

@@ -208,6 +208,8 @@ public partial class StimuliManagerViewModel : ObservableObject
             var newStimulus = new ImageStimulus
             {
                 Id = imageId,
+                // Store the leaf file name only. The package owns the image by Id;
+                // a full source path is ephemeral and must not appear in previews/lists.
                 FileName = dialog.FileName,
                 AltText = string.Empty
             };

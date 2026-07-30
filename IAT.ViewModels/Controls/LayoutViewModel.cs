@@ -632,11 +632,11 @@ namespace IAT.ViewModels
                 }
                 else
                 {
-                    // Bytes not in package cache and no PackageUri — filename fallback only
+                    // Bytes not in package cache and no PackageUri — show Text (leaf file name),
+                    // never the full source path that may still sit in FileName on older packages.
                     PreviewStimulusImage = null;
-                    PreviewStimulusText = string.IsNullOrWhiteSpace(imageStim.FileName)
-                        ? (imageStim.GetDisplayPreview() is { Length: > 0 } p ? p : "(image)")
-                        : imageStim.FileName;
+                    var preview = imageStim.GetDisplayPreview();
+                    PreviewStimulusText = string.IsNullOrWhiteSpace(preview) ? "(image)" : preview;
                     PreviewStimulusFontFamily = "Segoe UI";
                     PreviewStimulusFontSize = 16;
                     PreviewStimulusBrush = Brushes.DimGray;
@@ -667,6 +667,27 @@ namespace IAT.ViewModels
         /// Keyed/Mock also populate keys; Mock fills the stimulus slot and optional error/outline.
         /// Pass null to clear instruction-specific state and restore the block-instructions region.
         /// </summary>
+        /// <summary>
+        /// Clears all stage chrome so the Instructions tab does not show leftover Blocks-tab
+        /// trial content (stimulus, keys, error mark, body text) when no instruction screen is selected.
+        /// Does not change geometry — only visibility and preview strings.
+        /// </summary>
+        public void ClearStageForInstructionsIdle()
+        {
+            IsErrorMarkVisible = false;
+            IsContinueInstructionsVisible = false;
+            PreviewContinueText = string.Empty;
+            PreviewBlockInstructionsText = string.Empty;
+            IsResponseKeysVisible = false;
+            ApplyKeyHighlight(KeyedDirection.None);
+            HideStimulusPreview();
+            // Keep ActiveInstructions on the block band so the empty stage is stable if the user
+            // switches back to Blocks without a sequence re-selection.
+            SetActiveInstructionsRect(new Rect(
+                BlockInstructionsX, BlockInstructionsY,
+                BlockInstructionsWidth, BlockInstructionsHeight));
+        }
+
         public void ApplyInstructionPreview(InstructionScreen? screen)
         {
             if (screen is null)
@@ -676,6 +697,9 @@ namespace IAT.ViewModels
                 PreviewContinueText = string.Empty;
                 ApplyKeyHighlight(KeyedDirection.None);
                 // Restore the body region to BlockInstructions for trial / block mode.
+                // Intentionally does NOT hide stimulus/keys — Blocks calls this when returning
+                // to trial mode and then ApplyTrialPreview / ApplyBlockKeys. Instructions tab
+                // with no selection must call <see cref="ClearStageForInstructionsIdle"/> instead.
                 SetActiveInstructionsRect(new Rect(
                     BlockInstructionsX, BlockInstructionsY,
                     BlockInstructionsWidth, BlockInstructionsHeight));

@@ -8,9 +8,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+
+	  <ApplicationIcon>IAT-Design.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="IAT-Design.ico" />
     <None Remove="Templates\drawings\item_drawing.xslt" />
     <None Remove="Templates\drawings\title_drawing.xml" />
     <None Remove="Templates\drawings\title_drawing.xslt" />
@@ -118,4 +121,11 @@
     <Folder Include="Extensions\" />
     <Folder Include="Utilities\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="IAT-Design.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
 </Project>

@@ -35,9 +35,10 @@
             <StackPanel Orientation="Horizontal" Margin="4,6">
                 <TextBlock Text="I" FontWeight="Bold" Foreground="#F7C46C"
                            Width="20" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding FileName}" Foreground="#E0E0E0"
+                <!-- Text is Path.GetFileName(FileName) — never the full source path -->
+                <TextBlock Text="{Binding Text}" Foreground="#E0E0E0"
                            TextTrimming="CharacterEllipsis" MaxWidth="220"
-                           VerticalAlignment="Center" ToolTip="{Binding FileName}"/>
+                           VerticalAlignment="Center" ToolTip="{Binding Text}"/>
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>

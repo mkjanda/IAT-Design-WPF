@@ -24,8 +24,17 @@ public partial class InstructionManagerViewModel : ObservableObject
     private readonly LayoutViewModel _layoutEditor;
     private readonly IProjectPackageService _packageService;
     private bool _suppressPropertyPush;
+    /// <summary>Prevents ApplyInstructionPreview → layout PropertyChanged → re-apply loops.</summary>
+    private bool _suppressLayoutReapply;
 
     public IatTest CurrentTest => _currentTest;
+
+    /// <summary>
+    /// Shared layout geometry + stage preview model (same singleton Blocks and Layout tabs use).
+    /// The Instructions-tab live stage binds its Canvas to this object so positions, sizes,
+    /// keys, stimulus, error mark, and continue band all follow the real layout — not a hard-coded stack.
+    /// </summary>
+    public LayoutViewModel LayoutEditor => _layoutEditor;
 
     /// <summary>Live collection bound to the left-hand screen list.</summary>
     public ObservableCollection<InstructionScreen> InstructionScreens => _currentTest.InstructionScreens;
@@ -223,6 +232,11 @@ public partial class InstructionManagerViewModel : ObservableObject
 
         // Keep assignment list in sync when blocks are added/removed.
         _currentTest.Blocks.CollectionChanged += (_, _) => RebuildBlockAssignments();
+
+        // Stage size label + re-push the selected instruction into the shared layout
+        // preview whenever geometry that affects instruction screens changes.
+        // Without this, editing the Layout tab leaves the Instructions-tab Canvas
+        // on stale ActiveInstructions*/key/error/continue positions.
         _layoutEditor.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(LayoutViewModel.InteriorWidth)
@@ -233,7 +247,83 @@ public partial class InstructionManagerViewModel : ObservableObject
                 OnPropertyChanged(nameof(InteriorHeight));
                 OnPropertyChanged(nameof(StageSizeLabel));
             }
+
+            if (_suppressLayoutReapply || SelectedScreen is null)
+                return;
+
+            // Re-apply when derived or primary geometry that positions instruction content moves.
+            if (e.PropertyName is nameof(LayoutViewModel.InteriorWidth)
+                or nameof(LayoutViewModel.InteriorHeight)
+                or nameof(LayoutViewModel.LeftKeyX)
+                or nameof(LayoutViewModel.LeftKeyY)
+                or nameof(LayoutViewModel.RightKeyX)
+                or nameof(LayoutViewModel.RightKeyY)
+                or nameof(LayoutViewModel.KeyWidth)
+                or nameof(LayoutViewModel.KeyHeight)
+                or nameof(LayoutViewModel.StimulusX)
+                or nameof(LayoutViewModel.StimulusY)
+                or nameof(LayoutViewModel.StimulusWidth)
+                or nameof(LayoutViewModel.StimulusHeight)
+                or nameof(LayoutViewModel.ErrorMarkX)
+                or nameof(LayoutViewModel.ErrorMarkY)
+                or nameof(LayoutViewModel.ErrorMarkWidth)
+                or nameof(LayoutViewModel.ErrorMarkHeight)
+                or nameof(LayoutViewModel.TextInstructionsX)
+                or nameof(LayoutViewModel.TextInstructionsY)
+                or nameof(LayoutViewModel.TextInstructionsWidth)
+                or nameof(LayoutViewModel.TextInstructionsHeight)
+                or nameof(LayoutViewModel.KeyedInstructionsX)
+                or nameof(LayoutViewModel.KeyedInstructionsY)
+                or nameof(LayoutViewModel.KeyedInstructionsWidth)
+                or nameof(LayoutViewModel.KeyedInstructionsHeight)
+                or nameof(LayoutViewModel.MockItemInstructionsX)
+                or nameof(LayoutViewModel.MockItemInstructionsY)
+                or nameof(LayoutViewModel.MockItemInstructionsWidth)
+                or nameof(LayoutViewModel.MockItemInstructionsHeight)
+                or nameof(LayoutViewModel.ContinueInstructionsX)
+                or nameof(LayoutViewModel.ContinueInstructionsY)
+                or nameof(LayoutViewModel.ContinueInstructionsWidth)
+                or nameof(LayoutViewModel.ContinueInstructionsHeight)
+                or nameof(LayoutViewModel.BlockInstructionsX)
+                or nameof(LayoutViewModel.BlockInstructionsY)
+                or nameof(LayoutViewModel.BlockInstructionsWidth)
+                or nameof(LayoutViewModel.BlockInstructionsHeight))
+            {
+                RefreshInstructionPreview();
+            }
         };
+    }
+
+    /// <summary>
+    /// Pushes the currently selected instruction screen into the shared
+    /// <see cref="LayoutViewModel"/> stage (same path the Blocks tab uses).
+    /// Call when selection changes, instruction properties change, the tab becomes
+    /// visible again, or layout geometry is edited.
+    /// </summary>
+    public void RefreshInstructionPreview()
+    {
+        if (_suppressLayoutReapply)
+            return;
+
+        _suppressLayoutReapply = true;
+        try
+        {
+            if (SelectedScreen is null)
+            {
+                // Blocks leaves trial stimulus/keys on the shared LayoutViewModel stage.
+                // Null ApplyInstructionPreview only restores the body band — it does not
+                // hide that chrome. Own the stage so the Instructions preview is empty.
+                _layoutEditor.ClearStageForInstructionsIdle();
+            }
+            else
+            {
+                _layoutEditor.ApplyInstructionPreview(SelectedScreen);
+            }
+        }
+        finally
+        {
+            _suppressLayoutReapply = false;
+        }
     }
 
     /// <summary>
@@ -243,6 +333,7 @@ public partial class InstructionManagerViewModel : ObservableObject
     {
         SelectedScreen = null;
         BlockAssignments.Clear();
+        RefreshInstructionPreview();
     }
 
     // ── Selection changed ──────────────────────────────────────────────────
@@ -308,6 +399,8 @@ public partial class InstructionManagerViewModel : ObservableObject
             RebuildBlockAssignments();
             NotifyVisibility();
             NotifyPreview();
+            // Drive the shared layout stage so Mock Item / Keyed / Text positions match Blocks.
+            RefreshInstructionPreview();
         }
         finally
         {
@@ -361,6 +454,7 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is null) return;
         SelectedScreen.Text = value ?? string.Empty;
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -383,6 +477,7 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (SelectedScreen.ContinueInstructions is not null)
             SelectedScreen.ContinueInstructions.Text = value ?? string.Empty;
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -400,6 +495,7 @@ public partial class InstructionManagerViewModel : ObservableObject
             case MockItemInstructionScreen m: m.LeftResponseId = id; break;
         }
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -416,6 +512,7 @@ public partial class InstructionManagerViewModel : ObservableObject
             case MockItemInstructionScreen m: m.RightResponseId = id; break;
         }
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -433,6 +530,7 @@ public partial class InstructionManagerViewModel : ObservableObject
 
         SelectedLeftKey.Text = trimmed;
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -449,6 +547,7 @@ public partial class InstructionManagerViewModel : ObservableObject
 
         SelectedRightKey.Text = trimmed;
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -473,6 +572,8 @@ public partial class InstructionManagerViewModel : ObservableObject
 
         LoadPreviewStimulusImage(value);
         NotifyPreview();
+        // LayoutViewModel loads its own image via TryLoadImage — keep the stage in sync.
+        RefreshInstructionPreview();
     }
 
     /// <summary>
@@ -549,6 +650,7 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is not MockItemInstructionScreen mock) return;
         mock.ShowErrorMark = value;
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -557,6 +659,7 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is not MockItemInstructionScreen mock) return;
         mock.OutlineCorrectResponse = value;
         NotifyPreview();
+        RefreshInstructionPreview();
         MarkDirty();
     }
 
@@ -575,8 +678,10 @@ public partial class InstructionManagerViewModel : ObservableObject
         {
             mock.KeyedDirection = KeyedDirection.None;
             SelectedDirection = "None";
+            RefreshInstructionPreview();
             return;
         }
+        RefreshInstructionPreview();
         MarkDirty();
     }
 

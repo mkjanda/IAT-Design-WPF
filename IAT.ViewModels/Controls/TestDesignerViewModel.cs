@@ -174,6 +174,9 @@ namespace IAT.ViewModels.Controls
                 System.Diagnostics.Debug.WriteLine($"LOADED Blocks  : {loaded.Blocks.Count}");
                 System.Diagnostics.Debug.WriteLine($"LOADED Trials  : {loaded.Trials.Count}");
                 System.Diagnostics.Debug.WriteLine($"LOADED Keys    : {loaded.Keys.Count}");
+                System.Diagnostics.Debug.WriteLine($"LOADED InstructionScreens : {loaded.InstructionScreens.Count}");
+                foreach (var s in loaded.InstructionScreens)
+                    System.Diagnostics.Debug.WriteLine($"  screen {s.Id:N} type={s.GetType().Name} text=\"{s.Text}\"");
                 // -----------------------------
                 _suppressDirty = true;
                 try

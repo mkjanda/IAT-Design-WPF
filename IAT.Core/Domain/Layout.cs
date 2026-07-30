@@ -87,7 +87,8 @@ namespace IAT.Core.Domain
         private static readonly Rect _defaultStimulusRect = new Rect(30, 140, 540, 300);
         private static readonly Rect _defaultLeftKeyRect = new Rect(0, 0, 200, 120);
         private static readonly Rect _defaultRightKeyRect = new Rect(400, 0, 200, 120);
-        private static readonly Rect _defaultErrorMarkRect = new Rect(275, 450, 50, 50);
+        // Below stimulus (default stimulus bottom = 440). Extra gap so the mark never sits on the stimulus.
+        private static readonly Rect _defaultErrorMarkRect = new Rect(275, 470, 50, 50);
         private static readonly Rect _defaultBlockInstructionsRect = new Rect(15, 520, 570, 80);
         private static readonly Rect _defaultMockItemInstructionsRect = new Rect(15, 510, 570, 60);
         private static readonly Rect _defaultKeyedInstructionsRect = new Rect(15, 135, 570, 410);
