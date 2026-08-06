@@ -100,8 +100,10 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
     private bool _intentionalClose;
     private int _reconnectAttempt;
 
+    /// <summary>Maps server transaction types to MediatR command factories.</summary>
     public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
 
+    /// <summary>Current connection state. Thread-safe; raises <see cref="ConnectionStateChanged"/> when changed.</summary>
     public WebSocketConnectionState ConnectionState
     {
         get { lock (_stateGate) return _connectionState; }
@@ -116,8 +118,20 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Raised whenever <see cref="ConnectionState"/> changes. Thread-safe.
+    /// </summary>
     public event EventHandler<WebSocketConnectionState>? ConnectionStateChanged;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="WebSocketService"/> with the required dependencies.
+    /// </summary>
+    /// <param name="stringResourceService">The string resource service.</param>
+    /// <param name="xmlDeserializationService">The XML deserialization service.</param>
+    /// <param name="transactionState">The transaction state.</param>
+    /// <param name="mediator">The mediator.</param>
+    /// <param name="dialogService">The dialog service.</param>
+    /// <exception cref="ArgumentNullException"></exception>
     public WebSocketService(
         IStringResourceService stringResourceService,
         IXmlDeserializationService xmlDeserializationService,
@@ -153,7 +167,10 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         };
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Ensures a live connection and starts the receive loop if it is not already running.
+    /// Idempotent — safe to call before every transaction.
+    /// </summary>
     public void Start()
     {
         _intentionalClose = false;
@@ -481,6 +498,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             Handshake hs => new HandshakeCommand(hs),
             EncryptedRSAKey key => new RSAKeyCommand(key),
             Manifest manifest => new ManifestCommand(manifest),
+            ServerReport serverReport => new ServerReportCommand(serverReport),
             _ => null
         };
 

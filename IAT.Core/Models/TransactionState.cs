@@ -55,17 +55,17 @@ namespace IAT.Core.Models
         /// and other relevant settings. The ConfigFile is typically used to initialize the test environment and 
         /// ensure that the test is configured correctly according to the specifications defined in the configuration file.
         /// </summary>
-        public IATConfigFile? ConfigFile { get; set; }
+        public IATConfigFile ConfigFile { get; set; } = new IATConfigFile();
 
         /// <summary>
         /// THe manifest of deployment files.
         /// </summary>
-        public Manifest? FileManifest { get; set; }
+        public Manifest FileManifest { get; set; } = new Manifest();
 
         /// <summary>
         /// Gets or sets the manifest that defines the structure and metadata for the slide.
         /// </summary>
-        public Manifest? SlideManifest { get; set; }
+        public Manifest SlideManifest { get; set; } = new Manifest();
 
         /// <summary>
         /// Gets or sets the RSA key information used for encryption operations.
@@ -107,6 +107,8 @@ namespace IAT.Core.Models
         /// </summary>
         public ManualResetEvent Event { get; } = new ManualResetEvent(false);
 
+        public ServerReport ServerReport { get; set; } = new ServerReport();
+
         /// <summary>
         /// Resets all user and session-related properties to their default values.
         /// </summary>
@@ -125,6 +127,7 @@ namespace IAT.Core.Models
             RSA = new EncryptedRSAKey();
             Result = TransactionResult.Unset;
             ActivationKey = string.Empty;
+            ServerReport = new ServerReport();
             Event.Set();
         }
     }

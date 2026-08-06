@@ -7,7 +7,7 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:DeployManagerViewModel}"
              Background="#252526"
-             Foreground="#E0E0E0">
+             Foreground="#E0E0E0" IsVisibleChanged="OnIsVisibleChanged">
 <!--
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>

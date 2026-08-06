@@ -1,3 +1,5 @@
+using IAT.ViewModels.Controls;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace IAT.Views.Controls;
@@ -11,5 +13,13 @@ public partial class DeployManagerControl : UserControl
     public DeployManagerControl()
     {
         InitializeComponent();
+    }
+
+    private async void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true && DataContext is DeployManagerViewModel vm)
+        {
+            await vm.OnActivatedAsync();
+        }
     }
 }

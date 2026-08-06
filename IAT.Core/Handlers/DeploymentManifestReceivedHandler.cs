@@ -21,7 +21,6 @@ namespace IAT.Core.Handlers
     /// </summary>
     public class DeploymentManifestReceivedHandler : IRequestHandler<DeploymentManifestReceivedCommand, TransactionResult>
     {
-        private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
         private readonly IStringResourceService _stringResourceService;
 
@@ -31,11 +30,9 @@ namespace IAT.Core.Handlers
         /// <param name="webSocketService">The WebSocket service used to manage the connection.</param>
         /// <param name="state">The state of the current transaction.</param>
         /// <param name="stringResourceService">The service used to retrieve string resources.</param>
-        public DeploymentManifestReceivedHandler(IWebSocketService webSocketService, TransactionState state, 
-            IStringResourceService stringResourceService)
+        public DeploymentManifestReceivedHandler(TransactionState state, IStringResourceService stringResourceService)
         {
-            _webSocketService = webSocketService;
-            _transactionState = state;
+           _transactionState = state;
             _stringResourceService = stringResourceService;
         }
 

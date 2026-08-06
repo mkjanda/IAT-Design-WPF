@@ -45,7 +45,6 @@ namespace IAT.Core.Services.Network
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _transactionState.Clear();
             _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionActivationCommand(request);
         }
 
@@ -62,6 +61,7 @@ namespace IAT.Core.Services.Network
         /// the outcome of the activation request.</returns>
         public async Task<TransactionResult> ActivateProduct(string productKey, string userName, string email)
         {
+            _transactionState.Clear();
             _webSocketService.Start();
             _transactionState.ProductKey = productKey;
             _transactionState.UserName = userName;

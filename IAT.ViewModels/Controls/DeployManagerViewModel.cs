@@ -4,6 +4,8 @@ using IAT.Core.Domain;
 using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using System.Collections.ObjectModel;
+using System.Net.WebSockets;
+using System.Threading.Tasks;
 
 namespace IAT.ViewModels.Controls;
 
@@ -18,6 +20,7 @@ public partial class DeployManagerViewModel : ObservableObject
     private readonly IResultRetrievalService _resultService;
     private readonly IDialogService _dialogService;
     private readonly IUserNotificationService _notificationService;
+    private readonly IWebSocketService _webSocket;
     private readonly IatTest _currentTest;
 
     // ── Account / connection status (bound to top bar) ─────────────────────
@@ -51,16 +54,27 @@ public partial class DeployManagerViewModel : ObservableObject
 
     [ObservableProperty] private SurveyResultTab? selectedSurveyTab;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeployManagerViewModel"/> class with the specified services and current test.
+    /// </summary>
+    /// <param name="deploymentService">The service responsible for test deployment operations.</param>
+    /// <param name="resultService">The service responsible for result retrieval operations.</param>
+    /// <param name="dialogService">The service responsible for displaying dialogs.</param>
+    /// <param name="notificationService">The service responsible for user notifications.</param>
+    /// <param name="webSocketService">The service responsible for WebSocket communications.</param>
+    /// <param name="currentTest">The current test being managed.</param>
     public DeployManagerViewModel(
         ITestDeploymentService deploymentService,
         IResultRetrievalService resultService,
         IDialogService dialogService,
         IUserNotificationService notificationService,
-        IAT.Core.Domain.IatTest currentTest)
+        IWebSocketService webSocketService,
+        IatTest currentTest)
     {
         _deploymentService = deploymentService;
         _resultService = resultService;
         _dialogService = dialogService;
+        _webSocket = webSocketService;
         _notificationService = notificationService;
         _currentTest = currentTest;
 
@@ -97,6 +111,29 @@ public partial class DeployManagerViewModel : ObservableObject
 
         SelectedDeployedTest = DeployedTests[0];
         LoadPreviewFor(SelectedDeployedTest);
+    }
+
+    /// <summary>
+    /// Called when the view is activated. Starts the WebSocket connection and refreshes the deployed tests list.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task OnActivatedAsync()
+    {
+        _webSocket.Start();          // or await _webSocket.ConnectAsync() if you want to await readiness
+
+        // Optional: keep IsConnected in sync
+        _webSocket.ConnectionStateChanged -= OnConnectionStateChanged;
+        _webSocket.ConnectionStateChanged += OnConnectionStateChanged;
+        IsConnected = _webSocket.ConnectionState == WebSocketConnectionState.Connected;
+
+        // Then load real data
+        await RefreshAsync();
+
+    }
+
+    private void OnConnectionStateChanged(object? sender, WebSocketConnectionState newState)
+    {
+        IsConnected = newState == WebSocketConnectionState.Connected;
     }
 
     partial void OnSelectedDeployedTestChanged(DeployedTestItem? value)

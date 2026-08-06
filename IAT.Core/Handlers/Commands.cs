@@ -211,4 +211,8 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request associated with the item slide retrieval. Cannot be null.</param>
     public record RequestTransmissionItemSlideRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    public record RequestTransmissionServerReportCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    public record ServerReportCommand(ServerReport report) : IRequest<TransactionResult>;
 }

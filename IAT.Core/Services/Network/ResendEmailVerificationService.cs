@@ -34,7 +34,7 @@ namespace IAT.Core.Services.Network
         private readonly TransactionState _transactionState;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ResendEmailVerificationService"/> class.
+        /// Initializes a new instance of the <see cref="ServerReportService"/> class.
         /// </summary>
         /// <param name="webSocketService">The web socket service used for communication.</param>
         /// <param name="transactionState">The transaction state.</param>

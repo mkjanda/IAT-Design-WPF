@@ -1,11 +1,12 @@
 ﻿using IAT.Core.Enumerations;
-using IAT.Core.Serializable;
+using IAT.Core.Handlers;
 using IAT.Core.Models;
+using IAT.Core.Serializable;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using IAT.Core.Handlers;
 using System.Security.RightsManagement;
+using System.Text;
+using System.Transactions;
 
 namespace IAT.Core.Services.Network
 {
@@ -78,6 +79,7 @@ namespace IAT.Core.Services.Network
         async public Task<TransactionResult> VerifyEmail(string productKey, string email)
         {
             _webSocketService.Start();
+            _transactionState.Clear();
             _transactionState.Email = email;
             _transactionState.ProductKey = productKey;
             await _webSocketService.SendMessage(new TransactionRequest()
