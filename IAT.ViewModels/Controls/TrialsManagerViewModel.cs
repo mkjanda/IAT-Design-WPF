@@ -300,18 +300,33 @@ public partial class TrialsManagerViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Assign a stimulus to the selected block with the given keying direction by creating a new trial.
+    /// Assign the given stimulus as a Left-keyed trial on the selected block.
+    /// Bound directly from the L buttons in the Available Stimuli list.
     /// </summary>
     [RelayCommand]
-    private void AssignStimulus(object? parameter)
+    private void AssignLeft(Stimulus? stimulus)
     {
-        if (SelectedBlock is null || parameter is not object[] args || args.Length < 2) return;
-        if (args[0] is not Stimulus stim) return;
-        if (args[1] is not string dirName) return;
+        if (stimulus is null) return;
+        AssignStimulusCore(stimulus, KeyedDirection.Left);
+    }
 
-        var direction = dirName.Equals("Left", StringComparison.OrdinalIgnoreCase)
-            ? KeyedDirection.Left
-            : KeyedDirection.Right;
+    /// <summary>
+    /// Assign the given stimulus as a Right-keyed trial on the selected block.
+    /// Bound directly from the R buttons in the Available Stimuli list.
+    /// </summary>
+    [RelayCommand]
+    private void AssignRight(Stimulus? stimulus)
+    {
+        if (stimulus is null) return;
+        AssignStimulusCore(stimulus, KeyedDirection.Right);
+    }
+
+    /// <summary>
+    /// Shared implementation for creating a trial with the specified keying direction.
+    /// </summary>
+    private void AssignStimulusCore(Stimulus stim, KeyedDirection direction)
+    {
+        if (SelectedBlock is null) return;
 
         var trial = new Trial
         {

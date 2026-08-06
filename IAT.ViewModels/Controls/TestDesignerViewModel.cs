@@ -66,11 +66,6 @@ namespace IAT.ViewModels.Controls
             }
         }
 
-        [ObservableProperty] private bool _isStimuliSelected;
-        [ObservableProperty] private bool _isBlocksSelected;
-        [ObservableProperty] private bool _isLayoutSelected;
-        [ObservableProperty] private bool _isTrialsSelected;
-
         public TestDesignerViewModel(
             IProjectPackageService packageService,
             IDialogService dialogService,
@@ -275,23 +270,5 @@ namespace IAT.ViewModels.Controls
             return name.Trim();
         }
 
-        // ── Tab selection (existing) ─────────────────────────────────────────
-
-        [RelayCommand]
-        private void OnStimuliTabSelected() => IsStimuliSelected = true;
-
-        [RelayCommand]
-        private void OnBlocksTabSelected() => IsBlocksSelected = true;
-
-        [RelayCommand]
-        private void OnLayoutTabSelected()
-        {
-            IsLayoutSelected = true;
-            if (LayoutEditor is not null)
-                LayoutEditor.IsLayoutEditMode = true;
-        }
-
-        [RelayCommand]
-        private void OnTrialsTabSelected() => IsTrialsSelected = true;
     }
 }

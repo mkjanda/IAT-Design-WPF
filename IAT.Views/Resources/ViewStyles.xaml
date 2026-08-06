@@ -49,6 +49,13 @@
         <Setter Property="Padding" Value="8"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
+    <!-- Dark label used across property panels -->
+    <Style x:Key="DarkLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="#CCCCCC"/>
+        <Setter Property="Margin" Value="0,0,0,4"/>
+    </Style>
+
     <!-- ============================================================
          Fully themed Dark ComboBox (works correctly in WPF)
          ============================================================ -->

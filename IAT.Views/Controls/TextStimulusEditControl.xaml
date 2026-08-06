@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:behaviors="clr-namespace:IAT.Views.Behaviors"
              mc:Ignorable="d"
              d:DesignHeight="650" d:DesignWidth="520"
              Background="#252526">
@@ -42,15 +43,13 @@
             </Grid.RowDefinitions>
 
             <!-- Stimulus Text -->
-            <TextBox x:Name="StimulusTextBox"
-                     Grid.Row="0"
+            <TextBox Grid.Row="0"
                      Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource DarkTextBox}"
                      AcceptsReturn="True" TextWrapping="Wrap"
                      Height="56" Margin="0,0,0,16"
                      FontSize="28"
-                     GotFocus="StimulusTextBox_GotFocus"
-                     LostFocus="StimulusTextBox_LostFocus"/>
+                     behaviors:PlaceholderAttached.Text="New Text Stimulus"/>
 
             <!-- Font Controls -->
             <Grid Grid.Row="1" Margin="0,0,0,16">

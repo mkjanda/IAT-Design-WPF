@@ -234,13 +234,13 @@
                                         <Button Content="L" Width="28" Height="28" Margin="0,0,4,0"
                                                 Background="#007ACC" Foreground="White" FontWeight="Bold"
                                                 ToolTip="Assign as Left-keyed trial"
-                                                Tag="{Binding}"
-                                                Click="OnAssignLeftClick"/>
+                                                Command="{Binding DataContext.AssignLeftCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
                                         <Button Content="R" Width="28" Height="28"
                                                 Background="#C586C0" Foreground="White" FontWeight="Bold"
                                                 ToolTip="Assign as Right-keyed trial"
-                                                Tag="{Binding}"
-                                                Click="OnAssignRightClick"/>
+                                                Command="{Binding DataContext.AssignRightCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding Text}" 
                                                Foreground="#E0E0E0"

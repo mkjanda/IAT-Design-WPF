@@ -1,220 +1,527 @@
-﻿using IAT.Core.Services;
 using IAT.Core.Enumerations;
+using IAT.Core.Handlers;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using IAT.Core.Handlers;
 using MediatR;
-using System.IO;
 using System.Net.WebSockets;
-using System.Runtime.ExceptionServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Xml.Linq;
+using System.IO;
 using System.Xml.Serialization;
 
+namespace IAT.Core.Services.Network;
 
-namespace IAT.Core.Services.Network
+/// <summary>
+/// Connection lifecycle states for the persistent WebSocket client.
+/// </summary>
+public enum WebSocketConnectionState
+{
+    Disconnected,
+    Connecting,
+    Connected,
+    Reconnecting,
+    Closing
+}
+
+/// <summary>
+/// Contract for the application WebSocket client used by activation, deployment,
+/// results retrieval, and related transaction workflows.
+/// </summary>
+public interface IWebSocketService
 {
     /// <summary>
-    /// Defines the contract for a service that manages WebSocket connections, message handling, and command dispatching
-    /// for transaction processing.
+    /// Maps server transaction types to MediatR command factories.
+    /// Callers may replace individual entries for operation-specific handling.
     /// </summary>
-    /// <remarks>Implementations of this interface provide mechanisms to send and receive messages over a
-    /// WebSocket connection, associate transaction types with their handlers, and manage the connection lifecycle. This
-    /// interface is intended for use in scenarios where custom handling of transaction-based communication over
-    /// WebSockets is required.</remarks>
-    public interface IWebSocketService
-    {
-        /// <summary>
-        /// Gets or sets the mapping of transaction types to their corresponding command handlers.
-        /// </summary>
-        /// <remarks>Each entry associates a specific transaction type with a delegate that processes a
-        /// transaction request and returns a transaction result. Modifying this dictionary allows customization of how
-        /// different transaction types are handled.</remarks>
-        Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
+    Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
 
-        /// <summary>
-        /// Closes the web socket connection gracefully by sending a close message to the server and disposing of the WebSocket instance. 
-        /// If the WebSocket is already closed, it simply disposes of the instance.
-        /// </summary>
-        /// <returns>A task that represents the operation</returns>
-        public Task CloseSocketAsync();
+    /// <summary>Current connection state.</summary>
+    WebSocketConnectionState ConnectionState { get; }
 
-        /// <summary>
-        /// Starts the message receiving loop for the WebSocket connection. This method continuously listens for incoming 
-        /// messages from the server and processes them accordingly.
-        /// </summary>
-        void Start();
-
-        /// <summary>
-        /// Asynchronously sends the specified message object over the active WebSocket connection using binary serialization. 
-        /// The message is serialized to XML and transmitted as a binary WebSocket message.
-        /// </summary>
-        /// <param name="message">The message object to be sent over the WebSocket connection.</param>
-        Task SendMessage(object message);           
-    }
-
+    /// <summary>Raised whenever <see cref="ConnectionState"/> changes.</summary>
+    event EventHandler<WebSocketConnectionState>? ConnectionStateChanged;
 
     /// <summary>
-    /// Provides functionality for activating a product using a WebSocket-based service. Manages the activation
-    /// workflow, including communication with the activation server and handling activation results.
+    /// Ensures a live connection and starts the receive loop if it is not already running.
+    /// Idempotent — safe to call before every transaction.
     /// </summary>
-    /// <remarks>This service coordinates the product activation process by establishing a WebSocket
-    /// connection, sending activation requests, and processing responses from the server. It relies on several
-    /// supporting services for local storage, user notifications, string resources, and XML deserialization. The class
-    /// is intended to be used as part of a larger activation workflow and is not thread-safe.</remarks>
-    public class WebSocketService : IWebSocketService
+    void Start();
+
+    /// <summary>
+    /// Explicitly connects (or reconnects) to the configured endpoint.
+    /// Prefer <see cref="Start"/> from transaction services; use this when you need to await readiness.
+    /// </summary>
+    Task ConnectAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Serializes <paramref name="message"/> to XML and sends it as a binary WebSocket frame.
+    /// Thread-safe; waits until the socket is connected.
+    /// </summary>
+    Task SendMessage(object message);
+
+    /// <summary>
+    /// Gracefully closes the socket, cancels the receive loop, and disables auto-reconnect
+    /// until the next <see cref="Start"/> / <see cref="ConnectAsync"/>.
+    /// </summary>
+    Task CloseSocketAsync();
+}
+
+/// <summary>
+/// Production-oriented persistent WebSocket client.
+/// <list type="bullet">
+/// <item>Explicit connect with ws/wss URI normalization</item>
+/// <item>Non-empty receive buffer and correct multi-frame reassembly</item>
+/// <item>Cancellable receive loop (not fire-and-forget without tracking)</item>
+/// <item>Thread-safe send via semaphore</item>
+/// <item>ClientWebSocket keep-alive</item>
+/// <item>Exponential-backoff auto-reconnect unless intentionally closed</item>
+/// <item>Transaction completion signals <see cref="TransactionState"/> without tearing down the connection</item>
+/// </list>
+/// </summary>
+public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
+{
+    private const int ReceiveBufferSize = 64 * 1024;
+    private const int MaxBackoffSeconds = 30;
+    private static readonly TimeSpan KeepAliveInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(15);
+
+    private readonly IStringResourceService _stringResourceService;
+    private readonly IXmlDeserializationService _xmlDeserializationService;
+    private readonly TransactionState _transactionState;
+    private readonly IDialogService _dialogService;
+    private readonly IMediator _mediator;
+
+    private readonly SemaphoreSlim _sendLock = new(1, 1);
+    private readonly SemaphoreSlim _connectLock = new(1, 1);
+    private readonly object _stateGate = new();
+
+    private ClientWebSocket? _socket;
+    private CancellationTokenSource? _loopCts;
+    private Task? _receiveLoopTask;
+    private WebSocketConnectionState _connectionState = WebSocketConnectionState.Disconnected;
+    private bool _intentionalClose;
+    private int _reconnectAttempt;
+
+    public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
+
+    public WebSocketConnectionState ConnectionState
     {
-        /// <summary>
-        /// Gets the result of the product activation attempt.
-        /// </summary>
-        private ClientWebSocket WebSocket = new();
-        /// <summary>
-        /// The dictionary that maps transaction types to their corresponding command handlers. Each entry in the dictionary associates a specific transaction type 
-        /// with a delegate that processes a transaction request and returns a transaction result. This allows for dynamic handling of different transaction types 
-        /// based on the incoming messages received over the WebSocket connection.
-        /// </summary>
-        public Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>> TransactionCommands { get; set; }
-        private readonly CancellationToken AbortToken = new(false);
-        private readonly ArraySegment<byte> ReceiveBuffer = new();
-        private readonly TransactionState _transactionState;
-        private readonly IDialogService _dialogService;
-        private readonly IStringResourceService _stringResourceService;
-        private readonly IXmlDeserializationService _xmlDeserializationService;
-        private readonly IMediator _mediator;
-        private readonly MemoryStream MessageBuffer = new();
-
-
-        /// <summary>
-        /// Initializes a new instance of the WebSocketService class with the specified dependencies.
-        /// </summary>
-        /// <param name="stringResourceService">The service used to provide localized string resources.</param>
-        /// <param name="xmlDeserializationService">The service used to deserialize XML data.</param>
-        /// <param name="transactionState">The state object used to manage transaction state.</param>
-        /// <param name="mediator">The mediator used for handling requests and notifications.</param>
-        /// <param name="dialogService">The service used to display dialog notifications to the user.</param>
-        public WebSocketService(IStringResourceService stringResourceService, IXmlDeserializationService xmlDeserializationService, 
-            TransactionState transactionState, IMediator mediator, IDialogService dialogService)
+        get { lock (_stateGate) return _connectionState; }
+        private set
         {
-            _stringResourceService = stringResourceService;
-            _xmlDeserializationService = xmlDeserializationService;
-            _transactionState = transactionState;
-            _dialogService = dialogService;
-            _mediator = mediator;
-            TransactionCommands = new Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>>() {
-                { TransactionType.AbortTransaction, (request) => new AbortTransactionCommand(request) },
-                { TransactionType.ClientDeleted, (request) => new ClientDeletedCommand(request)  },
-                { TransactionType.ClientFrozen, (request) => new ClientFrozenCommand(request) },
-                { TransactionType.DeploymentFileManifestReceived, (request) => new DeploymentManifestReceivedCommand(request) },
-                { TransactionType.EMailAlreadyVerified, (request) => new EMailAlreadyVerifiedCommand(request) },
-                { TransactionType.EncryptionKeyReceived, (request) => new EncryptionKeyReceivedCommand(request) },
-                { TransactionType.IATBeingDeployed, (request) => new IATBeingDeployedCommand(request) },
-                { TransactionType.ItemSlideDownloadReady, (request) => new ItemSlidesReadyCommand(request) },
-                { TransactionType.NoActivationsRemain, (request) => new NoActivationsCommand(request) },
-                { TransactionType.NoSuchClient, (request) => new NoSuchClientCommand(request) },
-                { TransactionType.PasswordInvalid, (request) => new InvalidPasswordCommand(request) },
-                { TransactionType.PasswordValid, (request) => new PasswordValidResultsCommand(request)  },
-                { TransactionType.RequestIATUpload, (request) => new RequestIATUploadCommand(request) },
-                { TransactionType.ResultsReady, (request) => new ResultsReadyCommand(request) },
-                { TransactionType.TransactionFail, (request) => new TransactionFailCommand(request) },
-                { TransactionType.TransactionSuccess, (request) => new TransactionSuccessCommand(request) },
-                { TransactionType.VerifyPassword, (request) => new VerifyPasswordCommand(request) }
-            };
+            lock (_stateGate)
+            {
+                if (_connectionState == value) return;
+                _connectionState = value;
+            }
+            ConnectionStateChanged?.Invoke(this, value);
         }
+    }
 
-        /// <summary>
-        /// Sends the specified message object over the active WebSocket connection using binary serialization.
-        /// </summary>
-        /// <remarks>The message is serialized to XML and transmitted as a binary WebSocket message.
-        /// Ensure that the receiving endpoint can deserialize the message using the same XML schema. This method is
-        /// intended for use with an established WebSocket connection.</remarks>
-        /// <param name="message">The object to send. The object must be serializable by the XmlSerializer corresponding to its runtime type.
-        /// Cannot be null.</param>
-        public async Task SendMessage(object message)
+    public event EventHandler<WebSocketConnectionState>? ConnectionStateChanged;
+
+    public WebSocketService(
+        IStringResourceService stringResourceService,
+        IXmlDeserializationService xmlDeserializationService,
+        TransactionState transactionState,
+        IMediator mediator,
+        IDialogService dialogService)
+    {
+        _stringResourceService = stringResourceService ?? throw new ArgumentNullException(nameof(stringResourceService));
+        _xmlDeserializationService = xmlDeserializationService ?? throw new ArgumentNullException(nameof(xmlDeserializationService));
+        _transactionState = transactionState ?? throw new ArgumentNullException(nameof(transactionState));
+        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+
+        TransactionCommands = new Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>>
+        {
+            { TransactionType.AbortTransaction, r => new AbortTransactionCommand(r) },
+            { TransactionType.ClientDeleted, r => new ClientDeletedCommand(r) },
+            { TransactionType.ClientFrozen, r => new ClientFrozenCommand(r) },
+            { TransactionType.DeploymentFileManifestReceived, r => new DeploymentManifestReceivedCommand(r) },
+            { TransactionType.EMailAlreadyVerified, r => new EMailAlreadyVerifiedCommand(r) },
+            { TransactionType.EncryptionKeyReceived, r => new EncryptionKeyReceivedCommand(r) },
+            { TransactionType.IATBeingDeployed, r => new IATBeingDeployedCommand(r) },
+            { TransactionType.ItemSlideDownloadReady, r => new ItemSlidesReadyCommand(r) },
+            { TransactionType.NoActivationsRemain, r => new NoActivationsCommand(r) },
+            { TransactionType.NoSuchClient, r => new NoSuchClientCommand(r) },
+            { TransactionType.PasswordInvalid, r => new InvalidPasswordCommand(r) },
+            { TransactionType.PasswordValid, r => new PasswordValidResultsCommand(r) },
+            { TransactionType.RequestIATUpload, r => new RequestIATUploadCommand(r) },
+            { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) },
+            { TransactionType.TransactionFail, r => new TransactionFailCommand(r) },
+            { TransactionType.TransactionSuccess, r => new TransactionSuccessCommand(r) },
+            { TransactionType.VerifyPassword, r => new VerifyPasswordCommand(r) }
+        };
+    }
+
+    /// <inheritdoc />
+    public void Start()
+    {
+        _intentionalClose = false;
+        _ = EnsureConnectedAndReceivingAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    {
+        _intentionalClose = false;
+        await EnsureConnectedAndReceivingAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task SendMessage(object message)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        await EnsureConnectedAndReceivingAsync().ConfigureAwait(false);
+
+        var socket = _socket;
+        if (socket is null || socket.State != WebSocketState.Open)
+            throw new InvalidOperationException("WebSocket is not connected.");
+
+        byte[] payload;
+        await using (var memStream = new MemoryStream())
         {
             var ser = new XmlSerializer(message.GetType());
-            var memStream = new MemoryStream();
             ser.Serialize(memStream, message);
-            await WebSocket.SendAsync(new ArraySegment<byte>(memStream.ToArray()), WebSocketMessageType.Binary, true, AbortToken);
+            payload = memStream.ToArray();
         }
 
-        /// <summary>
-        /// Closes the active WebSocket connection gracefully by sending a close message to the server and disposing of the WebSocket instance. 
-        /// If the WebSocket is already closed, it simply disposes of the instance.
-        /// </summary>
-        /// <returns>A task that represents the asynchronous close operation.</returns>
-        public async Task CloseSocketAsync()
+        await _sendLock.WaitAsync().ConfigureAwait(false);
+        try
         {
-            if (WebSocket.State == WebSocketState.Open)
-            {
-                await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None);
-            }
-            WebSocket.Dispose();
-        }
+            socket = _socket;
+            if (socket is null || socket.State != WebSocketState.Open)
+                throw new InvalidOperationException("WebSocket is not connected.");
 
-        /// <summary>
-        /// Starts the asynchronous message receiving loop for the WebSocket connection. This method continuously listens 
-        /// for incoming messages from the server and processes them accordingly.
-        /// </summary>
-        public void Start()
+            using var timeoutCts = new CancellationTokenSource(ConnectTimeout);
+            await socket.SendAsync(
+                new ArraySegment<byte>(payload),
+                WebSocketMessageType.Binary,
+                endOfMessage: true,
+                timeoutCts.Token).ConfigureAwait(false);
+        }
+        finally
         {
-            _ = ReceiveMessages();
+            _sendLock.Release();
         }
+    }
 
-        /// <summary>
-        /// Processes the result of an asynchronous WebSocket receive operation and handles incoming messages
-        /// accordingly.
-        /// </summary>
-        /// <remarks>If the received message is complete, the method deserializes and processes it. If the
-        /// WebSocket remains open, the method continues to receive additional messages. Errors encountered during
-        /// message processing are reported to the user notification service.</remarks>
-        /// <param name="t">A task representing the asynchronous WebSocket receive operation whose result contains the received data and
-        /// status information.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        private async Task ReceiveMessages()
+    /// <inheritdoc />
+    public async Task CloseSocketAsync()
+    {
+        _intentionalClose = true;
+        ConnectionState = WebSocketConnectionState.Closing;
+
+        var cts = _loopCts;
+        _loopCts = null;
+        try { cts?.Cancel(); } catch (ObjectDisposedException) { /* ignore */ }
+
+        var loop = _receiveLoopTask;
+        _receiveLoopTask = null;
+
+        var socket = _socket;
+        _socket = null;
+
+        if (socket is not null)
         {
             try
             {
-                while (WebSocket.State == WebSocketState.Open)
+                if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
                 {
-                    var result = await WebSocket.ReceiveAsync(ReceiveBuffer, AbortToken);
-                    if (result.Count != 0)
-                    {
-                        if (result.EndOfMessage)
-                        {
-                            MessageBuffer.Write(ReceiveBuffer.ToArray());
-                            MessageBuffer.Seek(0, SeekOrigin.Begin);
-                            var message = _xmlDeserializationService.DeserializeUnknownType(MessageBuffer);
-                            var command = await (message switch
-                            {
-                                TransactionRequest tr => Task.FromResult(TransactionCommands[tr.Transaction](tr)),
-                                Handshake hs => Task.FromResult<IRequest<TransactionResult>>(new HandshakeCommand(hs)),
-                                EncryptedRSAKey key => Task.FromResult<IRequest<TransactionResult>>(new RSAKeyCommand(key)),
-                                Manifest manifest => Task.FromResult<IRequest<TransactionResult>>(new ManifestCommand(manifest))
-                            });
-                            var transactionResult = await _mediator.Send(command);
-                            if (transactionResult != TransactionResult.Unset)
-                            {
-                                _transactionState.Result = transactionResult;
-                                _transactionState.Event.Set();
-                                return;
-                            }
-                        }
-                        MessageBuffer.Seek(0, SeekOrigin.Begin);
-                    }
-                    else
-                    {
-                        MessageBuffer.Write(ReceiveBuffer.ToArray());
-                    }
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token)
+                        .ConfigureAwait(false);
                 }
+            }
+            catch (Exception)
+            {
+                // Best-effort close
+            }
+            finally
+            {
+                socket.Dispose();
+            }
+        }
+
+        if (loop is not null)
+        {
+            try { await Task.WhenAny(loop, Task.Delay(2000)).ConfigureAwait(false); }
+            catch { /* ignore */ }
+        }
+
+        cts?.Dispose();
+        ConnectionState = WebSocketConnectionState.Disconnected;
+        _reconnectAttempt = 0;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await CloseSocketAsync().ConfigureAwait(false);
+        _sendLock.Dispose();
+        _connectLock.Dispose();
+    }
+
+    // ── Internals ──────────────────────────────────────────────────────────
+
+    private async Task EnsureConnectedAndReceivingAsync(CancellationToken externalCt = default)
+    {
+        await _connectLock.WaitAsync(externalCt).ConfigureAwait(false);
+        try
+        {
+            if (_socket?.State == WebSocketState.Open &&
+                _receiveLoopTask is { IsCompleted: false })
+            {
+                return;
+            }
+
+            await ConnectCoreAsync(externalCt).ConfigureAwait(false);
+            StartReceiveLoop();
+        }
+        finally
+        {
+            _connectLock.Release();
+        }
+    }
+
+    private async Task ConnectCoreAsync(CancellationToken externalCt)
+    {
+        ConnectionState = _reconnectAttempt > 0
+            ? WebSocketConnectionState.Reconnecting
+            : WebSocketConnectionState.Connecting;
+
+        DisposeSocketOnly();
+
+        var uri = ResolveEndpointUri();
+        var socket = new ClientWebSocket();
+        socket.Options.KeepAliveInterval = KeepAliveInterval;
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(externalCt);
+        timeoutCts.CancelAfter(ConnectTimeout);
+
+        try
+        {
+            await socket.ConnectAsync(uri, timeoutCts.Token).ConfigureAwait(false);
+        }
+        catch
+        {
+            socket.Dispose();
+            ConnectionState = WebSocketConnectionState.Disconnected;
+            throw;
+        }
+
+        _socket = socket;
+        _reconnectAttempt = 0;
+        ConnectionState = WebSocketConnectionState.Connected;
+    }
+
+    private void StartReceiveLoop()
+    {
+        if (_receiveLoopTask is { IsCompleted: false })
+            return;
+
+        _loopCts?.Dispose();
+        _loopCts = new CancellationTokenSource();
+        var token = _loopCts.Token;
+        _receiveLoopTask = Task.Run(() => ReceiveLoopAsync(token), token);
+    }
+
+    private async Task ReceiveLoopAsync(CancellationToken ct)
+    {
+        var buffer = new byte[ReceiveBufferSize];
+        var messageBuffer = new MemoryStream();
+
+        while (!ct.IsCancellationRequested)
+        {
+            var socket = _socket;
+            if (socket is null || socket.State != WebSocketState.Open)
+            {
+                if (_intentionalClose || ct.IsCancellationRequested)
+                    break;
+
+                var recovered = await TryReconnectAsync(ct).ConfigureAwait(false);
+                if (!recovered)
+                    break;
+                continue;
+            }
+
+            try
+            {
+                var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), ct)
+                    .ConfigureAwait(false);
+
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    try
+                    {
+                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Server closed", CancellationToken.None)
+                            .ConfigureAwait(false);
+                    }
+                    catch { /* ignore */ }
+
+                    DisposeSocketOnly();
+                    ConnectionState = WebSocketConnectionState.Disconnected;
+
+                    if (_intentionalClose || ct.IsCancellationRequested)
+                        break;
+
+                    var recovered = await TryReconnectAsync(ct).ConfigureAwait(false);
+                    if (!recovered)
+                        break;
+                    continue;
+                }
+
+                if (result.Count > 0)
+                    messageBuffer.Write(buffer, 0, result.Count);
+
+                if (!result.EndOfMessage)
+                    continue;
+
+                // Complete message assembled
+                messageBuffer.Seek(0, SeekOrigin.Begin);
+                try
+                {
+                    await DispatchMessageAsync(messageBuffer).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"WebSocket dispatch error: {ex}");
+                    // Do not tear down the connection for a single bad message
+                }
+                finally
+                {
+                    messageBuffer.SetLength(0);
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
-                await _dialogService.ShowNotificationAsync("An error occurred while receiving data from the server. Please try again.", "Error Receiving Data");
-                WebSocket.Dispose();
-                ExceptionDispatchInfo.Capture(ex).Throw();
+                System.Diagnostics.Debug.WriteLine($"WebSocket receive error: {ex}");
+                DisposeSocketOnly();
+                ConnectionState = WebSocketConnectionState.Disconnected;
+
+                if (_intentionalClose || ct.IsCancellationRequested)
+                    break;
+
+                var recovered = await TryReconnectAsync(ct).ConfigureAwait(false);
+                if (!recovered)
+                {
+                    try
+                    {
+                        await _dialogService.ShowNotificationAsync(
+                            "Lost connection to the server and could not reconnect. Please try again.",
+                            "Connection Error").ConfigureAwait(false);
+                    }
+                    catch { /* UI may be shutting down */ }
+                    break;
+                }
             }
         }
+
+        ConnectionState = WebSocketConnectionState.Disconnected;
+    }
+
+    private async Task<bool> TryReconnectAsync(CancellationToken ct)
+    {
+        if (_intentionalClose || ct.IsCancellationRequested)
+            return false;
+
+        _reconnectAttempt++;
+        var delaySeconds = Math.Min(MaxBackoffSeconds, (int)Math.Pow(2, Math.Min(_reconnectAttempt, 5)));
+        // 2, 4, 8, 16, 32→30 capped
+        delaySeconds = Math.Min(MaxBackoffSeconds, Math.Max(1, delaySeconds));
+
+        ConnectionState = WebSocketConnectionState.Reconnecting;
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delaySeconds), ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+
+        try
+        {
+            await _connectLock.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                if (_intentionalClose) return false;
+                await ConnectCoreAsync(ct).ConfigureAwait(false);
+                return true;
+            }
+            finally
+            {
+                _connectLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"WebSocket reconnect failed (attempt {_reconnectAttempt}): {ex.Message}");
+            if (_reconnectAttempt >= 8)
+                return false;
+            return await TryReconnectAsync(ct).ConfigureAwait(false);
+        }
+    }
+
+    private async Task DispatchMessageAsync(MemoryStream messageBuffer)
+    {
+        var message = _xmlDeserializationService.DeserializeUnknownType(messageBuffer);
+        if (message is null)
+            return;
+
+        IRequest<TransactionResult>? command = message switch
+        {
+            TransactionRequest tr when TransactionCommands.TryGetValue(tr.Transaction, out var factory)
+                => factory(tr),
+            TransactionRequest tr
+                => throw new InvalidOperationException($"No handler registered for transaction type '{tr.Transaction}'."),
+            Handshake hs => new HandshakeCommand(hs),
+            EncryptedRSAKey key => new RSAKeyCommand(key),
+            Manifest manifest => new ManifestCommand(manifest),
+            _ => null
+        };
+
+        if (command is null)
+            return;
+
+        var transactionResult = await _mediator.Send(command).ConfigureAwait(false);
+
+        // Signal waiting callers without tearing down the persistent connection.
+        if (transactionResult != TransactionResult.Unset)
+        {
+            _transactionState.Result = transactionResult;
+            _transactionState.Event.Set();
+        }
+    }
+
+    private Uri ResolveEndpointUri()
+    {
+        var raw = _stringResourceService.GetString("WebSocketUrl")
+                  ?? throw new InvalidOperationException("WebSocketUrl resource is missing.");
+
+        // Accept http(s) configuration and normalize to ws(s).
+        if (raw.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            raw = "ws://" + raw["http://".Length..];
+        else if (raw.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            raw = "wss://" + raw["https://".Length..];
+
+        if (!Uri.TryCreate(raw, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != "ws" && uri.Scheme != "wss"))
+        {
+            throw new InvalidOperationException($"WebSocketUrl is not a valid ws/wss URI: '{raw}'");
+        }
+
+        return uri;
+    }
+
+    private void DisposeSocketOnly()
+    {
+        var socket = _socket;
+        _socket = null;
+        if (socket is null) return;
+        try { socket.Dispose(); } catch { /* ignore */ }
     }
 }

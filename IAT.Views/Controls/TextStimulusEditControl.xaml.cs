@@ -1,40 +1,19 @@
-﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace IAT.Views.Controls
+namespace IAT.Views.Controls;
+
+/// <summary>
+/// Interaction logic for TextStimulusEditControl.xaml.
+/// Pure view — placeholder behaviour is provided by the
+/// <see cref="Behaviors.PlaceholderAttached"/> attached property.
+/// </summary>
+public partial class TextStimulusEditControl : UserControl
 {
     /// <summary>
-    /// Interaction logic for TextStimulusEditControl.xaml
-    /// Provides placeholder behavior for the stimulus text TextBox:
-    /// - Clears the default "New Text Stimulus" text when the user focuses the box.
-    /// - Restores the placeholder if the user leaves the box empty.
+    /// Initializes a new instance of the <see cref="TextStimulusEditControl"/> class.
     /// </summary>
-    public partial class TextStimulusEditControl : UserControl
+    public TextStimulusEditControl()
     {
-        private const string PlaceholderText = "New Text Stimulus";
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TextStimulusEditControl"/> class.
-        /// </summary>
-        public TextStimulusEditControl()
-        {
-            InitializeComponent();
-        }
-
-        private void StimulusTextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox tb && tb.Text == PlaceholderText)
-            {
-                tb.Text = string.Empty;
-            }
-        }
-
-        private void StimulusTextBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox tb && string.IsNullOrWhiteSpace(tb.Text))
-            {
-                tb.Text = PlaceholderText;
-            }
-        }
+        InitializeComponent();
     }
 }

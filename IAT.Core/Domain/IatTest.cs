@@ -336,7 +336,7 @@ public partial class IatTest : ObservableObject
         }
 
         // 2. Stimulus reuse across blocks with different keying is allowed — but every stimulus must appear in at least one trial
-        if (!Stimuli.Any(s => Trials.Any(t => t.StimulusId == s.Id)))
+        if (Stimuli.Any(s => !Trials.Any(t => t.StimulusId == s.Id)))
             result.AddError("Every stimulus must be used in at least one trial");
         foreach (var stimulus in Stimuli)
             result.Combine(stimulus.Validate());

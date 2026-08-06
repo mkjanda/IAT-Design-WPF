@@ -151,10 +151,11 @@ namespace IAT.Core.Domain
         }
 
         /// <summary>
-        /// Gets the name associated with the current instance.
+        /// Display name of the block (shown in Blocks, Trials, and Deploy lists).
+        /// Observable so renaming updates all bound lists immediately.
         /// </summary>
-
-        public string Name { get; set; } = String.Empty;
+        [ObservableProperty]
+        private string name = string.Empty;
 
         /// <summary>
         /// Validates the current instance of the Block class, ensuring that all required properties are set and contain valid values.

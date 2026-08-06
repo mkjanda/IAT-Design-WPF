@@ -1,4 +1,4 @@
-﻿// IAT.ViewModels/Converters/BoolToVisibilityConverter.cs
+// IAT.Views/Converters/BoolToVisibilityConverter.cs
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;

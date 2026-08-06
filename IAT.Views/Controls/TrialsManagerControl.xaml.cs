@@ -1,39 +1,18 @@
-﻿using IAT.Core.Domain;
-using IAT.ViewModels.Controls;
-using System.Windows;
 using System.Windows.Controls;
 
-namespace IAT.Views.Controls
+namespace IAT.Views.Controls;
+
+/// <summary>
+/// Interaction logic for TrialsManagerControl.xaml.
+/// Pure view — all behaviour lives in TrialsManagerViewModel.
+/// </summary>
+public partial class TrialsManagerControl : UserControl
 {
     /// <summary>
-    /// Interaction logic for TrialsManagerControl.xaml
-    /// Provides the Trials tab UI for assigning stimuli to blocks, setting trial counts,
-    /// keying left/right, and editing basic response keys.
+    /// Initializes a new instance of the <see cref="TrialsManagerControl"/> class.
     /// </summary>
-    public partial class TrialsManagerControl : UserControl
+    public TrialsManagerControl()
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TrialsManagerControl"/> class.
-        /// </summary>
-        public TrialsManagerControl()
-        {
-            InitializeComponent();
-        }
-
-        private void OnAssignLeftClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is Stimulus stim && DataContext is TrialsManagerViewModel vm)
-            {
-                vm.AssignStimulusCommand.Execute(new object[] { stim, "Left" });
-            }
-        }
-
-        private void OnAssignRightClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is Stimulus stim && DataContext is TrialsManagerViewModel vm)
-            {
-                vm.AssignStimulusCommand.Execute(new object[] { stim, "Right" });
-            }
-        }
+        InitializeComponent();
     }
 }
