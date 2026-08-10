@@ -57,8 +57,8 @@ namespace IAT.Core.Handlers
             {
                 await _webSocketService.SendMessage(new TransactionRequest()
                 {
-                    Transaction = TransactionType.HaltTestDeployment,
-                    LongValues = { ["DeploymentId"] = request.transaction.LongValues["DeploymentId"] }
+                    Type = TransactionType.AbortTransaction,
+                    DeploymentId = request.transaction.DeploymentId
                 });
                 return TransactionResult.Unset;
             }

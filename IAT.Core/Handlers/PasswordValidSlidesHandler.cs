@@ -42,7 +42,7 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestItemSlideManifest
+                Type = TransactionType.RequestItemSlideManifest
             });
             return TransactionResult.Unset;
         }

@@ -43,7 +43,6 @@ namespace IAT.Core.Handlers
         /// the outcome of the operation.</returns>
         public async Task<TransactionResult> Handle(EMailAlreadyVerifiedCommand request, CancellationToken cancellationToken)
         {
-            _transactionState.ActivationKey = request.transaction.ActivationKey;
             await _webSocketService.CloseSocketAsync();
             _transactionState.Result = TransactionResult.Success;
             _transactionState.Event.Set();

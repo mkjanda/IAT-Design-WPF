@@ -43,10 +43,10 @@ namespace IAT.Core.Handlers
         /// the outcome of the transaction request.</returns>
         public async Task<TransactionResult> Handle(RequestTransmissionDeployTestCommand request, CancellationToken cancellationToken)
         {
-            _transactionState.ClientId = request.transaction.ClientID;
+            _transactionState.ClientId = request.transaction.ClientId;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestIATUpload,
+                Type = TransactionType.RequestIATUpload,
                 IATName = _transactionState.IATName,
                 ProductKey = _transactionState.ProductKey
             });

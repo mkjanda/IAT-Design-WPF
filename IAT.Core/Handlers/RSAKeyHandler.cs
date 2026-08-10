@@ -47,7 +47,7 @@ namespace IAT.Core.Handlers
             _transactionState.RSA = request.Key;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestPasswordVerification,
+                Type = TransactionType.RequestPasswordVerification,
                 ProductKey = _transactionState.ProductKey,
                 IATName = _transactionState.IATName
             });

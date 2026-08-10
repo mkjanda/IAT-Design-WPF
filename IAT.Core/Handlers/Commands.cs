@@ -49,12 +49,6 @@ namespace IAT.Core.Handlers
     public record IATExistsRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
         
     /// <summary>
-    /// Represents a request to verify a password as part of a transaction operation.
-    /// </summary>
-    /// <param name="transaction">The transaction request containing the details required for password verification. Cannot be null.</param>
-    public record VerifyPasswordCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
     /// Represents a command that indicates an invalid password was provided for a transaction request.
     /// </summary>
     /// <param name="transaction">The transaction request associated with the invalid password attempt. Cannot be null.</param>
@@ -64,8 +58,7 @@ namespace IAT.Core.Handlers
     /// Represents a command indicating that the specified IAT (Implicit Association Test) does not exist.
     /// </summary>
     /// <param name="transaction">The transaction request containing the details of the IAT that does not exist. Cannot be null.</param>
-    public record NoSuchIATResultRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
+    public record NoSuchIATErrorCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
     /// Represents a command to process a transaction request when the client is in a frozen state.
@@ -159,6 +152,25 @@ namespace IAT.Core.Handlers
     public record CannotRestoreBackupCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
+    /// Represents a command to request password verification for a transaction operation.
+    /// </summary>
+    /// <param name="transaction">The transaction request for which password verification is requested. Cannot be null.</param>
+    public record VerifyPasswordCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to handle the deletion of a transaction request when a valid password is provided.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the valid password attempt. Cannot be null.</param>
+    public record PasswordValidDeleteCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to handle the deletion of data associated with a transaction request when a valid password is provided.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the valid password attempt. Cannot be null.</param>
+    public record PasswordValidDeleteDataCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+
+    /// <summary>
     /// Represents a request to validate a password as part of a transaction operation.
     /// </summary>
     /// <param name="transaction">The transaction request containing the details required for password validation. Cannot be null.</param>
@@ -175,6 +187,18 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request associated with the invalid password attempt. Cannot be null.</param>
     public record PasswordInvalidCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to handle the deletion of an IAT (Implicit Association Test) when an invalid password is provided.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the invalid password attempt. Cannot be null.</param>
+    public record DeleteIATCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to handle the deletion of IAT data when an invalid password is provided.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the invalid password attempt. Cannot be null.</param>
+    public record DeleteIATDataCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
     /// The IATBeingDeployedCommand class represents a command that is triggered when an IAT (Implicit Association Test) is in the process of being deployed.
@@ -215,4 +239,7 @@ namespace IAT.Core.Handlers
     public record RequestTransmissionServerReportCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     public record ServerReportCommand(ServerReport report) : IRequest<TransactionResult>;
+
+
+    public record IATExistsCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 }

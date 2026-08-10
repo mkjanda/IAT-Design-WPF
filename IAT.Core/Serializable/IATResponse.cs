@@ -14,8 +14,11 @@ namespace IAT.Core.Serializable
     /// from XML format, with appropriate XML element attributes to define the structure of the XML representation. Each property corresponds to a 
     /// specific aspect of the trial response, allowing for detailed tracking and analysis of participant responses during the IAT.
     /// </summary>
-    public class TrialResponse
+    public class TrialResponse : IWebSocketMessage
     {
+        [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
+        public string ProductKey { get; set; } = String.Empty;
+
         /// <summary>
         /// Gets or sets the block number associated with the current entity.
         /// </summary>

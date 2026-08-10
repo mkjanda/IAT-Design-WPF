@@ -67,7 +67,7 @@ namespace IAT.Core.Services.Network
             _transactionState.UserName = userName;
             _transactionState.Email = email;
             await _webSocketService.SendMessage(new TransactionRequest() { 
-                Transaction = TransactionType.RequestConnection,
+                Type = TransactionType.RequestConnection,
                 ProductKey = productKey, 
             });
             _transactionState.Event.WaitOne();

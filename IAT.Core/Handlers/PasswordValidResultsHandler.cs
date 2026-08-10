@@ -41,7 +41,7 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestResults
+                Type = TransactionType.RequestResults
             });
             return TransactionResult.Unset;
         }

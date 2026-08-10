@@ -5,6 +5,7 @@ using MediatR;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Services.Network;
+using IAT.Core.Services;
 
 namespace IAT.Core.Handlers
 {
@@ -18,17 +19,19 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
-
+        private readonly LocalStorageService _storageService;
         /// <summary>
         /// Initializes a new instance of the EMailVerifiedHandler class with the specified WebSocket service and
         /// transaction state.
         /// </summary>
         /// <param name="webSocketService">The WebSocket service used to send or receive messages related to email verification.</param>
         /// <param name="transactionState">The transaction state object that tracks the current state of the email verification process.</param>
-        public EMailVerifiedHandler(IWebSocketService webSocketService, TransactionState transactionState)
+        /// <param name="storageService">The local storage service used to persist data locally.</param>
+        public EMailVerifiedHandler(IWebSocketService webSocketService, TransactionState transactionState, LocalStorageService storageService)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
+            _storageService = storageService;   
         }   
 
         /// <summary>
@@ -41,6 +44,7 @@ namespace IAT.Core.Handlers
         public async Task<TransactionResult> Handle(EMailVerifiedCommand request, CancellationToken cancellationToken)
         {
             _transactionState.ActivationKey = request.transaction.ActivationKey;
+            _storageService[Field.ActivationKey] = request.transaction.ActivationKey;
             await _webSocketService.CloseSocketAsync();
             _transactionState.Result = TransactionResult.Success;
             _transactionState.Event.Set();

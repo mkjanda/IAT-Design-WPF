@@ -81,7 +81,7 @@ namespace IAT.Core.Services.Network
             _state.Password = password;
             _state.IATName = name;
             _state.Event.Reset();
-            await _webSocket.SendMessage(new TransactionRequest() { Transaction = TransactionType.RequestConnection });
+            await _webSocket.SendMessage(new TransactionRequest() { Type = TransactionType.RequestConnection });
             _state.Event.WaitOne();
             return _state.Result;
         }

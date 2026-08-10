@@ -40,7 +40,7 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestIATUpload
+                Type = TransactionType.RequestIATUpload
             });
             return TransactionResult.Unset;
         }

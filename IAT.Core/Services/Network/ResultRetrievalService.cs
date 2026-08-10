@@ -2,7 +2,7 @@
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using System;
-using System.Collections.Generic;
+using IAT.Core.Enumerations;
 using System.Text;
 using System.Xml.Linq;
 
@@ -57,7 +57,7 @@ namespace IAT.Core.Services.Network
             _webSocketService.TransactionCommands[TransactionType.IATExists] = (request) => new IATExistsRetrievalCommand(request);
             _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionRetrieveResultsCommand(request);
             _webSocketService.TransactionCommands[TransactionType.PasswordValid] = (request) => new PasswordValidResultsCommand(request);
-            _webSocketService.TransactionCommands[TransactionType.NoSuchIAT] = (request) => new NoSuchIATResultRetrievalCommand(request);
+            _webSocketService.TransactionCommands[TransactionType.NoSuchIAT] = (request) => new IATExistsRetrievalCommand(request);
         }
 
         /// <summary>
@@ -74,15 +74,13 @@ namespace IAT.Core.Services.Network
         /// results. The document may be empty if no results are available.</returns>
         public async Task<XDocument> GetResults(string productKey, string iatName, string password)
         {
-            _webSocketService.Start();
+            _transactionState.Clear();
             _transactionState.ProductKey = productKey;
             _transactionState.IATName = iatName;
             _transactionState.Password = password;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestConnection,
-                ProductKey = productKey,
-                IATName = iatName
+                Type = TransactionType.RequestConnection,
             });
             _transactionState.Event.WaitOne();
             return _transactionState.TestResultsDocument;

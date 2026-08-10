@@ -44,8 +44,8 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestNewVerificationEMail,
-                StringValues = new Dictionary<string, string> { { "email", _transactionState.Email } },
+                Type = TransactionType.RequestNewVerificationEMail,
+                Email = _transactionState.Email,
                 ProductKey = _transactionState.ProductKey
             });
             return TransactionResult.Unset;

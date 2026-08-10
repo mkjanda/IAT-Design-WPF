@@ -22,8 +22,12 @@ namespace IAT.Core.Serializable
     /// <remarks>This class is typically used to serialize or deserialize handshake information in
     /// cryptographic protocols. The properties correspond to XML elements expected in handshake message
     /// formats.</remarks>
-    public class Handshake
+    public class Handshake : IWebSocketMessage
     {
+        [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
+        public string ProductKey { get; set; } = String.Empty;
+
+
         /// <summary>
         /// Gets or sets the public key associated with the entity.
         /// </summary>

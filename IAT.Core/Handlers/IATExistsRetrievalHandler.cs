@@ -40,11 +40,16 @@ namespace IAT.Core.Handlers
         /// indicating the outcome of the operation.</returns>
         public async Task<TransactionResult> Handle(IATExistsRetrievalCommand request, CancellationToken cancellationToken)
         {
+            if (request.transaction.Type == TransactionType.NoSuchIAT)
+            {
+                _transactionState.Result = TransactionResult.NoSuchIAT;
+                _transactionState.Event.Set();
+                return TransactionResult.NoSuchIAT; 
+            }
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestEncryptionKey,
+                Type = TransactionType.RequestEncryptionKey,
                 IATName = _transactionState.IATName,
-                ProductKey = _transactionState.ProductKey
             });
             return TransactionResult.Unset;
         }

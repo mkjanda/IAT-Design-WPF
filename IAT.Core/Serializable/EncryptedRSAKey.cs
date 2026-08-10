@@ -23,9 +23,10 @@ public record RSAKeyCommand(EncryptedRSAKey Key) : IRequest<TransactionResult>;
 /// <summary>
 /// Contains the encrypted RSA key information, including the modulus (n), exponent (e), private exponent (d), prime factors (p and q), and other related parameters.
 /// </summary>
-public class EncryptedRSAKey 
+public class EncryptedRSAKey : IWebSocketMessage
 {
-
+    [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
+    public string ProductKey { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the string value associated with the NString XML element.
@@ -44,6 +45,9 @@ public class EncryptedRSAKey
     /// </summary>
     [XmlElement("EncryptedKey", Form = XmlSchemaForm.Unqualified)]
     public string EncryptedKey { get; set; } = string.Empty;
+
+    [XmlElement("TestString", Form = XmlSchemaForm.Unqualified)]
+    public string TestString { get; set; } = string.Empty;
 
     [XmlIgnore]
     private byte[]? d, e, p, q, n, dp, dq, inverseQ;

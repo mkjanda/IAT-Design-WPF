@@ -220,13 +220,16 @@ namespace IAT.Core.Serializable
     /// Represents a manifest that contains metadata for XML serialization, including the client identifier and IAT
     /// element name.
     /// </summary>
-    public class Manifest : ManifestDirectory
+    public class Manifest : ManifestDirectory, IWebSocketMessage
     {
+        [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
+        public string ProductKey { get; set; } = String.Empty;
+
         /// <summary>
         /// Gets or sets the name of the IAT element for XML serialization.
         /// </summary>
         [XmlElement("IATName", Form = XmlSchemaForm.Unqualified)]
-        private string IATName = string.Empty;
+        public string IATName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the unique identifier for the client.

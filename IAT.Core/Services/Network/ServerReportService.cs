@@ -58,8 +58,7 @@ public class ServerReportService : IServerReportService
         _transactionState.ProductKey = productKey;
         await _webSocketService.SendMessage(new TransactionRequest()
         {
-            Transaction = TransactionType.RequestConnection,
-            ProductKey = productKey
+            Type = TransactionType.RequestConnection
         });
         _transactionState.Event.WaitOne();
         return _transactionState.Result;

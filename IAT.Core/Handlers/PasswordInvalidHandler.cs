@@ -41,7 +41,6 @@ namespace IAT.Core.Handlers
         /// password was invalid.</returns>
         public async Task<TransactionResult> Handle(PasswordInvalidCommand request, CancellationToken cancellationToken)
         {
-            await _webSocketService.CloseSocketAsync();
             _state.Result = TransactionResult.InvalidPassword;
             _state.Event.Set();
             return TransactionResult.InvalidPassword;

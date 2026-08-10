@@ -59,7 +59,7 @@ namespace IAT.Core.Services.Network
             _transactionState.ProductKey = productKey;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestConnection,
+                Type = TransactionType.RequestConnection,
                 IATName = iatName,
                 ProductKey = productKey,
             });

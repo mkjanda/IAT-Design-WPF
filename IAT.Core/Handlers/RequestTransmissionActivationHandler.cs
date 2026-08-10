@@ -43,7 +43,7 @@ namespace IAT.Core.Handlers
                 FirstName = _transactionState.UserName.Split(' ')[1],
                 LastName = _transactionState.UserName.Split(' ')[2],
                 EMail = _transactionState.Email,
-                ProductCode = _transactionState.ProductKey,
+                ProductKey = _transactionState.ProductKey,
                 Title = _transactionState.UserName.Split(' ')[0]
             });
             return TransactionResult.Unset;

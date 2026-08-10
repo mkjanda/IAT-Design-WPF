@@ -60,7 +60,7 @@ namespace IAT.Core.Handlers
 
             using var httpClient = new HttpClient();
             var retVal = await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")
-                    + $"IATName={_transactionState.IATName}&ClientID={_transactionState.ClientId}&DownloadKey={request.transaction.StringValues["DownloadKey"]}")
+                    + $"IATName={_transactionState.IATName}&ClientID={_transactionState.ClientId}&DownloadKey={request.ToString()}")
                     .ContinueWith(async t =>
             {
                 if (t.IsFaulted)

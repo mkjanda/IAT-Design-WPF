@@ -43,7 +43,7 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.IATExists,
+                Type = TransactionType.IATExists,
                 IATName = _transactionState.IATName,
                 ProductKey = _transactionState.ProductKey
             });

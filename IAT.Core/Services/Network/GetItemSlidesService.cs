@@ -1,6 +1,7 @@
 ﻿using IAT.Core.Serializable;
 using IAT.Core.Handlers;
 using IAT.Core.Models;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services.Network
 {
@@ -61,7 +62,7 @@ namespace IAT.Core.Services.Network
             _transactionState.Password = password;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Transaction = TransactionType.RequestConnection,
+                Type = TransactionType.RequestConnection,
                 ProductKey = productKey,
             });
             _transactionState.Event.WaitOne();

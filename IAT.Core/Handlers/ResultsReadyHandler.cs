@@ -56,9 +56,8 @@ namespace IAT.Core.Handlers
         {
             var requestBody = JsonSerializer.Serialize(new
             {
-                clientId = request.transaction.LongValues["ClientId"],
                 testName = _transactionState.IATName,
-                authToken = request.transaction.StringValues["AuthToken"]
+                authToken = request.transaction.AuthToken ?? string.Empty
             });
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
             using var _httpClient = new HttpClient();

@@ -54,7 +54,7 @@ namespace IAT.Core.Handlers
             {
                 await _webSocketService.SendMessage(new TransactionRequest()
                 {
-                    Transaction = TransactionType.AbortDeployment,
+                    Type = TransactionType.AbortDeployment,
                     IATName = _transactionState.IATName,
                     ProductKey = _transactionState.ProductKey
                 });

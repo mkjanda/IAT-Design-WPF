@@ -6,6 +6,7 @@ using MediatR;
 using System.Net.WebSockets;
 using System.IO;
 using System.Xml.Serialization;
+using com.sun.tools.corba.se.idl.constExpr;
 
 namespace IAT.Core.Services.Network;
 
@@ -148,22 +149,20 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         TransactionCommands = new Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>>
         {
             { TransactionType.AbortTransaction, r => new AbortTransactionCommand(r) },
-            { TransactionType.ClientDeleted, r => new ClientDeletedCommand(r) },
-            { TransactionType.ClientFrozen, r => new ClientFrozenCommand(r) },
             { TransactionType.DeploymentFileManifestReceived, r => new DeploymentManifestReceivedCommand(r) },
             { TransactionType.EMailAlreadyVerified, r => new EMailAlreadyVerifiedCommand(r) },
             { TransactionType.EncryptionKeyReceived, r => new EncryptionKeyReceivedCommand(r) },
             { TransactionType.IATBeingDeployed, r => new IATBeingDeployedCommand(r) },
             { TransactionType.ItemSlideDownloadReady, r => new ItemSlidesReadyCommand(r) },
-            { TransactionType.NoActivationsRemain, r => new NoActivationsCommand(r) },
             { TransactionType.NoSuchClient, r => new NoSuchClientCommand(r) },
             { TransactionType.PasswordInvalid, r => new InvalidPasswordCommand(r) },
             { TransactionType.PasswordValid, r => new PasswordValidResultsCommand(r) },
             { TransactionType.RequestIATUpload, r => new RequestIATUploadCommand(r) },
             { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) },
-            { TransactionType.TransactionFail, r => new TransactionFailCommand(r) },
-            { TransactionType.TransactionSuccess, r => new TransactionSuccessCommand(r) },
-            { TransactionType.VerifyPassword, r => new VerifyPasswordCommand(r) }
+            { TransactionType.Fail, r => new TransactionFailCommand(r) },
+            { TransactionType.Success, r => new TransactionSuccessCommand(r) },
+            { TransactionType.PasswordInvalid, r => new InvalidPasswordCommand(r) },
+            { TransactionType.IATExists, r => new IATExistsCommand(r) }
         };
     }
 
@@ -491,10 +490,10 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
 
         IRequest<TransactionResult>? command = message switch
         {
-            TransactionRequest tr when TransactionCommands.TryGetValue(tr.Transaction, out var factory)
+            TransactionRequest tr when TransactionCommands.TryGetValue(tr.Type, out var factory)
                 => factory(tr),
             TransactionRequest tr
-                => throw new InvalidOperationException($"No handler registered for transaction type '{tr.Transaction}'."),
+                => throw new InvalidOperationException($"No handler registered for transaction type '{tr.Type}'."),
             Handshake hs => new HandshakeCommand(hs),
             EncryptedRSAKey key => new RSAKeyCommand(key),
             Manifest manifest => new ManifestCommand(manifest),

@@ -22,8 +22,8 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestIATUploadCommand request, CancellationToken cancellationToken)
         {
-            _transactionState.DeploymentId = request.transaction.LongValues["DeploymentId"];
-            _transactionState.UploadTimeMillis = request.transaction.LongValues["DeploymentStartTime"];
+            _transactionState.DeploymentId = request.transaction.DeploymentId;
+            _transactionState.UploadTimeMillis = request.transaction.DeploymentStartTime;
             var encKey = new EncryptedRSAKey();
             encKey.Generate(_transactionState.Password);
             _transactionState.RSA = encKey;

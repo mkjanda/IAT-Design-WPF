@@ -11,13 +11,13 @@ namespace IAT.Core.Serializable
     /// <remarks>This class is typically used to serialize or deserialize activation requests in XML format
     /// for product registration workflows. All properties are required and must be provided to create a valid
     /// activation request.</remarks>
-    public class ActivationRequest 
+    public class ActivationRequest : IWebSocketMessage
     {
         /// <summary>
         /// Gets the unique code that identifies the product.
         /// </summary>
-        [XmlElement("ProductCode", Form = XmlSchemaForm.Unqualified)]
-        public required string ProductCode { get; init; } = String.Empty;
+        [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
+        public required string ProductKey { get; set; } = String.Empty;
 
         /// <summary>
         /// Gets the first name of the person.
