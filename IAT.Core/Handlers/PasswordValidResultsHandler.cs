@@ -6,6 +6,7 @@ using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Services.Network;
+using org.omg.CORBA;
 
 namespace IAT.Core.Handlers
 {
@@ -18,15 +19,17 @@ namespace IAT.Core.Handlers
     public class PasswordValidResultsHandler : IRequestHandler<PasswordValidResultsCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
-
+        private readonly TransactionState _transactionState;
         /// <summary>
         /// Initializes a new instance of the PasswordValidResultsHandler class using the specified WebSocket service.
         /// </summary>
         /// <param name="webSocketService">The WebSocket service used to send or receive messages related to password validation results. Cannot be
         /// null.</param>
-        public PasswordValidResultsHandler(IWebSocketService webSocketService)
+        /// <param name="transactionState">The transaction state used to track the state of the current transaction. Cannot be null.</param>
+        public PasswordValidResultsHandler(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
+            _transactionState = transactionState;
         }
 
         /// <summary>
@@ -39,9 +42,11 @@ namespace IAT.Core.Handlers
         /// of the transaction.</returns>
         public async Task<TransactionResult> Handle(PasswordValidResultsCommand request, CancellationToken cancellationToken)
         {
+            _transactionState.AuthToken = request.transaction.AuthToken;           
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Type = TransactionType.RequestResults
+                Type = TransactionType.RequestItemSlideManifest,
+                IATName = request.transaction.IATName
             });
             return TransactionResult.Unset;
         }

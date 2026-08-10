@@ -217,6 +217,12 @@ namespace IAT.Core.Serializable
     }
 
     /// <summary>
+    /// Represents a command that is sent when a manifest is received, containing the manifest data and expecting a transaction result in response.
+    /// </summary>
+    /// <param name="m">The manifest</param>
+    public record ManifestReceivedCommand(Manifest m) : IRequest<TransactionResult>;
+
+    /// <summary>
     /// Represents a manifest that contains metadata for XML serialization, including the client identifier and IAT
     /// element name.
     /// </summary>

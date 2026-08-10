@@ -1,11 +1,16 @@
 ﻿using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
+using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using MediatR;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace IAT.Core.Handlers
 {
@@ -15,10 +20,11 @@ namespace IAT.Core.Handlers
     /// manifest has been received. The handler returns an unset transaction result, indicating that the transaction is still in 
     /// progress and awaiting further actions or responses.
     /// </summary>
-    public class ManifestHandler : IRequestHandler<ManifestCommand, TransactionResult>
+    public class ManifestReceivedCommand : IRequestHandler<ManifestCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
+        private readonly IStringResourceService _stringService;
 
         /// <summary>
         /// Initializes a new instance of the ManifestHandler class with the specified WebSocket service and transaction
@@ -26,10 +32,12 @@ namespace IAT.Core.Handlers
         /// </summary>
         /// <param name="webSocketService">The WebSocket service used to send and receive messages for manifest operations. Cannot be null.</param>
         /// <param name="transactionState">The transaction state object that tracks the current state of transactions. Cannot be null.</param>
-        public ManifestHandler(IWebSocketService webSocketService, TransactionState transactionState)
+        /// <param name="stringService">The string resource service used to retrieve string resources. Cannot be null.</param>
+        public ManifestReceivedCommand(IWebSocketService webSocketService, TransactionState transactionState, IStringResourceService stringService)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
+            _stringService = stringService;
         }   
 
         /// <summary>
@@ -41,10 +49,30 @@ namespace IAT.Core.Handlers
         /// outcome of the transaction.</returns>
         public async Task<TransactionResult> Handle(ManifestCommand request, CancellationToken cancellationToken)
         {
-            _transactionState.SlideManifest = request.manifest;
+            HttpClient client = new HttpClient();
+            string url = $"http://{_stringService.GetString("RemoteHost")}{_stringService.GetString("ItemSlideDownloadPath")}";
+            url += $"?TestName={_transactionState.IATName}&ClientId={_transactionState.ClientId}&AuthToken={_transactionState.AuthToken}";
+            var response = await client.GetAsync(url);
+            var memStream = new MemoryStream();
+            await response.Content.CopyToAsync(memStream);
+            memStream.Seek(0, SeekOrigin.Begin);
+            var manifest = new Manifest();
+            request.manifest.Contents.ForEach(f =>
+            {
+                ManifestFile mf = new ManifestFile()
+                {
+                    ResourceType = FileResourceType.itemSlide,
+                    ResourceId = request.manifest.Contents.IndexOf(f) + 1,
+                    MimeType = "image/jpeg",
+                    Content = new byte[f.Size]
+                };
+                memStream.Write(mf.Content, 0, (int)f.Size);
+                manifest.Contents.Add(mf);
+            });
+            _transactionState.SlideManifest = manifest;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Type = TransactionType.RequestItemSlides,
+                Type = TransactionType.RequestResultDescriptor,
                 IATName = _transactionState.IATName
             });
             return TransactionResult.Unset;

@@ -20,6 +20,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(PasswordValidDeleteCommand request, CancellationToken cancellationToken)
         {
+            _transactionState.AuthToken = request.transaction.AuthToken;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Type = TransactionType.DeleteIAT,

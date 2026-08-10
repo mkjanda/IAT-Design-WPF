@@ -30,6 +30,11 @@ namespace IAT.Core.Models
         public string Password { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the authentication token used for securing transactions.
+        /// </summary>
+        public string AuthToken { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the name of the IAT (Implicit Association Test) associated with this instance.
         /// </summary>
         public string IATName { get; set; } = string.Empty;

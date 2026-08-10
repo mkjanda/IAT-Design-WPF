@@ -294,6 +294,18 @@ namespace IAT.Core.Enumerations
         /// Represents an entity that is currently in the process of being deployed.
         /// </summary>
         [Description("Represents an entity that is currently in the process of being deployed")]
-        IATBeingDeployed
+        IATBeingDeployed,
+
+        /// <summary>
+        /// Indicates that the item slides are ready for processing.
+        /// </summary>
+        [Description("Indicates that the item slides are ready for processing")]
+        ItemSlidesReady,
+
+        /// <summary>
+        /// Indicates that the request result descriptor is available and can be accessed for further processing or analysis.
+        /// </summary>
+        [Description("Indicates that the request result descriptor is available")]
+        RequestResultDescriptor
     };
 }

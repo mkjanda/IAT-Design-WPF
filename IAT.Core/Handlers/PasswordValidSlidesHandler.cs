@@ -18,6 +18,7 @@ namespace IAT.Core.Handlers
     public class PasswordValidSlidesHandler : IRequestHandler<PasswordValidSlidesCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
+        private readonly TransactionState _transactionHandler;
 
         /// <summary>
         /// Initializes a new instance of the PasswordValidSlidesHandler class with the specified WebSocket service and
@@ -28,6 +29,7 @@ namespace IAT.Core.Handlers
         public PasswordValidSlidesHandler(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService;
+            _transactionHandler = transactionState;
         }
 
         /// <summary>
@@ -40,6 +42,7 @@ namespace IAT.Core.Handlers
         /// operation.</returns>
         public async Task<TransactionResult> Handle(PasswordValidSlidesCommand request, CancellationToken cancellationToken)
         {
+            _transactionHandler.AuthToken = request.transaction.AuthToken;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Type = TransactionType.RequestItemSlideManifest
