@@ -73,6 +73,15 @@ namespace IAT.Core.Models
         public Manifest SlideManifest { get; set; } = new Manifest();
 
         /// <summary>
+        /// Gets or sets the number of results associated with the transaction. This property is used to track 
+        /// the count of results generated or processed during the transaction operation. It is represented as 
+        /// an integer value and can be used for validation, reporting, or further processing of the results. 
+        /// The NumResults property helps maintain an accurate record of the results produced in the context 
+        /// of the transaction workflow.
+        /// </summary>
+        public int NumResults { get; set; } = 0;
+
+        /// <summary>
         /// Gets or sets the RSA key information used for encryption operations.
         /// </summary>
         public EncryptedRSAKey RSA { get; set; } = new();

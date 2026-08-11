@@ -16,25 +16,65 @@ namespace IAT.Core.ConfigFile;
 /// survey UI components for improved readability and visual consistency.</remarks>
 public class SurveyCaption
 {
+    private Color _fontColor = Colors.Black, _backColor = Colors.White, _borderColor = Colors.Black;
+
     /// <summary>
     /// The color of the caption text. This property is used to specify the color of the caption text in a survey. It is 
     /// represented as a Color object, which can be defined using RGB values or named colors. The FontColor property allows 
     /// you to customize the appearance of the caption text to enhance readability and visual appeal in the survey interface.
     /// </summary>
-    [XmlElement(ElementName = "FontColor", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(Color))]
-    public Color FontColor { get; set; }
-
+    [XmlElement(ElementName = "FontColor", Form = XmlSchemaForm.Unqualified, Type = typeof(string))]
+    public string FontColor
+    {
+        get
+        {
+            return $"#{_fontColor.R.ToString("{X:2}")}{_fontColor.G.ToString("{X:2}")}{_fontColor.B.ToString("{X:2}")}";
+        }
+        set
+        {
+            var r = Convert.ToByte(value.Substring(1, 2), 16);
+            var g = Convert.ToByte(value.Substring(3, 2), 16);
+            var b = Convert.ToByte(value.Substring(5, 2), 16);
+            _fontColor = Color.FromRgb(r, g, b);
+        }
+    }
     /// <summary>
     /// Gets or sets the background color.
     /// </summary>
-    [XmlElement(ElementName = "BackColor", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(Color))]
-    public Color BackColor { get; set; }
+    [XmlElement(ElementName = "BackColor", Form = XmlSchemaForm.Unqualified, Type = typeof(string))]
+    public string BackColor
+    {
+        get
+        {
+            return $"#{_backColor.R.ToString("{X:2}")}{_backColor.G.ToString("{X:2}")}{_backColor.B.ToString("{X:2}")}";
+        }
+        set
+        {
+            var r = Convert.ToByte(value.Substring(1, 2), 16);
+            var g = Convert.ToByte(value.Substring(3, 2), 16);
+            var b = Convert.ToByte(value.Substring(5, 2), 16);
+            _backColor = Color.FromRgb(r, g, b);
+        }
+    }
 
     /// <summary>
     /// Gets or sets the color used to draw the border.
     /// </summary>
-    [XmlElement(ElementName = "BorderColor", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(Color))]
-    public Color BorderColor { get; set; }
+    [XmlElement(ElementName = "BorderColor", Form = XmlSchemaForm.Unqualified, Type = typeof(string))]
+    public string BorderColor
+    {
+        get
+        {
+            return $"#{_borderColor.R.ToString("{X:2}")}{_borderColor.G.ToString("{X:2}")}{_borderColor.B.ToString("{X:2}")}";
+        }
+        set
+        {
+            var r = Convert.ToByte(value.Substring(1, 2), 16);
+            var g = Convert.ToByte(value.Substring(3, 2), 16);
+            var b = Convert.ToByte(value.Substring(5, 2), 16);
+            _borderColor = Color.FromRgb(r, g, b);
+        }
+    }
 
     /// <summary>
     /// Gets or sets the width of the border, in pixels.

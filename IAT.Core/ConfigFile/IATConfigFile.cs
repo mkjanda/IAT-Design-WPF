@@ -137,46 +137,12 @@ public class IATConfigFile
     [XmlElement("Layout", Form = XmlSchemaForm.Unqualified, Type = typeof(Layout))]
     public Layout Layout { get; set; } = new Layout();
 
-    /// <summary>
-    /// Gets or sets the collection of surveys as base64-encoded XML strings.
-    /// </summary>
-    /// <remarks>Each string in the collection represents a serialized survey object encoded in base64.
-    /// Setting this property replaces the current collection of surveys with those deserialized from the provided
-    /// base64-encoded XML strings.</remarks>
-    [XmlArray]
-    [XmlArrayItem("SurveyB64Xml", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public List<String> SurveyB64Xml
-    {
-        get
-        {
-            var results = new List<string>();
-            XmlSerializer ser = new XmlSerializer(typeof(Survey));
-            var strWriter = new StringWriter();
-            Surveys.ForEach((survey) =>
-            {
-                ser.Serialize(strWriter, survey);
-                results.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes(strWriter.ToString())));
-            });
-            return results;
-        }
-        set
-        {
-            Surveys.Clear();
-            XmlSerializer ser = new XmlSerializer(typeof(Survey));
-            foreach (var b64Survey in value)
-            {
-                var xml = Encoding.UTF8.GetString(Convert.FromBase64String(b64Survey));
-                using var strReader = new StringReader(xml);
-                if (ser.Deserialize(strReader) is Survey survey)
-                    Surveys.Add(survey);
-            }
-        }
-    }
 
     /// <summary>
     /// Gets or sets the collection of surveys associated with this instance.
     /// </summary>
-    [XmlIgnore]
+    [XmlArray("Surveys")]
+    [XmlArrayItem("Survey", Form = XmlSchemaForm.Unqualified, Type = typeof(Survey))]
     public List<Survey> Surveys { get; set; } = new List<Survey>();
 
     /// <summary>

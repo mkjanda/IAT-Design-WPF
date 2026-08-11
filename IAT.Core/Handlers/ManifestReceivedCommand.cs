@@ -50,9 +50,7 @@ namespace IAT.Core.Handlers
         public async Task<TransactionResult> Handle(ManifestCommand request, CancellationToken cancellationToken)
         {
             HttpClient client = new HttpClient();
-            string url = $"http://{_stringService.GetString("RemoteHost")}{_stringService.GetString("ItemSlideDownloadPath")}";
-            url += $"?TestName={_transactionState.IATName}&ClientId={_transactionState.ClientId}&AuthToken={_transactionState.AuthToken}";
-            var response = await client.GetAsync(url);
+            var response = await client.GetAsync(_stringService.GetString("ItemSlideDownloadUrl"));
             var memStream = new MemoryStream();
             await response.Content.CopyToAsync(memStream);
             memStream.Seek(0, SeekOrigin.Begin);

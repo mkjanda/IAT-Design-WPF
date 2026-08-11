@@ -31,6 +31,6 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Indicates that the token is encoded in Base64 format with UTF-8 support.
         /// </summary>
-        base64_utf8
+        base64_Utf8
     }
 }
