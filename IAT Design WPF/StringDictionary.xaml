@@ -12,5 +12,6 @@
     <sys:String x:Key="WebSocketUrl">ws://127.0.0.1:8082/IATServer/DataTransactionSocket</sys:String>
     <sys:String x:Key="ItemSlideDownloadUrl">http://127.0.0.1:8082/RetrieveResults/ItemSlides</sys:String>
     <sys:String x:Key="ResultDownloadUrl">http://127.0.0.1:8082/RetrieveResults</sys:String>
-    <sys:String x:Key="DeploymentUploadUrl">http://127.0.0.1:8082/DeploymentUpload</sys:String>
+    <sys:String x:Key="DeploymentUploadUrl">http://127.0.0.1:8082/Upload/Deployment</sys:String>
+    <sys:String x:Key="ManifestUploadUrl">http://127.0.0.1:8082/Upload/Manifest</sys:String>
 </ResourceDictionary>    

@@ -56,6 +56,12 @@ namespace IAT.Core.Enumerations
         DeleteIATData,
 
         /// <summary>
+        /// Initiates the deployment of an IAT (Implicit Association Test) to the server.
+        /// </summary>
+        [Description("Initiates IAT Deployment")]
+        DoIATDeploy,
+
+        /// <summary>
         /// Gets or sets a value indicating whether the transaction completed successfully.
         /// </summary>
         [Description("Transaction Success")]

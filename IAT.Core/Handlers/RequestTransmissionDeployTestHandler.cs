@@ -46,9 +46,8 @@ namespace IAT.Core.Handlers
             _transactionState.ClientId = request.transaction.ClientId;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Type = TransactionType.RequestIATUpload,
-                IATName = _transactionState.IATName,
-                ProductKey = _transactionState.ProductKey
+                Type = TransactionType.DoIATDeploy,
+                IATName = _transactionState.IATName
             });
             return TransactionResult.Unset;
         }
