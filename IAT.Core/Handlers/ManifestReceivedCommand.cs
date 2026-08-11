@@ -70,7 +70,7 @@ namespace IAT.Core.Handlers
             _transactionState.SlideManifest = manifest;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Type = TransactionType.RequestResultDescriptor,
+                Type = TransactionType.RequestResults,
                 IATName = _transactionState.IATName
             });
             return TransactionResult.Unset;

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.ExceptionServices;
+﻿using System.Runtime.ExceptionServices;
 using System.Net.Http;
 using System.IO;
 using MediatR;
@@ -85,12 +82,15 @@ namespace IAT.Core.Handlers
                             receipt.Read(file.Content, 0, (int)file.Size);
                         }
                     }
-                    await _webSocketService.CloseSocketAsync();
-                    return TransactionResult.Success;
+                    return TransactionResult.Unset;
                 }
             }).Result;
+            if (retVal != TransactionResult.Unset)
+            {
+                _transactionState.Result = retVal;
+                _transactionState.Event.Set();
+            }
             _transactionState.Result = retVal;
-            _transactionState.Event.Set();
             return retVal;
         }
     }

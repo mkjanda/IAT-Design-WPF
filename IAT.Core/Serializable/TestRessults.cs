@@ -6,7 +6,7 @@ using System.Xml.Schema;
 
 namespace IAT.Core.Serializable
 {
-    internal class TestResults
+    public class TestResults
     {
         [XmlElement("ResultSetDescriptor", Form = XmlSchemaForm.Unqualified, Type = typeof(ResultSetDescriptor))]
         public ResultSetDescriptor ResultDescriptor { get; set; } = new();
@@ -20,7 +20,7 @@ namespace IAT.Core.Serializable
     /// Represents an entry in the result set, containing information about the result data and its 
     /// associated table of contents (TOC) entry.
     /// </summary>
-    internal class ResultSetEntry
+    public class ResultSetEntry
     {
         [XmlAttribute("ResultId", Form = XmlSchemaForm.Unqualified)]
         public int ResultId { get; set; } = 0;
@@ -36,7 +36,7 @@ namespace IAT.Core.Serializable
         public string AdminTime { get; set; } = string.Empty;
     }
 
-    internal class TOCEntry
+    public class TOCEntry
     {
         [XmlElement("KeyOffset", Form = XmlSchemaForm.Unqualified)]
         public long KeyOffset { get; set; } = 0;

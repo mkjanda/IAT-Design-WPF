@@ -4,12 +4,9 @@ using IAT.Core.Serializable;
 using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using MediatR;
-using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Xml.Linq;
+using System.IO;
+using System.Xml.Serialization;
 
 namespace IAT.Core.Handlers
 {
@@ -18,7 +15,6 @@ namespace IAT.Core.Handlers
     /// </summary>
     public class ResultsReadyHandler : IRequestHandler<ResultsReadyCommand, TransactionResult>
     {
-        private readonly IWebSocketService _webSocketService;
         private readonly IStringResourceService _stringResourceService;
         private readonly TransactionState _transactionState;
 
@@ -29,12 +25,10 @@ namespace IAT.Core.Handlers
         /// ready for download. The handler will perform the necessary actions to download the test results, update the transaction state, and close 
         /// the WebSocket connection when this command is received. .
         /// </summary>
-        /// <param name="webSocketService">The WebSocket service used for communication with the server.</param>
         /// <param name="stringResourceService">The string resource service used to access configuration values.</param>
         /// <param name="transactionState">The transaction state that tracks the current status and data of the ongoing transaction.</param>
-        public ResultsReadyHandler(IWebSocketService webSocketService, IStringResourceService stringResourceService, TransactionState transactionState)
+        public ResultsReadyHandler(IStringResourceService stringResourceService, TransactionState transactionState)
         {
-            _webSocketService = webSocketService;
             _stringResourceService = stringResourceService;
             _transactionState = transactionState;
         }
@@ -54,18 +48,16 @@ namespace IAT.Core.Handlers
         /// results are successfully retrieved and processed.</returns>
         public async Task<TransactionResult> Handle(ResultsReadyCommand request, CancellationToken cancellationToken)
         {
-            var requestBody = JsonSerializer.Serialize(new
-            {
-                testName = _transactionState.IATName,
-                authToken = request.transaction.AuthToken ?? string.Empty
-            });
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+            var url = _stringResourceService.GetString("ResultsDownloadUrl") +
+                $"?TestName={_transactionState.IATName}&AuthToken={request.transaction.AuthToken}" +
+                $"&ClientId={_transactionState.ClientId}";
             using var _httpClient = new HttpClient();
-            var httpResponse = await _httpClient.PostAsync(_stringResourceService.GetString("ResultsDownloadUrl"), content);
-            httpResponse.EnsureSuccessStatusCode();
-            using var memStream = await httpResponse.Content.ReadAsStreamAsync();
-            _transactionState.TestResultsDocument = XDocument.Load(memStream);
-            await _webSocketService.CloseSocketAsync();
+            var response = await _httpClient.GetAsync(url);
+            XmlSerializer serializer = new XmlSerializer(typeof(TestResults));
+            var memStream = new MemoryStream();
+            await response.Content.CopyToAsync(memStream);
+            memStream.Seek(0, SeekOrigin.Begin);
+            _transactionState.TestResults = (TestResults)serializer.Deserialize(memStream);
             _transactionState.Result = TransactionResult.Success;
             _transactionState.Event.Set();
             return TransactionResult.Success;

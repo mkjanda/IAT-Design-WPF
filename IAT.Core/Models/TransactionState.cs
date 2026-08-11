@@ -121,7 +121,13 @@ namespace IAT.Core.Models
         /// </summary>
         public ManualResetEvent Event { get; } = new ManualResetEvent(false);
 
+        /// <summary>
+        /// Gets or sets the server report containing information about the server's response to the transaction.         
+        /// </summary>
         public ServerReport ServerReport { get; set; } = new ServerReport();
+
+        public TestResults TestResults { get; set; } = new TestResults();
+
 
         /// <summary>
         /// Resets all user and session-related properties to their default values.
