@@ -61,7 +61,7 @@ namespace IAT.Core.Services
         /// <exception cref="NullReferenceException">Thrown if the configuration or result data cannot be deserialized from the response.</exception>
         public void Retrieve(String iatName, String password)
         {
-            _ = _resultRetrievalService.GetResults(iatName, password, _localStorageService[Field.ProductKey]).ContinueWith(t =>
+            _ = _resultRetrievalService.GetResults(_localStorageService[Field.ProductKey], iatName, password).ContinueWith(t =>
             {
                 var xDoc = t.Result;
                 var ser = new XmlSerializer(typeof(ConfigFile.IATConfigFile), new XmlRootAttribute("ConfigFile"));
@@ -94,7 +94,7 @@ namespace IAT.Core.Services
                             SurveyResponses.Add(resultElem as SurveyResponse);
                     }
                 }
-            }).ContinueWith(t => _itemSlideRetriever.GetItemSlides(iatName, password, _localStorageService[Field.ProductKey]));
+            });
         }
     }
 }

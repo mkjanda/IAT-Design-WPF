@@ -1,7 +1,7 @@
 ﻿using IAT.Core.Handlers;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using System;
+using IAT.Core.Services.Network;
 using IAT.Core.Enumerations;
 using System.Text;
 using System.Xml.Linq;
@@ -23,9 +23,15 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique key identifying the product for which to retrieve results. Cannot be null or empty.</param>
         /// <param name="iatName">The name of the IAT (Implicit Association Test) associated with the results. Cannot be null or empty.</param>
         /// <param name="password">The password used to authenticate the request. Cannot be null or empty.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains an XDocument with the results
         /// data for the specified product and IAT.</returns>
-        Task<XDocument> GetResults(string productKey, string iatName, string password);
+        Task<XDocument> GetResults(string productKey,
+                string iatName,
+                string password,
+                CancellationToken cancellationToken = default);
+        }
+        
     }
 
     /// <summary>
@@ -70,9 +76,11 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The product key used to authenticate the connection request. Cannot be null or empty.</param>
         /// <param name="iatName">The name of the IAT instance to connect to. Cannot be null or empty.</param>
         /// <param name="password">The password associated with the specified product key and IAT instance. Cannot be null or empty.</param>
+        /// <param name="token">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains an XDocument with the test
         /// results. The document may be empty if no results are available.</returns>
-        public async Task<XDocument> GetResults(string productKey, string iatName, string password)
+        public async Task<XDocument> GetResults(string productKey, string iatName, string password, 
+            CancellationToken token = default)
         {
             _transactionState.Clear();
             _transactionState.ProductKey = productKey;
@@ -82,8 +90,14 @@ namespace IAT.Core.Services.Network
             {
                 Type = TransactionType.RequestConnection,
             });
-            _transactionState.Event.WaitOne();
-            return _transactionState.TestResultsDocument;
+            if (await _transactionState.Completion.WaitAsync(token) == TransactionResult.Success)
+            {
+                return _transactionState.TestResultsDocument;
+            }
+            else
+            {
+                throw new InvalidOperationException("Failed to retrieve test results.");
+            }
         }
     }
 }

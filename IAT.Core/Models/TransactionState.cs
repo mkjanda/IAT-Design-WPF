@@ -5,7 +5,7 @@ using System.Xml.Linq;
 using IAT.Core.ConfigFile;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
-using sun.reflect.generics.tree;
+using System.Security.Cryptography;
 
 namespace IAT.Core.Models
 {
@@ -19,9 +19,50 @@ namespace IAT.Core.Models
     /// transaction workflow.</remarks>
     public class TransactionState
     {
+        private TaskCompletionSource<TransactionResult> _completion =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+    
         /// <summary>
-        /// Gets or sets the product key associated with the product.
+        /// Gets a task that represents the completion of the transaction.
         /// </summary>
+        public Task<TransactionResult> Completion => _completion.Task;
+
+        /// <summary>
+        /// Sets the result of the transaction operation.
+        /// </summary>
+        /// <param name="result">The transaction result to set.</param>
+        public void SetResult(TransactionResult result)
+        {
+            _completion.TrySetResult(result);
+        }
+
+        /// <summary>
+        /// Transitions the underlying task to a canceled state.
+        /// </summary>
+        public void SetCanceled()
+        {
+            _completion.TrySetCanceled();
+        }
+
+        /// <summary>
+        /// Sets the exception that caused the transaction to fail.
+        /// </summary>
+        /// <param name="ex">The exception to set.</param>
+        public void SetException(Exception ex)
+        {
+            _completion.TrySetException(ex);
+        }
+
+        /// <summary>
+        /// Resets the completion task to allow a new asynchronous operation to be awaited.
+        /// </summary>
+        public void ResetCompletion()
+        {
+            // New TCS for the next transaction
+            _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }        /// <summary>
+                 /// Gets or sets the product key associated with the product.
+                 /// </summary>
         public string ProductKey { get; set; } = string.Empty;
 
         /// <summary>
@@ -112,20 +153,15 @@ namespace IAT.Core.Models
         /// </summary>
         public string ActivationKey { get; set; } = string.Empty;
 
-        /// <summary>
-        /// The event that signals the completion of a transaction operation. This ManualResetEvent is used to synchronize the flow of the 
-        /// transaction process, allowing the calling code to wait for the transaction to complete before proceeding. When the transaction is 
-        /// completed, the event is set, allowing any waiting threads to continue execution. This is particularly useful in asynchronous 
-        /// operations where the transaction may involve network communication or other time-consuming tasks, ensuring that the application 
-        /// remains responsive while waiting for the transaction to complete. 
-        /// </summary>
-        public ManualResetEvent Event { get; } = new ManualResetEvent(false);
 
         /// <summary>
         /// Gets or sets the server report containing information about the server's response to the transaction.         
         /// </summary>
         public ServerReport ServerReport { get; set; } = new ServerReport();
 
+        /// <summary>
+        /// Gets or sets the test results.
+        /// </summary>
         public TestResults TestResults { get; set; } = new TestResults();
 
 
@@ -148,7 +184,7 @@ namespace IAT.Core.Models
             Result = TransactionResult.Unset;
             ActivationKey = string.Empty;
             ServerReport = new ServerReport();
-            Event.Set();
+            ResetCompletion();
         }
     }
 }
