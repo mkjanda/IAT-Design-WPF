@@ -19,8 +19,9 @@ namespace IAT.Core.Services.Network
         /// <param name="iatName">The IAT name.</param>
         /// <param name="password">The password for authentication.</param>
         /// <param name="productKey">The product key.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the transaction result.</returns>
-        Task<TransactionResult> GetItemSlides(string iatName, string password, string productKey);
+        Task<TransactionResult> GetItemSlides(string iatName, string password, string productKey, CancellationToken cancellationToken = default);
     }
 
 
@@ -51,8 +52,9 @@ namespace IAT.Core.Services.Network
         /// <param name="iatName"></param>
         /// <param name="password"></param>
         /// <param name="productKey"></param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns></returns>
-        public async Task<TransactionResult> GetItemSlides(string iatName, string password, string productKey)
+        public async Task<TransactionResult> GetItemSlides(string iatName, string password, string productKey, CancellationToken cancellationToken = default)
         {
             _transactionState.Clear();
             _transactionState.IATName = iatName;
@@ -63,10 +65,8 @@ namespace IAT.Core.Services.Network
                 IATName = iatName,
                 ProductKey = productKey,
             });
-            _transactionState.Event.WaitOne();
+            await _transactionState.Completion.WaitAsync(cancellationToken);
             return TransactionResult.Unset;
         }
-
-
     }
 }

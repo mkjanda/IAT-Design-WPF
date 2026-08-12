@@ -19,8 +19,9 @@ namespace IAT.Core.Services.Network
         /// </summary>
         /// <param name="productKey">The product key.</param>
         /// <param name="email">The email address to send the verification message to.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the transaction result.</returns>
-        Task<TransactionResult> ResendEmailVerification(string productKey, string email);
+        Task<TransactionResult> ResendEmailVerification(string productKey, string email, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -51,7 +52,7 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The product key associated with the verification request.</param>
         /// <param name="email">The email address to send the verification to.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the transaction result.</returns>
-        public async Task<TransactionResult> ResendEmailVerification(string productKey, string email)
+        public async Task<TransactionResult> ResendEmailVerification(string productKey, string email, CancellationToken cancellationToken = default)
         {
             _webSocketService.Start();
             _transactionState.Email = email;
@@ -61,7 +62,7 @@ namespace IAT.Core.Services.Network
                 Type = TransactionType.RequestConnection,
                 ProductKey = productKey
             });
-            _transactionState.Event.WaitOne();
+            await _transactionState.Completion.WaitAsync(cancellationToken);
             return _transactionState.Result;
         }
     }

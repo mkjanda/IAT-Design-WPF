@@ -46,8 +46,7 @@ namespace IAT.Core.Handlers
             _transactionState.ActivationKey = request.transaction.ActivationKey;
             _storageService[Field.ActivationKey] = request.transaction.ActivationKey;
             await _webSocketService.CloseSocketAsync();
-            _transactionState.Result = TransactionResult.Success;
-            _transactionState.Event.Set();
+            _transactionState.SetResult(TransactionResult.Success);
             return TransactionResult.Success;
         }
     }

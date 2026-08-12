@@ -47,8 +47,7 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.CloseSocketAsync();
             await _dialogService.ShowNotificationAsync(TransactionResult.InvalidPassword.Message, TransactionResult.InvalidPassword.Title);
-            _state.Result = TransactionResult.InvalidPassword;
-            _state.Event.Set();
+            _state.SetResult(TransactionResult.InvalidPassword);
             return TransactionResult.InvalidPassword;
         }
     }

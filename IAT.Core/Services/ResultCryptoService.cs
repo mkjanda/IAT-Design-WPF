@@ -3,6 +3,7 @@ using IAT.Core.Serializable;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace IAT.Core.Services;
 

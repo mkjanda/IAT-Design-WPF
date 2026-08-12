@@ -46,7 +46,7 @@ namespace IAT.Core.Handlers
             await _wss.CloseSocketAsync();
             await _dialogService.ShowNotificationAsync(TransactionResult.Aborted.Message, TransactionResult.Aborted.Title);
             _transactionState.Result = TransactionResult.Aborted;
-            _transactionState.Event.Set();
+            _transactionState.SetResult(TransactionResult.Aborted);
             return TransactionResult.Aborted;
         }
     }

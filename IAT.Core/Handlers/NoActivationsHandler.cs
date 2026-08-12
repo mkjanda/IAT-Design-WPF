@@ -45,8 +45,7 @@ namespace IAT.Core.Handlers
         {
             await _dialogService.ShowNotificationAsync(TransactionResult.NoActivationsRemaining.Message, TransactionResult.NoActivationsRemaining.Title);
             await _webSocketService.CloseSocketAsync();
-            _state.Result = TransactionResult.NoActivationsRemaining;
-            _state.Event.Set();
+            _state.SetResult(TransactionResult.NoActivationsRemaining);
             return TransactionResult.NoActivationsRemaining;
         }
     }

@@ -42,8 +42,7 @@ namespace IAT.Core.Handlers
         {
             if (request.transaction.Type == TransactionType.NoSuchIAT)
             {
-                _transactionState.Result = TransactionResult.NoSuchIAT;
-                _transactionState.Event.Set();
+                _transactionState.SetResult(TransactionResult.NoSuchIAT);
                 return TransactionResult.NoSuchIAT; 
             }
             await _webSocketService.SendMessage(new TransactionRequest()

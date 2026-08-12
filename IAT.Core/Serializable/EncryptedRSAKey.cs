@@ -46,6 +46,9 @@ public class EncryptedRSAKey : IWebSocketMessage
     [XmlElement("EncryptedKey", Form = XmlSchemaForm.Unqualified)]
     public string EncryptedKey { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Gets or sets the test string value.
+    /// </summary>
     [XmlElement("TestString", Form = XmlSchemaForm.Unqualified)]
     public string TestString { get; set; } = string.Empty;
 

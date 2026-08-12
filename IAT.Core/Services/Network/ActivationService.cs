@@ -18,8 +18,9 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The product key to activate.</param>
         /// <param name="userName">The user name associated with the activation.</param>
         /// <param name="email">The email address associated with the activation.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>The result of the activation transaction.</returns>
-        Task<TransactionResult> ActivateProduct(string productKey, string userName, string email);
+        Task<TransactionResult> ActivateProduct(string productKey, string userName, string email, CancellationToken cancellationToken = default);
     }
 
     /// <summary>
@@ -57,9 +58,10 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique key identifying the product to activate. Cannot be null or empty.</param>
         /// <param name="userName">The name of the user requesting activation. Cannot be null or empty.</param>
         /// <param name="email">The email address associated with the user. Cannot be null or empty.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the activation request.</returns>
-        public async Task<TransactionResult> ActivateProduct(string productKey, string userName, string email)
+        public async Task<TransactionResult> ActivateProduct(string productKey, string userName, string email, CancellationToken cancellationToken = default)
         {
             _transactionState.Clear();
             _webSocketService.Start();
@@ -70,7 +72,7 @@ namespace IAT.Core.Services.Network
                 Type = TransactionType.RequestConnection,
                 ProductKey = productKey, 
             });
-            _transactionState.Event.WaitOne();
+            _transactionState.Completion.Wait(cancellationToken);
             return _transactionState.Result;
         }
     }

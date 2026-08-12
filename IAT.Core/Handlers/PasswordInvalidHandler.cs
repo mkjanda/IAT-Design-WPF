@@ -41,8 +41,7 @@ namespace IAT.Core.Handlers
         /// password was invalid.</returns>
         public async Task<TransactionResult> Handle(PasswordInvalidCommand request, CancellationToken cancellationToken)
         {
-            _state.Result = TransactionResult.InvalidPassword;
-            _state.Event.Set();
+            _state.SetResult(TransactionResult.InvalidPassword);
             return TransactionResult.InvalidPassword;
         }
     }

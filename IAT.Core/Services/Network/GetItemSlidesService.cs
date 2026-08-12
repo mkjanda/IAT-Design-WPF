@@ -10,7 +10,15 @@ namespace IAT.Core.Services.Network
     /// </summary>
     public interface IGetItemSlidesService
     {
-        Task<Manifest> GetItemSlides(string productKey, string iatName, string password);
+        /// <summary>
+        /// Asynchronously retrieves the slide manifest for a specified product and IAT instance using the provided credentials.
+        /// </summary>
+        /// <param name="productKey">The unique key identifying the product for which to retrieve slides.</param>
+        /// <param name="iatName">The name of the IAT (Implicit Association Test) instance associated with the product.</param>
+        /// <param name="password">The password required to access the slide manifest for the specified IAT instance.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the slide manifest for the specified IAT instance.</returns>
+        Task<Manifest> GetItemSlides(string productKey, string iatName, string password, CancellationToken cancellationToken = default);
     }
 
 
@@ -51,9 +59,10 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique key identifying the product for which to retrieve slides.</param>
         /// <param name="iatName">The name of the IAT (Implicit Association Test) instance associated with the product.</param>
         /// <param name="password">The password used to authenticate the request for the specified IAT instance.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a Manifest object with the slide
         /// information for the specified product and IAT instance.</returns>
-        public async Task<Manifest> GetItemSlides(string productKey, string iatName, string password)
+        public async Task<Manifest> GetItemSlides(string productKey, string iatName, string password, CancellationToken cancellationToken = default)
         {
             _webSocketService.Start();
             _transactionState.Clear();
@@ -65,7 +74,7 @@ namespace IAT.Core.Services.Network
                 Type = TransactionType.RequestConnection,
                 ProductKey = productKey,
             });
-            _transactionState.Event.WaitOne();
+            await _transactionState.Completion.WaitAsync(cancellationToken);
             return _transactionState.SlideManifest;
         }
     }

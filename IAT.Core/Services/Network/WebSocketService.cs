@@ -511,8 +511,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         // Signal waiting callers without tearing down the persistent connection.
         if (transactionResult != TransactionResult.Unset)
         {
-            _transactionState.Result = transactionResult;
-            _transactionState.Event.Set();
+            _transactionState.SetResult(transactionResult); 
         }
     }
 

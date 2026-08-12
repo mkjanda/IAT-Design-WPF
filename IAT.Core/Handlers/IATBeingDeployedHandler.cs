@@ -63,8 +63,7 @@ namespace IAT.Core.Handlers
                 return TransactionResult.Unset;
             }
             await _webSocketService.CloseSocketAsync();
-            _transactionState.Result = TransactionResult.Aborted;
-            _transactionState.Event.Set();
+            _transactionState.SetResult(TransactionResult.Aborted);
             return TransactionResult.Aborted;
         }
     }

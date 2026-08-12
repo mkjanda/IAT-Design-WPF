@@ -47,7 +47,7 @@ namespace IAT.Core.Handlers
             await _wss.CloseSocketAsync();
             await _dialogService.ShowNotificationAsync(TransactionResult.ClientDeleted.Message, TransactionResult.ClientDeleted.Title);
             _state.Result = TransactionResult.ClientDeleted;
-            _state.Event.Set();
+            _state.SetResult(TransactionResult.ClientDeleted);
             return TransactionResult.ClientDeleted;
         }
     }

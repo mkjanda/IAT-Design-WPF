@@ -12,7 +12,13 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request containing the details of the completed transaction. Cannot be null.</param>
     public record TransactionSuccessCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-    
+
+    /// <summary>
+    /// Represents a command to indicate that a specified IAT (Implicit Association Test) does not exist for a transaction request.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the non-existent IAT. Cannot be null.</param>
+    public record NoSuchIATCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
     /// <summary>
     /// Represents a command to mark an email as verified for a specified transaction.
     /// </summary>

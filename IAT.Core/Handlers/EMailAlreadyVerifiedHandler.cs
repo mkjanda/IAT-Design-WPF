@@ -45,7 +45,8 @@ namespace IAT.Core.Handlers
         {
             await _webSocketService.CloseSocketAsync();
             _transactionState.Result = TransactionResult.Success;
-            _transactionState.Event.Set();
+            _transactionState.SetResult(TransactionResult.Success);
+
             return TransactionResult.Success;
         }
     }
