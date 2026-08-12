@@ -48,7 +48,7 @@ namespace IAT.Core.Handlers
         public async Task<TransactionResult> Handle(RSAKeyCommand request, CancellationToken cancellationToken)
         {
             // inside Handle / the method that currently does request.Key.DecryptKey(...)
-            _transactionState.RSA = _resultCryptoService.UnwrapPrivateKey(request.Key, _transactionState.Password);
+            _transactionState.RSA.SetRSAParameters(_resultCryptoService.UnwrapPrivateKey(request.Key, _transactionState.Password));
             // then continue with the password-verification request as before
             request.Key.DecryptKey(_transactionState.Password);
             await _webSocketService.SendMessage(new TransactionRequest()

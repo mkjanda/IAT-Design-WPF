@@ -252,5 +252,21 @@ public class EncryptedRSAKey : IWebSocketMessage
             InverseQ = inverseQ
         };
     }
+
+    /// <summary>
+    /// Sets the RSA key parameters for the current instance using the provided <see cref="RSAParameters"/> structure.
+    /// </summary>
+    /// <param name="parameters">The RSA parameters to set for the current instance.</param>
+    public void SetRSAParameters(RSAParameters parameters)
+    {
+        n = parameters.Modulus;
+        e = parameters.Exponent;
+        d = parameters.D;
+        p = parameters.P;
+        q = parameters.Q;
+        dp = parameters.DP;
+        dq = parameters.DQ;
+        inverseQ = parameters.InverseQ;
+    }
 }
 
