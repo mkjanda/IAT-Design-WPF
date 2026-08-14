@@ -14,12 +14,6 @@ namespace IAT.Core.Handlers
     public record TransactionSuccessCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
-    /// Represents a command to indicate that a specified IAT (Implicit Association Test) does not exist for a transaction request.
-    /// </summary>
-    /// <param name="transaction">The transaction request associated with the non-existent IAT. Cannot be null.</param>
-    public record NoSuchIATCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
     /// Represents a command to mark an email as verified for a specified transaction.
     /// </summary>
     /// <param name="transaction">The transaction request containing the details of the transaction for which the email is being verified. Cannot
@@ -53,7 +47,7 @@ namespace IAT.Core.Handlers
     /// <param name="transaction">The transaction request containing the details required to check the existence of the Automated Teller
     /// transaction. Cannot be null.</param>
     public record IATExistsRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-        
+
     /// <summary>
     /// Represents a command that indicates an invalid password was provided for a transaction request.
     /// </summary>
@@ -76,7 +70,7 @@ namespace IAT.Core.Handlers
     /// Represents a command to delete a client as part of a transaction request.
     /// </summary>
     /// <param name="transaction">The transaction request containing the details required to process the client deletion. Cannot be null.</param>
-    public record ClientDeletedCommand(TransactionRequest transaction)  : IRequest<TransactionResult>;
+    public record ClientDeletedCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
     /// Represents a command to request activation of a transaction transmission.
@@ -249,8 +243,21 @@ namespace IAT.Core.Handlers
     /// <param name="transaction">The transaction request associated with the server report request. Cannot be null.</param>
     public record RequestTransmissionServerReportCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
+    /// <summary>
+    /// Represents a command to handle the processing of a server report received as part of a transaction request.
+    /// </summary>
+    /// <param name="report">The server report to be processed. Cannot be null.</param>
     public record ServerReportCommand(ServerReport report) : IRequest<TransactionResult>;
 
-
+    /// <summary>
+    /// Represents a command to check if an IAT (Implicit Association Test) exists for a given transaction request.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the IAT existence check. Cannot be null.</param>
     public record IATExistsCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to handle the scenario where no such IAT (Implicit Association Test) exists for a given transaction request.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the no such IAT scenario. Cannot be null.</param>
+    public record NoSuchIATResultRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 }

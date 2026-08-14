@@ -58,11 +58,12 @@ namespace IAT.Core.Handlers
                     IATName = _transactionState.IATName,
                     ProductKey = _transactionState.ProductKey
                 });
-                _transactionState.Result = TransactionResult.Unset;
+                _transactionState.SetResult(TransactionResult.Unset);
                 return TransactionResult.Unset;
             }
             else
             {
+                await _webSocketService.CloseSocketAsync();
                 _transactionState.SetResult(TransactionResult.Aborted);
                 return TransactionResult.Aborted;
             }

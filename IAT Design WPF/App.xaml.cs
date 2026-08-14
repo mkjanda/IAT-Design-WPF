@@ -70,6 +70,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<IGetItemSlidesService, GetItemSlidesService>();
             services.AddSingleton<IResendEmailVerificationService, ResendEmailVerificationService>();
             services.AddSingleton<IResultRetrievalService, ResultRetrievalService>();
+            services.AddSingleton<IServerReportService, ServerReportService>();
             services.AddSingleton<ITestDeploymentService, TestDeploymentService>();
             services.AddSingleton<IBlockExportProcessor, BlockExportProcessor>();
             services.AddSingleton<IStimulusExportProcessor, StimulusExportProcessor>();
@@ -78,16 +79,12 @@ namespace IAT_Design_WPF
             services.AddSingleton<IProjectPackageService, ProjectPackageService>();
             services.AddSingleton<IFileManifestBuilder, FileManifestBuilder>();
             services.AddSingleton<IImageGenerationService, ImageGenerationService>();
-            services.AddSingleton<IResultCryptoService, ResultCryptoService>();
-            services.AddSingleton<IResultDecryptionService, ResultDecryptionService>();
             services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IValidator<IatTest>, IatTestValidator>();
             services.AddSingleton<IValidator<Block>, BlockValidator>();
             services.AddSingleton<IValidator<Stimulus>, StimulusValidator>();
             services.AddSingleton<IValidator<InstructionScreen>, InstructionScreenValidator>();
             services.AddSingleton<IValidator<Trial>, TrialValidator>();
-            services.AddSingleton<IResultCryptoService, ResultCryptoService>();
-            services.AddSingleton<IResultDecryptionService, ResultDecryptionService>();
 
             // Domain model first — shared singleton used by all designer tabs
             services.AddSingleton<IatTest>();

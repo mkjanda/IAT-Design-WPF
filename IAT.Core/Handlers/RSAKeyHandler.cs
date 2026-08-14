@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using MediatR;
 using IAT.Core.Serializable;
-using IAT.Core.Services;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Services.Network;
@@ -18,7 +17,6 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
-        private readonly IResultCryptoService _resultCryptoService;
 
         /// <summary>
         /// The constructor initializes the RSAKeyHandler with the necessary dependencies, including the WebSocket service for communication and the transaction 
@@ -29,12 +27,10 @@ namespace IAT.Core.Handlers
         /// </summary>
         /// <param name="webSocketService">The WebSocket service used for communication with the server.</param>
         /// <param name="transactionState">The transaction state that tracks the current status and data of the ongoing transaction.</param>
-        /// <param name="resultCryptoService">The service used for cryptographic operations related to transaction results.</param>
-        public RSAKeyHandler(IWebSocketService webSocketService, TransactionState transactionState, IResultCryptoService resultCryptoService) 
+        public RSAKeyHandler(IWebSocketService webSocketService, TransactionState transactionState) 
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _resultCryptoService = resultCryptoService;
         }
 
         /// <summary>
@@ -47,10 +43,8 @@ namespace IAT.Core.Handlers
         /// sending the request.</returns>
         public async Task<TransactionResult> Handle(RSAKeyCommand request, CancellationToken cancellationToken)
         {
-            // inside Handle / the method that currently does request.Key.DecryptKey(...)
-            _transactionState.RSA.SetRSAParameters(_resultCryptoService.UnwrapPrivateKey(request.Key, _transactionState.Password));
-            // then continue with the password-verification request as before
             request.Key.DecryptKey(_transactionState.Password);
+            _transactionState.RSA = request.Key;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Type = TransactionType.RequestPasswordVerification,

@@ -43,7 +43,6 @@ namespace IAT.Core.Handlers
         {
             await _wss.CloseSocketAsync();
             await _dialogService.ShowNotificationAsync(TransactionResult.ClientFrozen.Message, TransactionResult.ClientFrozen.Title);
-            _state.Result = TransactionResult.ClientFrozen;
             _state.SetResult(TransactionResult.ClientFrozen);
             return TransactionResult.ClientFrozen;
         }

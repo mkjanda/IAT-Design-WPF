@@ -57,10 +57,7 @@ namespace IAT.Core.Handlers
             var memStream = new MemoryStream();
             await response.Content.CopyToAsync(memStream);
             memStream.Seek(0, SeekOrigin.Begin);
-            _transactionState.TestResults = serializer.Deserialize(memStream) as TestResults
-                ?? throw new InvalidOperationException(
-                    "Server response could not be deserialized as TestResults.");
-            _transactionState.Result = TransactionResult.Success;
+            _transactionState.TestResults = (TestResults)serializer.Deserialize(memStream);
             _transactionState.SetResult(TransactionResult.Success);
             return TransactionResult.Success;
         }

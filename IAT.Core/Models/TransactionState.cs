@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
+using System;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using IAT.Core.ConfigFile;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
-using System.Security.Cryptography;
 
 namespace IAT.Core.Models
 {
@@ -21,18 +19,19 @@ namespace IAT.Core.Models
     {
         private TaskCompletionSource<TransactionResult> _completion =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
-    
+
         /// <summary>
         /// Gets a task that represents the completion of the transaction.
         /// </summary>
         public Task<TransactionResult> Completion => _completion.Task;
 
         /// <summary>
-        /// Sets the result of the transaction operation.
+        /// Sets the result of the transaction operation and completes <see cref="Completion"/>.
         /// </summary>
         /// <param name="result">The transaction result to set.</param>
         public void SetResult(TransactionResult result)
         {
+            Result = result;
             _completion.TrySetResult(result);
         }
 
@@ -60,9 +59,11 @@ namespace IAT.Core.Models
         {
             // New TCS for the next transaction
             _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        }        /// <summary>
-                 /// Gets or sets the product key associated with the product.
-                 /// </summary>
+        }
+
+        /// <summary>
+        /// Gets or sets the product key associated with the product.
+        /// </summary>
         public string ProductKey { get; set; } = string.Empty;
 
         /// <summary>
@@ -96,15 +97,15 @@ namespace IAT.Core.Models
         public XDocument TestResultsDocument { get; set; } = new();
 
         /// <summary>
-        /// The configuragtion file for the test being deployed. This property is set during the deployment 
-        /// process and contains the necessary configuration details for the test, such as stimuli, instructions, 
-        /// and other relevant settings. The ConfigFile is typically used to initialize the test environment and 
+        /// The configuration file for the test being deployed. This property is set during the deployment
+        /// process and contains the necessary configuration details for the test, such as stimuli, instructions,
+        /// and other relevant settings. The ConfigFile is typically used to initialize the test environment and
         /// ensure that the test is configured correctly according to the specifications defined in the configuration file.
         /// </summary>
         public IATConfigFile ConfigFile { get; set; } = new IATConfigFile();
 
         /// <summary>
-        /// THe manifest of deployment files.
+        /// The manifest of deployment files.
         /// </summary>
         public Manifest FileManifest { get; set; } = new Manifest();
 
@@ -114,10 +115,10 @@ namespace IAT.Core.Models
         public Manifest SlideManifest { get; set; } = new Manifest();
 
         /// <summary>
-        /// Gets or sets the number of results associated with the transaction. This property is used to track 
-        /// the count of results generated or processed during the transaction operation. It is represented as 
-        /// an integer value and can be used for validation, reporting, or further processing of the results. 
-        /// The NumResults property helps maintain an accurate record of the results produced in the context 
+        /// Gets or sets the number of results associated with the transaction. This property is used to track
+        /// the count of results generated or processed during the transaction operation. It is represented as
+        /// an integer value and can be used for validation, reporting, or further processing of the results.
+        /// The NumResults property helps maintain an accurate record of the results produced in the context
         /// of the transaction workflow.
         /// </summary>
         public int NumResults { get; set; } = 0;
@@ -138,7 +139,7 @@ namespace IAT.Core.Models
         public long ClientId { get; set; } = 0;
 
         /// <summary>
-        /// The deployment ID of the test upload
+        /// The deployment ID of the test upload.
         /// </summary>
         public long DeploymentId { get; set; } = 0;
 
@@ -148,14 +149,13 @@ namespace IAT.Core.Models
         public long UploadTimeMillis { get; set; } = 0;
 
         /// <summary>
-        /// The activation key associated with the current activation or verification process. This property is updated upon successful email 
+        /// The activation key associated with the current activation or verification process. This property is updated upon successful email
         /// verification or product activation and can be used to retrieve the activation key for storage or display purposes.
         /// </summary>
         public string ActivationKey { get; set; } = string.Empty;
 
-
         /// <summary>
-        /// Gets or sets the server report containing information about the server's response to the transaction.         
+        /// Gets or sets the server report containing information about the server's response to the transaction.
         /// </summary>
         public ServerReport ServerReport { get; set; } = new ServerReport();
 
@@ -164,26 +164,32 @@ namespace IAT.Core.Models
         /// </summary>
         public TestResults TestResults { get; set; } = new TestResults();
 
-
         /// <summary>
-        /// Resets all user and session-related properties to their default values.
+        /// Resets all user and session-related properties to their default values and arms a fresh
+        /// <see cref="Completion"/> task for the next transaction.
         /// </summary>
         /// <remarks>Call this method to clear sensitive information and restore the object to its initial
-        /// state before reuse. This method also signals any waiting threads that the reset operation has
-        /// completed.</remarks>
+        /// state before reuse.</remarks>
         public void Clear()
         {
             ProductKey = string.Empty;
             Password = string.Empty;
+            AuthToken = string.Empty;
             IATName = string.Empty;
             UserName = string.Empty;
             Email = string.Empty;
             TestResultsDocument = new XDocument();
             SlideManifest = new Manifest();
+            FileManifest = new Manifest();
             RSA = new EncryptedRSAKey();
             Result = TransactionResult.Unset;
             ActivationKey = string.Empty;
             ServerReport = new ServerReport();
+            TestResults = new TestResults();
+            NumResults = 0;
+            ClientId = 0;
+            DeploymentId = 0;
+            UploadTimeMillis = 0;
             ResetCompletion();
         }
     }

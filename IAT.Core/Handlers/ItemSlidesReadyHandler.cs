@@ -56,8 +56,8 @@ namespace IAT.Core.Handlers
         {
 
             using var httpClient = new HttpClient();
-            return await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")
-                    + $"IATName={_transactionState.IATName}&ClientID={_transactionState.ClientId}&AuthToken={_transactionState.AuthToken}")
+            var retVal = await httpClient.GetByteArrayAsync(_stringResourceService.GetString("sItemSlideDownloadURL")
+                    + $"IATName={_transactionState.IATName}&ClientID={_transactionState.ClientId}&DownloadKey={request.ToString()}")
                     .ContinueWith(async t =>
             {
                 if (t.IsFaulted)
@@ -82,10 +82,14 @@ namespace IAT.Core.Handlers
                             receipt.Read(file.Content, 0, (int)file.Size);
                         }
                     }
-                    _transactionState.SetResult(TransactionResult.Success);
-                    return TransactionResult.Success;
+                    return TransactionResult.Unset;
                 }
             }).Result;
+            if (retVal != TransactionResult.Unset)
+                _transactionState.SetResult(retVal);
+            else
+                _transactionState.Result = retVal;
+            return retVal;
         }
     }
 }

@@ -161,10 +161,8 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) },
             { TransactionType.Fail, r => new TransactionFailCommand(r) },
             { TransactionType.Success, r => new TransactionSuccessCommand(r) },
-            { TransactionType.PasswordInvalid, r => new InvalidPasswordCommand(r) },
             { TransactionType.IATExists, r => new IATExistsCommand(r) },
-            { TransactionType.ItemSlidesReady, r => new ItemSlidesReadyCommand(r) },
-            { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) }
+            { TransactionType.ItemSlidesReady, r => new ItemSlidesReadyCommand(r) }
         };
     }
 
@@ -511,7 +509,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         // Signal waiting callers without tearing down the persistent connection.
         if (transactionResult != TransactionResult.Unset)
         {
-            _transactionState.SetResult(transactionResult); 
+            _transactionState.SetResult(transactionResult);
         }
     }
 

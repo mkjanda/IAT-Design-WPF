@@ -26,10 +26,9 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique key identifying the product for which the email verification is requested. Cannot be null or
         /// empty.</param>
         /// <param name="email">The email address to verify. Must be a valid, non-empty email address.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification request.</returns>
-        Task<TransactionResult> VerifyEmail(string productKey, string email, CancellationToken cancellationToken = default);
+        Task<TransactionResult> VerifyEmail(string productKey, string email);
 
         /// <summary>
         /// The activation key for the software
@@ -75,10 +74,9 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique identifier for the product to associate with the email verification request. Cannot be null or
         /// empty.</param>
         /// <param name="email">The email address to verify. Cannot be null or empty.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification process.</returns>
-        async public Task<TransactionResult> VerifyEmail(string productKey, string email, CancellationToken cancellationToken = default)
+        async public Task<TransactionResult> VerifyEmail(string productKey, string email)
         {
             _webSocketService.Start();
             _transactionState.Clear();
@@ -89,7 +87,7 @@ namespace IAT.Core.Services.Network
                 Type = TransactionType.RequestConnection,
                 ProductKey = productKey
             });
-            await _transactionState.Completion.WaitAsync(cancellationToken);
+            await _transactionState.Completion.ConfigureAwait(false);
             return _transactionState.Result;
         }
         

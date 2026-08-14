@@ -49,7 +49,7 @@ namespace IAT.Core.Handlers
         {
             await _dialogService.ShowNotificationAsync(TransactionResult.NoSuchClient.Message, TransactionResult.NoSuchClient.Title);
             await _webSocketService.CloseSocketAsync();
-            _transactionState.SetResult(TransactionResult.NoSuchClient);
+            _transactionState.SetResult(TransactionResult.NoSuchClient);  
             return TransactionResult.NoSuchClient;
         }
     }

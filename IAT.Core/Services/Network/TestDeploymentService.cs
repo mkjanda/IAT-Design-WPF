@@ -26,9 +26,8 @@ namespace IAT.Core.Services.Network
         /// <param name="name">The name of the IAT to be deployed.</param>
         /// <param name="password">The password required to authenticate the deployment operation.</param>
         /// <param name="exportResult">The result of the export operation to be used in the deployment.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous deployment operation. The task result contains the outcome of the deployment.</returns>
-        Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult, CancellationToken cancellationToken = default);
+        Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult);
     }
 
     /// <summary>
@@ -71,10 +70,9 @@ namespace IAT.Core.Services.Network
         /// <param name="name">The name to associate with the deployment operation. This value is used to identify the deployment session.</param>
         /// <param name="password">The password required to authenticate the deployment operation. Cannot be null.</param>
         /// <param name="exportResult">The result of the export operation to be used in the deployment.</param>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous deployment operation. The task result contains a TransactionResult
         /// indicating the outcome of the deployment.</returns>
-        public async Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult, CancellationToken cancellationToken = default)
+        public async Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult)
         {
             _state.ConfigFile = exportResult.ConfigFile;
             _state.FileManifest = exportResult.FileManifest;
@@ -83,7 +81,7 @@ namespace IAT.Core.Services.Network
             _state.IATName = name;
             _state.ResetCompletion();
             await _webSocket.SendMessage(new TransactionRequest() { Type = TransactionType.RequestConnection });
-            await _state.Completion.WaitAsync(cancellationToken);
+            await _state.Completion.ConfigureAwait(false);
             return _state.Result;
         }
     }

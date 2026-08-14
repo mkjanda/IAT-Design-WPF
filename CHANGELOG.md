@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Continue key locked to Space for instruction screens (standard IAT practice)
 - Result data no longer carries legacy versioning fields
 - Errors prefer the main-window error banner over modal dialogs where appropriate
+- Deploy action buttons (header + bottom bar) use shared Secondary/Danger button styles with larger height and padding so labels are fully visible
+- Left-pane list data (Blocks, Stimuli, Trials, Instructions, Surveys, Deployed Tests) uses larger type (14–15 pt) and light foreground `#F0F0F0` / `#B0B0B0` for secondary lines; shared `DarkListBoxItem` style applied for consistent selection and contrast on the dark theme
+- Deploy tab activation calls `IServerReportService.RetrieveServerReport` and maps `ServerReport` into the account bar and deployed-tests list; WebSocket stays open while the tab is visible and is closed on deactivate
+- `IServerReportService` registered in DI; transaction handlers bound per-call so they do not fight other network services
 
 ### Removed
 
@@ -47,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Inverted “every stimulus must be used in at least one trial” check in `ValidateEntireTest`
 - Image generation service after packaging data-flow changes
+- `TransactionState.Clear` now resets the completion event (previously called `Set`, so the next `WaitOne` returned immediately)
 - Duplicate Page build-action items
 - `App.xaml` root namespace (`IAT_Design_WPF`) blocking compilation
 - Layout editor sizing, repositioning, and save/load

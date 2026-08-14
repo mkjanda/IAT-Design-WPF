@@ -18,11 +18,11 @@ namespace IAT.Core.Handlers
             _transactionState = transactionState;
         }
 
-        public async Task<TransactionResult> Handle(ServerReportCommand request, CancellationToken cancellationToken)
+        public Task<TransactionResult> Handle(ServerReportCommand request, CancellationToken cancellationToken)
         {
             _transactionState.ServerReport = request.report;
             _transactionState.SetResult(TransactionResult.Success);
-            return TransactionResult.Success;
+            return Task.FromResult(TransactionResult.Success);
         }
     }
 }

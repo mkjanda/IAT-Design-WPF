@@ -80,8 +80,8 @@
                 </StackPanel>
 
                 <Button Grid.Column="4" Content="Refresh" Command="{Binding RefreshCommand}"
-                        Style="{StaticResource AccentButton}" Padding="12,5" Height="28"
-                        Margin="0,0,12,0"/>
+                        Style="{StaticResource SecondaryButton}" Padding="14,6" Height="30"
+                        Margin="0,0,12,0" MinWidth="72"/>
 
                 <TextBlock Grid.Column="5" VerticalAlignment="Center" Foreground="#888888">
                     <Run Text="Last sync: "/>
@@ -116,14 +116,14 @@
                             <TextBlock Text="Deployed Tests" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
                                 <Button Content="Retrieve" Command="{Binding RetrieveResultsCommand}"
-                                        Padding="10,4" Margin="0,0,6,0" Height="26"
-                                        Background="#3A3A3A" Foreground="#E0E0E0" BorderThickness="0" Cursor="Hand"/>
+                                        Style="{StaticResource SecondaryButton}"
+                                        Margin="0,0,6,0" MinWidth="72"/>
                                 <Button Content="Clear" Command="{Binding ClearResultsCommand}"
-                                        Padding="10,4" Margin="0,0,6,0" Height="26"
-                                        Background="#3A3A3A" Foreground="#E0E0E0" BorderThickness="0" Cursor="Hand"/>
+                                        Style="{StaticResource SecondaryButton}"
+                                        Margin="0,0,6,0" MinWidth="60"/>
                                 <Button Content="Delete" Command="{Binding DeleteTestCommand}"
-                                        Padding="10,4" Height="26"
-                                        Background="#5C2B2B" Foreground="#FFAAAA" BorderThickness="0" Cursor="Hand"/>
+                                        Style="{StaticResource DangerButton}"
+                                        MinWidth="64"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -133,33 +133,8 @@
                              SelectedItem="{Binding SelectedDeployedTest}"
                              Background="Transparent" BorderThickness="0"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             Margin="4">
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="Margin" Value="0,2"/>
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ListBoxItem">
-                                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="10,8"
-                                                    BorderThickness="1" BorderBrush="Transparent">
-                                                <ContentPresenter/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="#333333"/>
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background" Value="#0E639C"/>
-                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#007ACC"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
+                             Margin="4"
+                             ItemContainerStyle="{StaticResource DarkListBoxItem}">
                         <ListBox.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:DeployedTestItem}">
                                 <Grid>
@@ -168,18 +143,19 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                            <TextBlock Text="{Binding UploadedDisplay}" Foreground="#AAAAAA" FontSize="11" Margin="0,0,10,0"/>
-                                            <TextBlock Text="{Binding SizeDisplay}" Foreground="#AAAAAA" FontSize="11" Margin="0,0,10,0"/>
-                                            <TextBlock FontSize="11">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"
+                                                   Foreground="#F0F0F0"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock Text="{Binding UploadedDisplay}" Foreground="#B0B0B0" FontSize="13" Margin="0,0,12,0"/>
+                                            <TextBlock Text="{Binding SizeDisplay}" Foreground="#B0B0B0" FontSize="13" Margin="0,0,12,0"/>
+                                            <TextBlock FontSize="13" Foreground="#B0B0B0">
                                                 <Run Text="{Binding ResultCount, Mode=OneWay}"/>
                                                 <Run Text=" results"/>
                                             </TextBlock>
                                         </StackPanel>
                                     </StackPanel>
                                     <TextBlock Grid.Column="1" Text="{Binding Status}" VerticalAlignment="Center"
-                                               FontSize="11" Foreground="#F7C46C" Margin="8,0,0,0"/>
+                                               FontSize="12" Foreground="#F7C46C" Margin="8,0,0,0"/>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -350,7 +326,7 @@
         </Grid>
 
         <!-- ═══════════════ BOTTOM ACTION BAR ═══════════════ -->
-        <Grid Grid.Row="4">
+        <Grid Grid.Row="4" Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -360,17 +336,20 @@
             <Button Grid.Column="0" Content="+ Deploy Current Test"
                     Command="{Binding DeployCurrentTestCommand}"
                     Style="{StaticResource AccentButton}"
-                    HorizontalAlignment="Left" Padding="18,8" Height="36" FontSize="13"/>
+                    HorizontalAlignment="Left" Padding="20,10" Height="40" FontSize="14"
+                    MinWidth="180"/>
 
             <Button Grid.Column="1" Content="Download All Results"
                     Command="{Binding DownloadAllResultsCommand}"
-                    Background="#3A3A3A" Foreground="#E0E0E0" BorderThickness="0"
-                    Padding="16,8" Height="36" Margin="0,0,10,0" Cursor="Hand"/>
+                    Style="{StaticResource SecondaryButton}"
+                    Padding="18,10" Height="40" Margin="0,0,10,0" FontSize="13"
+                    MinWidth="160"/>
 
             <Button Grid.Column="2" Content="Delete Selected"
                     Command="{Binding DeleteSelectedCommand}"
-                    Background="#C62828" Foreground="White" BorderThickness="0"
-                    Padding="16,8" Height="36" Cursor="Hand"/>
+                    Style="{StaticResource DangerButton}"
+                    Padding="18,10" Height="40" FontSize="13"
+                    MinWidth="130"/>
         </Grid>
     </Grid>
 </UserControl>

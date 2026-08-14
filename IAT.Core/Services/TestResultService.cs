@@ -22,7 +22,6 @@ namespace IAT.Core.Services
         private readonly IResultRetrievalService _resultRetrievalService;
         private readonly ILocalStorageService _localStorageService;
         private readonly IXmlDeserializationService _xmlDeserializationService;
-        private readonly IItemSlideRetriever _itemSlideRetriever;
         private readonly TransactionState _state;
         private ConfigFile.IATConfigFile? ConfigFile { get; set; } = null;
         private List<ResultPacket> Results { get; set; } = new();
@@ -39,12 +38,11 @@ namespace IAT.Core.Services
         /// <param name="itemSlideRetriever">The service used to retrieve item slides for the test results.</param>
         /// <param name="state">The transaction state object that tracks the current state of transactions.</param>
         public TestResultService(ILocalStorageService localStorageService, IResultRetrievalService resultRetrievalService,
-            IXmlDeserializationService xmlDeserializationService, IItemSlideRetriever itemSlideRetriever, TransactionState state)
+            IXmlDeserializationService xmlDeserializationService, TransactionState state)
         {
             _localStorageService = localStorageService;
             _xmlDeserializationService = xmlDeserializationService;
             _resultRetrievalService = resultRetrievalService;
-            _itemSlideRetriever = itemSlideRetriever;
             _state = state;
         }
 

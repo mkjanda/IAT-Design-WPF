@@ -1,34 +1,46 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IAT.Core.Domain;
+using IAT.Core.Enumerations;
+using IAT.Core.Models;
+using IAT.Core.Serializable;
 using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using System.Collections.ObjectModel;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace IAT.ViewModels.Controls;
 
 /// <summary>
 /// ViewModel for the Deploy tab: account status, list of deployed tests on the server,
 /// result retrieval/preview, and deployment of the current local test.
-/// Follows the same MVVM + CommunityToolkit.Mvvm patterns used by the other manager VMs.
+/// <para>
+/// Connection policy: the WebSocket is started when the tab becomes visible and kept open
+/// for the lifetime of the Deploy UI. It is closed when the tab is hidden so other flows
+/// can reconfigure transaction handlers cleanly.
+/// </para>
 /// </summary>
 public partial class DeployManagerViewModel : ObservableObject
 {
     private readonly ITestDeploymentService _deploymentService;
     private readonly IResultRetrievalService _resultService;
+    private readonly IServerReportService _serverReportService;
+    private readonly ILocalStorageService _localStorage;
+    private readonly TransactionState _transactionState;
     private readonly IDialogService _dialogService;
     private readonly IUserNotificationService _notificationService;
     private readonly IWebSocketService _webSocket;
     private readonly IatTest _currentTest;
 
+    private bool _isActive;
+    private int _activationGate; // 0 = idle, 1 = activation in progress
+
     // ── Account / connection status (bound to top bar) ─────────────────────
-    [ObservableProperty] private string accountName = "Dr. Elena Vargas";
-    [ObservableProperty] private string storageRemaining = "142.3 MB";
-    [ObservableProperty] private int administrationsRemaining = 87;
-    [ObservableProperty] private bool isConnected = true;
-    [ObservableProperty] private string lastSyncText = "2 min ago";
+    [ObservableProperty] private string accountName = "—";
+    [ObservableProperty] private string storageRemaining = "—";
+    [ObservableProperty] private int administrationsRemaining;
+    [ObservableProperty] private bool isConnected;
+    [ObservableProperty] private string lastSyncText = "never";
     [ObservableProperty] private bool isRefreshing;
 
     // ── Deployed tests list ────────────────────────────────────────────────
@@ -38,6 +50,7 @@ public partial class DeployManagerViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(RetrieveResultsCommand))]
     [NotifyCanExecuteChangedFor(nameof(ClearResultsCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteTestCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
     private DeployedTestItem? selectedDeployedTest;
 
     [ObservableProperty] private string searchText = string.Empty;
@@ -54,18 +67,12 @@ public partial class DeployManagerViewModel : ObservableObject
 
     [ObservableProperty] private SurveyResultTab? selectedSurveyTab;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeployManagerViewModel"/> class with the specified services and current test.
-    /// </summary>
-    /// <param name="deploymentService">The service responsible for test deployment operations.</param>
-    /// <param name="resultService">The service responsible for result retrieval operations.</param>
-    /// <param name="dialogService">The service responsible for displaying dialogs.</param>
-    /// <param name="notificationService">The service responsible for user notifications.</param>
-    /// <param name="webSocketService">The service responsible for WebSocket communications.</param>
-    /// <param name="currentTest">The current test being managed.</param>
     public DeployManagerViewModel(
         ITestDeploymentService deploymentService,
         IResultRetrievalService resultService,
+        IServerReportService serverReportService,
+        ILocalStorageService localStorage,
+        TransactionState transactionState,
         IDialogService dialogService,
         IUserNotificationService notificationService,
         IWebSocketService webSocketService,
@@ -73,66 +80,69 @@ public partial class DeployManagerViewModel : ObservableObject
     {
         _deploymentService = deploymentService;
         _resultService = resultService;
+        _serverReportService = serverReportService;
+        _localStorage = localStorage;
+        _transactionState = transactionState;
         _dialogService = dialogService;
         _webSocket = webSocketService;
         _notificationService = notificationService;
         _currentTest = currentTest;
-
-        // Seed realistic sample data so the UI is reviewable immediately.
-        SeedSampleData();
-    }
-
-    private void SeedSampleData()
-    {
-        DeployedTests.Add(new DeployedTestItem
-        {
-            Name = "Race IAT v3",
-            Uploaded = DateTime.Now.AddDays(-4),
-            SizeBytes = 4_200_000,
-            ResultCount = 25,
-            Status = "Ready"
-        });
-        DeployedTests.Add(new DeployedTestItem
-        {
-            Name = "Gender Career IAT",
-            Uploaded = DateTime.Now.AddDays(-12),
-            SizeBytes = 3_800_000,
-            ResultCount = 11,
-            Status = "Ready"
-        });
-        DeployedTests.Add(new DeployedTestItem
-        {
-            Name = "Age Stereotype Pilot",
-            Uploaded = DateTime.Now.AddDays(-30),
-            SizeBytes = 2_100_000,
-            ResultCount = 0,
-            Status = "No results"
-        });
-
-        SelectedDeployedTest = DeployedTests[0];
-        LoadPreviewFor(SelectedDeployedTest);
     }
 
     /// <summary>
-    /// Called when the view is activated. Starts the WebSocket connection and refreshes the deployed tests list.
+    /// Called when the Deploy tab becomes visible. Starts (or reuses) the WebSocket and
+    /// loads the server report into the account bar and deployed-tests list.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task OnActivatedAsync()
     {
-        _webSocket.Start();          // or await _webSocket.ConnectAsync() if you want to await readiness
+        if (Interlocked.Exchange(ref _activationGate, 1) == 1)
+            return;
 
-        // Optional: keep IsConnected in sync
+        try
+        {
+            _isActive = true;
+
+            _webSocket.ConnectionStateChanged -= OnConnectionStateChanged;
+            _webSocket.ConnectionStateChanged += OnConnectionStateChanged;
+
+            // Keep the socket open for the duration of the Deploy UI.
+            _webSocket.Start();
+            IsConnected = _webSocket.ConnectionState == WebSocketConnectionState.Connected;
+
+            await RefreshAsync();
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _activationGate, 0);
+        }
+    }
+
+    /// <summary>
+    /// Called when the Deploy tab is hidden. Tears down the connection so other
+    /// transaction services can rebind handlers without interference.
+    /// </summary>
+    public async Task OnDeactivatedAsync()
+    {
+        _isActive = false;
         _webSocket.ConnectionStateChanged -= OnConnectionStateChanged;
-        _webSocket.ConnectionStateChanged += OnConnectionStateChanged;
-        IsConnected = _webSocket.ConnectionState == WebSocketConnectionState.Connected;
 
-        // Then load real data
-        await RefreshAsync();
+        try
+        {
+            await _webSocket.CloseSocketAsync();
+        }
+        catch
+        {
+            // Best-effort close — never throw out of a visibility handler.
+        }
 
+        IsConnected = false;
     }
 
     private void OnConnectionStateChanged(object? sender, WebSocketConnectionState newState)
     {
+        // Marshal is not required for bool property; CommunityToolkit raises on calling thread.
+        // Connection events may arrive off the UI thread — property change is still fine for binding
+        // as long as WPF dispatcher is used for collection mutations (we do that in ApplyServerReport).
         IsConnected = newState == WebSocketConnectionState.Connected;
     }
 
@@ -150,70 +160,23 @@ public partial class DeployManagerViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
-        // Client-side filter of the deployed list (simple Contains on name).
-        // Real implementation would re-query or use CollectionViewSource.
-        // For now the list stays as-is; filter is applied in the view via CollectionView if needed.
+        // Client-side filter reserved for a CollectionView; list is rebuilt from ServerReport.
     }
 
     private void LoadPreviewFor(DeployedTestItem item)
     {
         SelectedTestTitle = $"{item.Name}  ·  {item.ResultCount} results";
-        MeanDScore = 0.42;
+        MeanDScore = 0;
         SampleSize = item.ResultCount;
-        AverageRtMs = 685;
+        AverageRtMs = 0;
         HasResults = item.ResultCount > 0;
 
         SurveyTabs.Clear();
-
-        // Summary always first
         SurveyTabs.Add(new SurveyResultTab
         {
             Header = "Summary",
             IsSummary = true
         });
-
-        // Mock two surveys that a real result packet would contain
-        var demographics = new SurveyResultTab
-        {
-            Header = "Demographics",
-            IsSummary = false,
-            QuestionHeaders =
-            {
-                new QuestionHeader { ShortText = "Age", FullText = "What is your age in years?", ResponseType = "BoundedNumber" },
-                new QuestionHeader { ShortText = "Gender", FullText = "Which gender do you identify with?", ResponseType = "MultipleChoice" },
-                new QuestionHeader { ShortText = "DOB", FullText = "Date of birth (YYYY-MM-DD)", ResponseType = "Date" },
-                new QuestionHeader { ShortText = "Comment", FullText = "Any additional comments about the study?", ResponseType = "BoundedText" }
-            },
-            Rows =
-            {
-                new ResponseRow { ParticipantId = "P001", Values = { "24", "Female", "2001-03-12", "Interesting study" } },
-                new ResponseRow { ParticipantId = "P002", Values = { "31", "Male", "1994-11-05", "" } },
-                new ResponseRow { ParticipantId = "P003", Values = { "19", "Non-binary", "2006-07-22", "A bit long" } },
-                new ResponseRow { ParticipantId = "P004", Values = { "27", "Female", "1998-01-30", "" } }
-            }
-        };
-        SurveyTabs.Add(demographics);
-
-        var attitudes = new SurveyResultTab
-        {
-            Header = "Attitudes",
-            IsSummary = false,
-            QuestionHeaders =
-            {
-                new QuestionHeader { ShortText = "Q1", FullText = "I feel comfortable working with people from different racial backgrounds.", ResponseType = "Likert" },
-                new QuestionHeader { ShortText = "Q2", FullText = "Stereotypes are mostly accurate reflections of group differences.", ResponseType = "Likert" },
-                new QuestionHeader { ShortText = "Q3", FullText = "How often do you notice automatic judgments about others?", ResponseType = "Likert" }
-            },
-            Rows =
-            {
-                new ResponseRow { ParticipantId = "P001", Values = { "5", "2", "3" } },
-                new ResponseRow { ParticipantId = "P002", Values = { "4", "3", "4" } },
-                new ResponseRow { ParticipantId = "P003", Values = { "6", "1", "5" } },
-                new ResponseRow { ParticipantId = "P004", Values = { "5", "2", "2" } }
-            }
-        };
-        SurveyTabs.Add(attitudes);
-
         SelectedSurveyTab = SurveyTabs[0];
     }
 
@@ -222,16 +185,129 @@ public partial class DeployManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshAsync()
     {
+        if (IsRefreshing)
+            return;
+
         IsRefreshing = true;
         try
         {
-            // Real: await _deploymentService.RefreshManifestAsync() or similar
-            await Task.Delay(600); // simulate network
+            var productKey = SafeReadField(Field.ProductKey);
+            var email = SafeReadField(Field.UserEmail);
+
+            if (string.IsNullOrWhiteSpace(productKey) || string.IsNullOrWhiteSpace(email))
+            {
+                AccountName = "Not activated";
+                StorageRemaining = "—";
+                AdministrationsRemaining = 0;
+                DeployedTests.Clear();
+                SelectedDeployedTest = null;
+                LastSyncText = "not activated";
+                await _dialogService.ShowNotificationAsync(
+                    "Activate the product (product key + verified email) before loading the server report.",
+                    "Activation Required");
+                return;
+            }
+
+            // Ensure socket is up for the report exchange; leave it open afterwards.
+            _webSocket.Start();
+
+            var result = await _serverReportService.RetrieveServerReport(productKey, email);
+
+            if (!_isActive)
+                return; // Tab left while the request was in flight.
+
+            if (!result.IsSuccess)
+            {
+                var message = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Could not retrieve the server report."
+                    : result.Message;
+                await _dialogService.ShowNotificationAsync(message, result.Title ?? "Server Report");
+                return;
+            }
+
+            ApplyServerReport(_transactionState.ServerReport);
             LastSyncText = "just now";
+        }
+        catch (Exception ex)
+        {
+            if (_isActive)
+            {
+                await _dialogService.ShowNotificationAsync(
+                    $"Failed to load server report: {ex.Message}",
+                    "Server Report");
+            }
         }
         finally
         {
             IsRefreshing = false;
+        }
+    }
+
+    /// <summary>
+    /// Maps <see cref="ServerReport"/> into the account bar and the deployed-tests list.
+    /// </summary>
+    private void ApplyServerReport(ServerReport report)
+    {
+        if (report is null)
+            return;
+
+        var name = $"{report.ContactFName} {report.ContactLName}".Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            name = string.IsNullOrWhiteSpace(report.Organization) ? "Account" : report.Organization;
+
+        AccountName = name;
+        AdministrationsRemaining = report.NumAdministrations; // remaining administrations
+
+        // DiskAlottmentRemainingKB is in KB; present as MB when ≥ 1024.
+        var remainingKb = report.DiskAlottmentRemainingKB;
+        StorageRemaining = remainingKb >= 1024
+            ? $"{remainingKb / 1024.0:0.0} MB"
+            : $"{remainingKb} KB";
+
+        var previousSelection = SelectedDeployedTest?.Name;
+
+        DeployedTests.Clear();
+        foreach (var iat in report.ReportList ?? Enumerable.Empty<IATReport>())
+        {
+            if (string.IsNullOrWhiteSpace(iat.Name))
+                continue;
+
+            var item = new DeployedTestItem
+            {
+                Name = iat.Name,
+                SizeBytes = (long)iat.TestSizeKB * 1024L,
+                ResultCount = iat.NumResultSets,
+                Status = iat.NumResultSets > 0 ? "Ready" : "No results",
+                Uploaded = ParseLastRetrieval(iat.LastDataRetrieval)
+            };
+            DeployedTests.Add(item);
+        }
+
+        SelectedDeployedTest = DeployedTests.FirstOrDefault(t => t.Name == previousSelection)
+            ?? DeployedTests.FirstOrDefault();
+    }
+
+    private static DateTime ParseLastRetrieval(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return DateTime.MinValue;
+
+        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dt))
+            return dt.ToLocalTime();
+        if (DateTime.TryParse(value, out dt))
+            return dt;
+        return DateTime.MinValue;
+    }
+
+    private string SafeReadField(Field field)
+    {
+        try
+        {
+            return _localStorage[field] ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
         }
     }
 
@@ -242,8 +318,8 @@ public partial class DeployManagerViewModel : ObservableObject
     {
         if (SelectedDeployedTest is null) return;
         SelectedDeployedTest.Status = "Retrieving…";
-        // Real: await _resultService.RetrieveAsync(SelectedDeployedTest.Name);
-        await Task.Delay(800);
+        // Real path: await _resultService.RetrieveAsync(...)
+        await Task.Delay(400);
         SelectedDeployedTest.Status = "Ready";
         LoadPreviewFor(SelectedDeployedTest);
         await _dialogService.ShowNotificationAsync(
@@ -278,12 +354,10 @@ public partial class DeployManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task DeployCurrentTestAsync()
     {
-        // Real path: validate → package → _deploymentService.DeployAsync(...)
         var ok = await _dialogService.ShowConfirmationAsync(
             $"Deploy the current test “{_currentTest.Name}” to the server? Existing deployments with the same name will be versioned.",
             "Deploy Test");
         if (!ok) return;
-        // Placeholder success — real path wires to ITestDeploymentService + progress via messenger
         await _dialogService.ShowNotificationAsync(
             "Deployment started. You will be notified when the server acknowledges the package.", "Deploy");
     }
@@ -291,7 +365,6 @@ public partial class DeployManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task DownloadAllResultsAsync()
     {
-        // Real: zip all result packets via IResultRetrievalService
         await Task.CompletedTask;
         await _dialogService.ShowNotificationAsync(
             "All results download started (placeholder).", "Download");
@@ -316,9 +389,15 @@ public partial class DeployedTestItem : ObservableObject
 
     public string SizeDisplay => SizeBytes >= 1_000_000
         ? $"{SizeBytes / 1_000_000.0:0.0} MB"
-        : $"{SizeBytes / 1_000.0:0} KB";
+        : SizeBytes >= 1_000
+            ? $"{SizeBytes / 1_000.0:0} KB"
+            : $"{SizeBytes} B";
 
-    public string UploadedDisplay => Uploaded.ToString("yyyy-MM-dd");
+    public string UploadedDisplay =>
+        Uploaded == DateTime.MinValue ? "—" : Uploaded.ToString("yyyy-MM-dd");
+
+    partial void OnSizeBytesChanged(long value) => OnPropertyChanged(nameof(SizeDisplay));
+    partial void OnUploadedChanged(DateTime value) => OnPropertyChanged(nameof(UploadedDisplay));
 }
 
 public partial class SurveyResultTab : ObservableObject

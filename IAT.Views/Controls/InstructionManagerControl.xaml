@@ -63,15 +63,16 @@
                          SelectedItem="{Binding SelectedScreen, Mode=TwoWay}"
                          Background="Transparent" BorderThickness="0"
                          Margin="4,0,4,4"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ItemContainerStyle="{StaticResource DarkListBoxItem}">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type domain:InstructionScreen}">
-                            <StackPanel Margin="6,8">
+                            <StackPanel Margin="4,4">
                                 <TextBlock Text="{Binding Text}"
-                                           Foreground="#E0E0E0" FontWeight="SemiBold"
+                                           Foreground="#F0F0F0" FontSize="15" FontWeight="SemiBold"
                                            TextTrimming="CharacterEllipsis"/>
                                 <TextBlock Text="{Binding Converter={StaticResource ScreenTypeConverter}}"
-                                           Foreground="#888888" FontSize="11" Margin="0,2,0,0"/>
+                                           Foreground="#B0B0B0" FontSize="12" Margin="0,3,0,0"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

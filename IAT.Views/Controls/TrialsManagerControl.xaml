@@ -44,13 +44,14 @@
                 <ListBox ItemsSource="{Binding Blocks}"
                          SelectedItem="{Binding SelectedBlock, Mode=TwoWay}"
                          Background="Transparent" BorderThickness="0"
-                         Margin="4,0,4,8">
+                         Margin="4,0,4,8"
+                         ItemContainerStyle="{StaticResource DarkListBoxItem}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="6,8">
-                                <TextBlock Text="{Binding Name}" Foreground="#E0E0E0"
-                                           FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Foreground="#888888" FontSize="11" Margin="0,2,0,0">
+                            <StackPanel Margin="4,4">
+                                <TextBlock Text="{Binding Name}" Foreground="#F0F0F0"
+                                           FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Foreground="#B0B0B0" FontSize="12" Margin="0,3,0,0">
                                     <Run Text="Block "/>
                                     <Run Text="{Binding BlockNumber, Mode=OneWay}"/>
                                     <Run Text="  ·  "/>
@@ -243,7 +244,7 @@
                                                 CommandParameter="{Binding}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding Text}" 
-                                               Foreground="#E0E0E0"
+                                               Foreground="#F0F0F0" FontSize="14"
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0"
