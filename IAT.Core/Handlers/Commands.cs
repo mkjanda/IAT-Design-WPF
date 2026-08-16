@@ -260,4 +260,46 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request associated with the no such IAT scenario. Cannot be null.</param>
     public record NoSuchIATResultRetrievalCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to request the manifest of files associated with a transaction, indicating that the file manifest is needed for further processing.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the file manifest request. Cannot be null.</param>
+    public record RequestFileManifestCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to request the manifest of item slides associated with a transaction, indicating that the item slide manifest is needed for further processing.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the item slide manifest request. Cannot be null.</param>
+    public record RequestItemSlideManifestCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to request a file associated with a transaction, indicating that the file is needed for further processing.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the file request. Cannot be null.</param>
+    public record RequestFilesCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to request item slides associated with a transaction, indicating that the item slides are needed for further processing.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the item slides request. Cannot be null.</param>
+    public record RequestItemSlidesCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to request the configuration file associated with a transaction, indicating that the configuration file is needed for further processing.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the configuration file request. Cannot be null.</param>
+    public record RequestConfigFileCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to indicate that a deployment associated with a transaction was successful.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the deployment success. Cannot be null.</param>
+    public record DeploymentSuccessCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to indicate that a deployment associated with a transaction has failed.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the deployment failure. Cannot be null.</param>
+    public record DeploymentFailCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 }

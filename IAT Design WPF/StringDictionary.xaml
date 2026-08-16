@@ -12,5 +12,5 @@
     <sys:String x:Key="ItemSlideDownloadUrl">http://127.0.0.1:8080/RetrieveResults/ItemSlides</sys:String>
     <sys:String x:Key="ResultDownloadUrl">http://127.0.0.1:8080/RetrieveResults</sys:String>
     <sys:String x:Key="DeploymentUploadUrl">http://127.0.0.1:8080/Upload/Deployment</sys:String>
-    <sys:String x:Key="ManifestUploadUrl">http://127.0.0.1:8080/Upload/Manifest</sys:String>
+    <sys:String x:Key="ItemSlideUploadUrl">http://127.0.0.1:8080/Upload/ItemSlides</sys:String>
 </ResourceDictionary>    

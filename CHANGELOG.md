@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain validation (`Validate` / `ValidateEntireTest`) plus FluentValidation validators
 - Unit test foundation for domain validation (`xUnitIAT`)
 - Production-oriented persistent `WebSocketService` (connect, keep-alive, reconnect, thread-safe send, connection state)
+- `MediatR` request/notification handlers for receiving and responding to server websocket messages for test deployment, result retrieval, and maintenance tasks.
 
 ### Changed
 

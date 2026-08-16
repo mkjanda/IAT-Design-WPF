@@ -35,9 +35,10 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestIATUploadCommand request, CancellationToken cancellationToken)
         {
+            _transactionState.DeploymentId = request.transaction.DeploymentId;
             _transactionState.AuthToken = request.transaction.AuthToken;
             var url = $"{_stringService.GetString("ManifestUploadUrl")}?TestName={_transactionState.IATName}"
-                + $"&AuthToken={_transactionState.AuthToken}&ClientId={_transactionState.ClientId}";
+                + $"&AuthToken={_transactionState.AuthToken}&ClientId={_transactionState.ClientId}&DeploymentId={_transactionState.DeploymentId}";
             HttpClient client = new HttpClient();
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, url);
             var exporResult = await _testExportService.PrepareForServerUploadAsync(_test);

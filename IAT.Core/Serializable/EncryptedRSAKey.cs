@@ -19,7 +19,11 @@ namespace IAT.Core.Serializable;
 /// <param name="Key">The encrypted RSA key to be processed. Cannot be null.</param>
 public record RSAKeyCommand(EncryptedRSAKey Key) : IRequest<TransactionResult>;
 
-
+/// <summary>
+/// Represents a command to request an RSA key as part of a transaction, which returns a transaction result.
+/// </summary>
+/// <param name="transaction">The transaction request containing the details required to request the RSA key. Cannot be null.</param>
+public record RequestRSAKeyCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 /// <summary>
 /// Contains the encrypted RSA key information, including the modulus (n), exponent (e), private exponent (d), prime factors (p and q), and other related parameters.
 /// </summary>

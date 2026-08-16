@@ -65,13 +65,13 @@ namespace IAT.Core.Enumerations
         /// Gets or sets a value indicating whether the transaction completed successfully.
         /// </summary>
         [Description("Transaction Success")]
-        Success,
+        TransactionSuccess,
 
         /// <summary>
         /// Indicates that a transaction has failed.
         /// </summary>
         [Description("Transaction Fail")]
-        Fail,
+        TransactionFail,
 
         /// <summary>
         /// Represents a value indicating whether the specified entity exists in the system.
@@ -109,11 +109,6 @@ namespace IAT.Core.Enumerations
         [Description("No IAT with that name exists on the server.")]
         NoSuchIAT,
 
-        /// <summary>
-        /// Represents a request to retrieve a slide manifest item.
-        /// </summary>
-        [Description("The item slide manifest is being requested.")]
-        RequestItemSlideManifest,
 
         /// <summary>
         /// Requests that a verification email be sent to the user's registered email address.
@@ -182,11 +177,6 @@ namespace IAT.Core.Enumerations
         [Description("Indicates that the provided password is invalid")]
         PasswordInvalid,
 
-        /// <summary>
-        /// Represents a request to retrieve a collection of slides from a presentation.
-        /// </summary>
-        [Description("A request to retrieve a collection of slides from a presentation is being made")]
-        RequestItemSlides,
 
         /// <summary>
         /// Represents an error state indicating that a backup cannot be restored.
@@ -312,6 +302,42 @@ namespace IAT.Core.Enumerations
         /// Indicates that the request result descriptor is available and can be accessed for further processing or analysis.
         /// </summary>
         [Description("Indicates that the request result descriptor is available")]
-        RequestResultDescriptor
+        RequestResultDescriptor,
+
+        /// <summary>
+        /// Represents a request to retrieve a collection of slides from a presentation.
+        /// </summary>
+        [Description("A request to send the collection of the collection of item slides associated with a test")]
+        RequestItemSlides,
+
+        /// <summary>
+        /// Represents a request to retrieve a slide manifest item.
+        /// </summary>
+        [Description("A request for the file manifest of item slides associated with a test.")]
+        RequestItemSlideManifest,
+
+        /// <summary>
+        /// Represents a request to retrieve a file manifest for deployment files associated with a test.
+        /// </summary>
+        [Description("A request for the file manifest of deployment files associated with a test.")]
+        RequestFileManifest,
+
+        /// <summary>
+        /// Represents a request to send the collection of deployment files for a test.
+        /// </summary>
+        [Description("A request to send the collection of the collection of deployment files for a test")]
+        RequestFiles,
+
+        /// <summary>
+        /// Represents a request to retrieve the configuration file associated with a test.
+        /// </summary>
+        [Description("A request for the configuration file associated with a test.")]
+        RequestConfigFile,
+
+        /// <summary>
+        /// Represents a request to retrieve the encrypted RSA keypair associated with a test.
+        /// </summary>
+        [Description("A request for the encrypted RSA keypair associated with a test.")]
+        RequestRSAKey
     };
 }

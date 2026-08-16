@@ -58,6 +58,7 @@ namespace IAT.Core.Services.Network
             _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionRetrieveResultsCommand(request);
             _webSocketService.TransactionCommands[TransactionType.PasswordValid] = (request) => new PasswordValidResultsCommand(request);
             _webSocketService.TransactionCommands[TransactionType.NoSuchIAT] = (request) => new IATExistsRetrievalCommand(request);
+            _webSocketService.TransactionCommands[TransactionType.RequestConfigFile] = (request) => new RequestConfigFileCommand(request);
         }
 
         /// <summary>

@@ -58,7 +58,12 @@ namespace IAT.Core.Services.Network
             _state.Clear();
             _webSocket.TransactionCommands[TransactionType.IATExists] = (request) => new IATExistsDeploymentCommand(request);
             _webSocket.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionDeployTestCommand(request);
-            _webSocket.TransactionCommands[TransactionType.NoSuchIAT] = (request) => new NoSuchIATDeploymentCommand(request);
+            _webSocket.TransactionCommands[TransactionType.RequestItemSlides] = (request) => new RequestItemSlidesCommand(request);
+            _webSocket.TransactionCommands[TransactionType.RequestItemSlideManifest] = (request) => new RequestItemSlideManifestCommand(request);
+            _webSocket.TransactionCommands[TransactionType.RequestFiles] = (request) => new RequestFilesCommand(request);
+            _webSocket.TransactionCommands[TransactionType.RequestFileManifest] = (request) => new RequestFileManifestCommand(request);
+            _webSocket.TransactionCommands[TransactionType.TransactionSuccess] = (request) => new DeploymentSuccessCommand(request);
+            _webSocket.TransactionCommands[TransactionType.TransactionFail] = (request) => new DeploymentFailCommand(request);   
         }
 
         /// <summary>

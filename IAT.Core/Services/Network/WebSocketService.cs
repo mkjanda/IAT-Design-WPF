@@ -159,8 +159,9 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             { TransactionType.PasswordValid, r => new PasswordValidResultsCommand(r) },
             { TransactionType.RequestIATUpload, r => new RequestIATUploadCommand(r) },
             { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) },
-            { TransactionType.Fail, r => new TransactionFailCommand(r) },
-            { TransactionType.Success, r => new TransactionSuccessCommand(r) },
+            { TransactionType.TransactionFail, r => new TransactionFailCommand(r) },
+            { TransactionType.TransactionSuccess, r => new TransactionSuccessCommand(r) },
+            { TransactionType.RequestRSAKey, r => new RequestRSAKeyCommand(r) },
             { TransactionType.IATExists, r => new IATExistsCommand(r) },
             { TransactionType.ItemSlidesReady, r => new ItemSlidesReadyCommand(r) }
         };
@@ -498,6 +499,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             EncryptedRSAKey key => new RSAKeyCommand(key),
             Manifest manifest => new ManifestCommand(manifest),
             ServerReport serverReport => new ServerReportCommand(serverReport),
+
             _ => null
         };
 

@@ -228,6 +228,16 @@ namespace IAT.Core.Serializable
     /// </summary>
     public class Manifest : ManifestDirectory, IWebSocketMessage
     {
+        /// <summary>
+        /// Gets or sets the type of the manifest, indicating whether it is a file manifest or an item slide manifest.
+        /// </summary>
+        [XmlAttribute("ManifestType", Form = XmlSchemaForm.Unqualified, Type = typeof(ManifestType))]
+        public ManifestType ManifestType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the product key associated with the manifest, 
+        /// used for authentication or identification purposes.
+        /// </summary>
         [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
         public string ProductKey { get; set; } = String.Empty;
 

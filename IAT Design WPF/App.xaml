@@ -5,6 +5,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/StringDictionary.xaml" />
                 <!-- Shell theme tokens, animations, tab style -->
                 <ResourceDictionary Source="/Styles/Styles.xaml"/>
                 <!-- Control styles (AccentButton, DarkTextBox, DarkComboBox) + converters -->
