@@ -27,18 +27,17 @@ namespace IAT.Core.Serializable
     {
 
         /// <summary>
+        /// Gets or sets the transaction type associated with the current operation.
+        /// </summary>
+        [XmlElement("Type", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
+        public TransactionType Type { get; set; }
+
+
+        /// <summary>
         /// Gets or sets the product key used to activate or identify the product.
         /// </summary>
         [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
         public String ProductKey { get; set; } = String.Empty;
-
-
-        /// <summary>
-        /// Gets or sets the transaction type associated with the current operation.
-        /// </summary>
-        [XmlElement("Transaction", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-        public TransactionType Type { get; set; }
-
 
 
         /// <summary>
@@ -57,7 +56,7 @@ namespace IAT.Core.Serializable
         /// Gets the unique identifier for the client.
         /// </summary>
         [XmlElement("ClientId", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-        public int ClientId { get; private set; }
+        public int ClientId { get; set; }
 
 
         /// <summary>
@@ -106,8 +105,6 @@ namespace IAT.Core.Serializable
         /// </summary>
         public TransactionRequest()
         {
-            Type = TransactionType.Unset;
-            IATName = String.Empty;
         }
 
         /// <summary>
@@ -120,8 +117,6 @@ namespace IAT.Core.Serializable
         /// <param name="localStorage">The local storage service used to retrieve the product and activation keys. Cannot be null.</param>
         public TransactionRequest(ILocalStorageService localStorage)
         {
-            Type = TransactionType.Unset;
-            IATName = String.Empty;
             ProductKey = localStorage[Field.ProductKey];
             ActivationKey = localStorage[Field.ActivationKey];
         }
@@ -134,8 +129,6 @@ namespace IAT.Core.Serializable
         /// <param name="localStorage">The local storage service used to retrieve product and activation keys. Cannot be null.</param>
         public TransactionRequest(TransactionType tType, ILocalStorageService localStorage)
         {
-            Type = tType;
-            IATName = String.Empty;
             ProductKey = localStorage[Field.ProductKey];
             ActivationKey = localStorage[Field.ActivationKey];
         }

@@ -1,5 +1,6 @@
-﻿using com.sun.xml.@internal.ws.resources;
+﻿using com.sun.corba.se.spi.orbutil.fsm;
 using IAT.Core.Enumerations;
+using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Services.Network;
 using MediatR;
@@ -15,11 +16,18 @@ namespace IAT.Core.Handlers
     /// </summary>
     public class HandshakeHandler : IRequestHandler<HandshakeCommand, TransactionResult>
     {
-        private static readonly byte[] AesKeyBytes = new byte[32] { 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE,
-            0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x10, 0x32, 0x54, 0x76, 0x98, 0xBA, 0xDC, 0xFE };
+        private static byte[] AesKeyBytes = new byte[] {
+        (byte)0x2c, (byte)0x5b, (byte)0xd5, (byte)0x54, (byte)0x33, (byte)0xa8, (byte)0x8a, (byte)0x1e,
+        (byte)0xff, (byte)0xe7, (byte)0x1f, (byte)0x36, (byte)0xa7, (byte)0xe0, (byte)0xe4, (byte)0xae,
+        (byte)0x76, (byte)0x78, (byte)0x12, (byte)0xb3, (byte)0x23, (byte)0x64, (byte)0x89, (byte)0x62,
+        (byte)0xdc, (byte)0xfc, (byte)0x79, (byte)0x53, (byte)0x41, (byte)0x51, (byte)0x6a, (byte)0xeb
+        };
+
+
         private static readonly int NonceBytes = 12;
         private static readonly int TagBytes = 16;
         private readonly IWebSocketService _wss;
+        private readonly TransactionState _state;
 
         /// <summary>
         /// The constructor initializes the HandshakeHandler with the necessary dependencies, including the WebSocket service for managing the connection. This setup 
@@ -28,9 +36,11 @@ namespace IAT.Core.Handlers
         /// data is protected during transmission.
         /// </summary>
         /// <param name="wss">The WebSocket service used to manage the connection.</param>
-        public HandshakeHandler(IWebSocketService wss)
+        /// <param name="state">The transaction state</param>
+        public HandshakeHandler(IWebSocketService wss, TransactionState state)
         {
             _wss = wss;
+            _state = state;
         }
 
         /// <summary>
@@ -43,14 +53,18 @@ namespace IAT.Core.Handlers
         /// the outcome of the handshake processing.</returns>
         public async Task<TransactionResult> Handle(HandshakeCommand request, CancellationToken cancellationToken)
         {
-            var aes = new AesGcm(AesKeyBytes, 16);
-            var nonce = RandomNumberGenerator.GetBytes(NonceBytes);
-            var tag = new byte[TagBytes];
-            var plaintext = Convert.FromBase64String(request.inHand.Text);
-            var ciphertext = new byte[plaintext.Length];
-            aes.Decrypt(nonce, ciphertext, tag, plaintext);
-            await _wss.SendMessage(new Handshake() { 
-                Text = Convert.ToBase64String(ciphertext)
+            var aes = new AesGcm(AesKeyBytes, TagBytes);
+            var nonce = Convert.FromBase64String(request.inHand.Nonce);
+            var tag = Convert.FromBase64String(request.inHand.Tag);
+            var challenge = Convert.FromBase64String(request.inHand.Challenge);
+            var reply = new byte[challenge.Length];
+            aes.Decrypt(nonce, challenge, tag, reply);
+            await _wss.SendMessage(new Handshake()
+            {
+                ProductKey = _state.ProductKey,
+                Challenge = Convert.ToBase64String(reply),
+                Nonce = request.inHand.Nonce,
+                Tag = request.inHand.Tag
             });
             return TransactionResult.Unset;
         }

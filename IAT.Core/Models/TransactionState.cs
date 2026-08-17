@@ -157,7 +157,26 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the server report containing information about the server's response to the transaction.
         /// </summary>
-        public ServerReport ServerReport { get; set; } = new ServerReport();
+        // In TransactionState.cs
+        private ServerReport _serverReport = new();
+
+        /// <summary>
+        /// Gets or sets the server report containing information about the server's response to the transaction.
+        /// </summary>
+        public ServerReport ServerReport
+        {
+            get => _serverReport;
+            set
+            {
+                _serverReport = value ?? new ServerReport();
+                ServerReportChanged?.Invoke(_serverReport);
+            }
+        }
+
+        /// <summary>
+        /// Raised whenever ServerReport is replaced. Always one instance at a time.
+        /// </summary>
+        public event Action<ServerReport>? ServerReportChanged; 
 
         /// <summary>
         /// Gets or sets the test results.

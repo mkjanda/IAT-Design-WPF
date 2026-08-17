@@ -26,7 +26,7 @@ namespace IAT.Core.Services
             { typeof(ActivationResponse).Name, typeof(ActivationResponse) },
             { typeof(Block).Name, typeof(Block) }, { typeof(Handshake).Name, typeof(Handshake) },
             { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
-            { "SurveyResults", typeof(SurveyResponse) }, 
+            { "SurveyResults", typeof(SurveyResponse) }, { typeof(ServerReport).Name, typeof(ServerReport )},
             { typeof(IatTest).Name, typeof(IatTest)  },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) }
         };

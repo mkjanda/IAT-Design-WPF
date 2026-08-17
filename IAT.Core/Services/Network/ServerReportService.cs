@@ -62,7 +62,7 @@ public sealed class ServerReportService : IServerReportService
             Type = TransactionType.RequestConnection,
             ProductKey = productKey,
             Email = email
-        }).ConfigureAwait(false);
+        });
 
         try
         {

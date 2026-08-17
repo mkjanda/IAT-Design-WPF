@@ -54,7 +54,11 @@ namespace IAT_Design_WPF
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
 
-            services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TransactionSuccessHandler>());
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(typeof(TransactionSuccessHandler).Assembly);
+                // If you ever move handlers out of IAT.Core you can add more assemblies here
+            });
 
             // Register your services here as we build them
             services.AddSingleton<ILocalStorageService, LocalStorageService>();

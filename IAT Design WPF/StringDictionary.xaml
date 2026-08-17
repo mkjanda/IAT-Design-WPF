@@ -8,7 +8,7 @@
     <sys:String x:Key="IATBeingDeployef">An IAT with this name is currently in a state of deployment. If you have recently tried to upload a test with this name, likely that deployment has been suspended. You may only upload this test if you abandon the previous deployment. Do you wish to do so?"</sys:String>
     <sys:String x:Key="IATBeingDeployedTitle">IAT Being Deployed</sys:String>
     <sys:String x:Key="InvalidPassword">Invalid Password</sys:String>
-    <sys:String x:Key="WebSocketUrl">ws://127.0.0.1:8080/DataTransactionSocket</sys:String>
+    <sys:String x:Key="WebSocketUrl">ws://127.0.0.1:8080/DataTransaction</sys:String>
     <sys:String x:Key="ItemSlideDownloadUrl">http://127.0.0.1:8080/RetrieveResults/ItemSlides</sys:String>
     <sys:String x:Key="ResultDownloadUrl">http://127.0.0.1:8080/RetrieveResults</sys:String>
     <sys:String x:Key="DeploymentUploadUrl">http://127.0.0.1:8080/Upload/Deployment</sys:String>

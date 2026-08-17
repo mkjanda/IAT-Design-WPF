@@ -6,6 +6,7 @@ using System.Xml.Schema;
 using System.Security.Cryptography;
 using MediatR;
 using IAT.Core.Enumerations;
+using IAT.Core.Services;
 
 namespace IAT.Core.Serializable
 {
@@ -29,17 +30,29 @@ namespace IAT.Core.Serializable
 
 
         /// <summary>
-        /// Gets or sets the public key associated with the entity.
+        /// Number used once
         /// </summary>
-        [XmlElement("Text", Form = XmlSchemaForm.Unqualified)]
-        public string Text { get; set; } = String.Empty;
+        [XmlElement("Nonce", Form = XmlSchemaForm.Unqualified)]
+        public string Nonce { get; set; } = String.Empty;
 
         /// <summary>
-        /// Initializes a new instance of the Handshake class.
+        /// Gets or sets the public key associated with the entity.
         /// </summary>
-        public Handshake()
-        {
+        [XmlElement("Challenge", Form = XmlSchemaForm.Unqualified)]
+        public string Challenge { get; set; } = String.Empty;
 
+
+        /// <summary>
+        /// Tags the challenge
+        /// </summary>
+        [XmlElement("Tag", Form = XmlSchemaForm.Unqualified)]
+        public string Tag { get; set; } = String.Empty;
+
+        public Handshake() { }
+
+        public Handshake(ILocalStorageService localStorage)
+        {
+            ProductKey = localStorage[Field.ProductKey];
         }
     }
 }

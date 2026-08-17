@@ -1,12 +1,14 @@
+using com.sun.tools.corba.se.idl.constExpr;
 using IAT.Core.Enumerations;
 using IAT.Core.Handlers;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using MediatR;
-using System.Net.WebSockets;
 using System.IO;
+using System.Net.WebSockets;
+using System.Text;
+using System.Xml;
 using System.Xml.Serialization;
-using com.sun.tools.corba.se.idl.constExpr;
 
 namespace IAT.Core.Services.Network;
 
@@ -195,11 +197,23 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         if (socket is null || socket.State != WebSocketState.Open)
             throw new InvalidOperationException("WebSocket is not connected.");
 
+        // Serialize as UTF-8 text (what TextWebSocketHandler expects)
         byte[] payload;
         await using (var memStream = new MemoryStream())
         {
-            var ser = new XmlSerializer(message.GetType());
-            ser.Serialize(memStream, message);
+            var settings = new XmlWriterSettings
+            {
+                Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                OmitXmlDeclaration = false,
+                Indent = false
+            };
+
+            using (var writer = XmlWriter.Create(memStream, settings))
+            {
+                var ser = new XmlSerializer(message.GetType());
+                ser.Serialize(writer, message);
+            }
+
             payload = memStream.ToArray();
         }
 
@@ -213,7 +227,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             using var timeoutCts = new CancellationTokenSource(ConnectTimeout);
             await socket.SendAsync(
                 new ArraySegment<byte>(payload),
-                WebSocketMessageType.Binary,
+                WebSocketMessageType.Text,      // ← must be Text
                 endOfMessage: true,
                 timeoutCts.Token).ConfigureAwait(false);
         }
@@ -222,6 +236,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             _sendLock.Release();
         }
     }
+    
 
     /// <inheritdoc />
     public async Task CloseSocketAsync()

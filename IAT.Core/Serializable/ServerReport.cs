@@ -8,7 +8,7 @@ using System.Xml.Schema;
 
 namespace IAT.Core.Serializable;
 
-[XmlRoot("IATReport")]
+[XmlType("IATReport")]
 public class IATReport : IWebSocketMessage
 {
     [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)] public string ProductKey { get; set; } = string.Empty;
@@ -78,5 +78,5 @@ public class ServerReport
     /// <summary>Gets or set the IATReport list.</summary>
     [XmlArray]
     [XmlArrayItem("IATReport", IsNullable = true, Type = typeof(IATReport), Form = XmlSchemaForm.Unqualified)]
-    public List<IATReport> ReportList { get; set; } = new();
+    public List<IATReport> IATReport { get; set; } = new();
 }

@@ -1,3 +1,4 @@
+using com.sun.media.sound;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IAT.Core.Domain;
@@ -8,7 +9,7 @@ using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using System.Collections.ObjectModel;
 using System.Globalization;
-
+using System.Windows;
 namespace IAT.ViewModels.Controls;
 
 /// <summary>
@@ -38,7 +39,7 @@ public partial class DeployManagerViewModel : ObservableObject
     // ── Account / connection status (bound to top bar) ─────────────────────
     [ObservableProperty] private string accountName = "—";
     [ObservableProperty] private string storageRemaining = "—";
-    [ObservableProperty] private int administrationsRemaining;
+    [ObservableProperty] private string administrationsRemaining = "—";
     [ObservableProperty] private bool isConnected;
     [ObservableProperty] private string lastSyncText = "never";
     [ObservableProperty] private bool isRefreshing;
@@ -109,6 +110,16 @@ public partial class DeployManagerViewModel : ObservableObject
             _webSocket.Start();
             IsConnected = _webSocket.ConnectionState == WebSocketConnectionState.Connected;
 
+            _transactionState.ServerReportChanged -= OnServerReportChanged;
+            _transactionState.ServerReportChanged += OnServerReportChanged;
+
+            // If a report is already present (e.g. previous session), show it immediately
+            if (_transactionState.ServerReport.IATReport?.Count > 0 ||
+                !string.IsNullOrWhiteSpace(_transactionState.ServerReport.ContactFName))
+            {
+                ApplyServerReport(_transactionState.ServerReport);
+            }
+
             await RefreshAsync();
         }
         finally
@@ -125,7 +136,7 @@ public partial class DeployManagerViewModel : ObservableObject
     {
         _isActive = false;
         _webSocket.ConnectionStateChanged -= OnConnectionStateChanged;
-
+        _transactionState.ServerReportChanged -= OnServerReportChanged;
         try
         {
             await _webSocket.CloseSocketAsync();
@@ -136,6 +147,17 @@ public partial class DeployManagerViewModel : ObservableObject
         }
 
         IsConnected = false;
+    }
+
+    private void OnServerReportChanged(ServerReport report)
+    {
+        // Always marshal collection mutations to the UI thread
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (!_isActive) return;
+            ApplyServerReport(report);
+            LastSyncText = "just now";
+        });
     }
 
     private void OnConnectionStateChanged(object? sender, WebSocketConnectionState newState)
@@ -198,7 +220,7 @@ public partial class DeployManagerViewModel : ObservableObject
             {
                 AccountName = "Not activated";
                 StorageRemaining = "—";
-                AdministrationsRemaining = 0;
+                AdministrationsRemaining = "0";
                 DeployedTests.Clear();
                 SelectedDeployedTest = null;
                 LastSyncText = "not activated";
@@ -256,18 +278,24 @@ public partial class DeployManagerViewModel : ObservableObject
             name = string.IsNullOrWhiteSpace(report.Organization) ? "Account" : report.Organization;
 
         AccountName = name;
-        AdministrationsRemaining = report.NumAdministrations; // remaining administrations
+        if (report.NumAdministrations < 0)
+            AdministrationsRemaining = "Unlimited";
+        else 
+            AdministrationsRemaining = report.NumAdministrations.ToString(); // remaining administrations
 
         // DiskAlottmentRemainingKB is in KB; present as MB when ≥ 1024.
         var remainingKb = report.DiskAlottmentRemainingKB;
-        StorageRemaining = remainingKb >= 1024
-            ? $"{remainingKb / 1024.0:0.0} MB"
-            : $"{remainingKb} KB";
+        if (remainingKb < 0)
+            StorageRemaining = "Unlimited";
+        else  
+            StorageRemaining = remainingKb >= 1024
+                ? $"{remainingKb / 1024.0:0.0} MB"
+                : $"{remainingKb} KB";
 
         var previousSelection = SelectedDeployedTest?.Name;
 
         DeployedTests.Clear();
-        foreach (var iat in report.ReportList ?? Enumerable.Empty<IATReport>())
+        foreach (var iat in report.IATReport ?? Enumerable.Empty<IATReport>())
         {
             if (string.IsNullOrWhiteSpace(iat.Name))
                 continue;
