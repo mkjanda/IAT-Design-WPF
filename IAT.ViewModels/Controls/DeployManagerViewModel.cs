@@ -1,4 +1,3 @@
-using com.sun.media.sound;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IAT.Core.Domain;
@@ -10,6 +9,7 @@ using IAT.Core.Services.Network;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
+
 namespace IAT.ViewModels.Controls;
 
 /// <summary>
@@ -300,13 +300,20 @@ public partial class DeployManagerViewModel : ObservableObject
             if (string.IsNullOrWhiteSpace(iat.Name))
                 continue;
 
+            // Prefer upload timestamp (when the test was deployed). Fall back to last
+            // data retrieval for older server payloads that only send that field.
+            var uploadedRaw = !string.IsNullOrWhiteSpace(iat.UploadTimestamp)
+                ? iat.UploadTimestamp
+                : iat.LastDataRetrieval;
+
             var item = new DeployedTestItem
             {
                 Name = iat.Name,
                 SizeBytes = (long)iat.TestSizeKB * 1024L,
                 ResultCount = iat.NumResultSets,
                 Status = iat.NumResultSets > 0 ? "Ready" : "No results",
-                Uploaded = ParseLastRetrieval(iat.LastDataRetrieval)
+                Uploaded = ParseLastRetrieval(uploadedRaw),
+                Url = iat.URL?.Trim() ?? string.Empty
             };
             DeployedTests.Add(item);
         }
@@ -414,6 +421,9 @@ public partial class DeployedTestItem : ObservableObject
     [ObservableProperty] private long sizeBytes;
     [ObservableProperty] private int resultCount;
     [ObservableProperty] private string status = "Ready";
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(OpenUrlCommand))]
+    private string url = string.Empty;
 
     public string SizeDisplay => SizeBytes >= 1_000_000
         ? $"{SizeBytes / 1_000_000.0:0.0} MB"
@@ -424,8 +434,35 @@ public partial class DeployedTestItem : ObservableObject
     public string UploadedDisplay =>
         Uploaded == DateTime.MinValue ? "—" : Uploaded.ToString("yyyy-MM-dd");
 
+    /// <summary>URL for display; falls back to em-dash when empty.</summary>
+    public string UrlDisplay =>
+        string.IsNullOrWhiteSpace(Url) ? "—" : Url;
+
     partial void OnSizeBytesChanged(long value) => OnPropertyChanged(nameof(SizeDisplay));
     partial void OnUploadedChanged(DateTime value) => OnPropertyChanged(nameof(UploadedDisplay));
+    partial void OnUrlChanged(string value) => OnPropertyChanged(nameof(UrlDisplay));
+
+    private bool CanOpenUrl() => !string.IsNullOrWhiteSpace(Url);
+
+    /// <summary>Opens the test URL in the default browser.</summary>
+    [RelayCommand(CanExecute = nameof(CanOpenUrl))]
+    private void OpenUrl()
+    {
+        if (string.IsNullOrWhiteSpace(Url))
+            return;
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Url)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Malformed URL or no registered browser handler — swallow; UI stays quiet.
+        }
+    }
 }
 
 public partial class SurveyResultTab : ObservableObject
