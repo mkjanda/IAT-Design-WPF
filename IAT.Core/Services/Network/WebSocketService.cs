@@ -163,9 +163,10 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) },
             { TransactionType.TransactionFail, r => new TransactionFailCommand(r) },
             { TransactionType.TransactionSuccess, r => new TransactionSuccessCommand(r) },
-            { TransactionType.RequestRSAKey, r => new RequestRSAKeyCommand(r) },
             { TransactionType.IATExists, r => new IATExistsCommand(r) },
-            { TransactionType.ItemSlidesReady, r => new ItemSlidesReadyCommand(r) }
+            { TransactionType.ItemSlidesReady, r => new ItemSlidesReadyCommand(r) },
+            { TransactionType.AuthToken, r => new AuthTokenCommand(r) }
+
         };
     }
 

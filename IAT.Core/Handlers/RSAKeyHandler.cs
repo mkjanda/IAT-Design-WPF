@@ -6,6 +6,8 @@ using IAT.Core.Serializable;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Services.Network;
+using Microsoft.Extensions.DependencyInjection;
+using net.sf.saxon.functions;
 
 namespace IAT.Core.Handlers
 {
@@ -43,13 +45,13 @@ namespace IAT.Core.Handlers
         /// sending the request.</returns>
         public async Task<TransactionResult> Handle(RSAKeyCommand request, CancellationToken cancellationToken)
         {
-            request.Key.DecryptKey(_transactionState.Password);
-            _transactionState.RSA = request.Key;
+            if (!request.Key.TestPassword(_transactionState.Password)) {
+                _transactionState.SetResult(TransactionResult.InvalidPassword);
+                return TransactionResult.InvalidPassword;
+            }
             await _webSocketService.SendMessage(new TransactionRequest()
             {
-                Type = TransactionType.RequestPasswordVerification,
-                ProductKey = _transactionState.ProductKey,
-                IATName = _transactionState.IATName
+                Type = TransactionType.PasswordValid
             });
             return TransactionResult.Unset;
         }

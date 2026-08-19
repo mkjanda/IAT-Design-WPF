@@ -4,9 +4,6 @@ using IAT.Core.Serializable;
 using IAT.Core.Services;
 using IAT.Core.Services.Network;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace IAT.Core.Handlers
 {
@@ -19,7 +16,6 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;
-        private readonly IStringResourceService _stringResourceService;
         private readonly TransactionState _transactionState;
 
         /// <summary>
@@ -35,7 +31,6 @@ namespace IAT.Core.Handlers
         {
             _webSocketService = webSocketService;
             _dialogService = dialogService;
-            _stringResourceService = stringResourceService;
             _transactionState = transactionState;
         }
 
@@ -50,23 +45,26 @@ namespace IAT.Core.Handlers
         /// <returns>A TransactionResult value indicating whether the redeployment was initiated or the operation was aborted.</returns>
         public async Task<TransactionResult> Handle(IATExistsDeploymentCommand request, CancellationToken cancellationToken)
         {
-            if (await _dialogService.ShowConfirmationAsync(_stringResourceService.GetString("DeploymentIATExists")))
+            if (_transactionState.Operation == OperationType.TestDeployment)
             {
+                await _dialogService.ShowNotificationAsync(TransactionResult.IATExists.Message, TransactionResult.IATExists.Title);
+                _transactionState.SetResult(TransactionResult.IATExists);
+                return TransactionResult.IATExists;
+            }
+            if (_transactionState.Operation == OperationType.RetrieveResults ||
+                        _transactionState.Operation == OperationType.RetrieveItemSlides ||
+                        _transactionState.Operation == OperationType.DeleteResults ||
+                        _transactionState.Operation == OperationType.DeleteTest) {
                 await _webSocketService.SendMessage(new TransactionRequest()
                 {
-                    Type = TransactionType.AbortDeployment,
+                    Type = TransactionType.RequestRSAKey,
                     IATName = _transactionState.IATName,
-                    ProductKey = _transactionState.ProductKey
+                    ClientId = _transactionState.ClientId
                 });
-                _transactionState.SetResult(TransactionResult.Unset);
                 return TransactionResult.Unset;
             }
-            else
-            {
-                await _webSocketService.CloseSocketAsync();
-                _transactionState.SetResult(TransactionResult.Aborted);
-                return TransactionResult.Aborted;
-            }
+            _transactionState.SetResult(TransactionResult.InvalidRequest);
+            return TransactionResult.InvalidRequest;
         }
     }
 }

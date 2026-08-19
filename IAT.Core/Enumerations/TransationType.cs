@@ -338,6 +338,14 @@ namespace IAT.Core.Enumerations
         /// Represents a request to retrieve the encrypted RSA keypair associated with a test.
         /// </summary>
         [Description("A request for the encrypted RSA keypair associated with a test.")]
-        RequestRSAKey
+        RequestRSAKey,
+
+        /// <summary>
+        /// Represents a transaction that contains an authentication token for secure communication or verification purposes.
+        /// </summary>
+        [Description("A transaction that contain an authentication token.")]
+        AuthToken
+
+
     };
 }

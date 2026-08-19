@@ -1,12 +1,48 @@
-using System;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 using IAT.Core.ConfigFile;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
+using System.ComponentModel;
 
 namespace IAT.Core.Models
 {
+    /// <summary>
+    /// Enumerates the types of operations that can be performed in a transaction, such as activation, email verification, 
+    /// test deployment, and result retrieval.
+    /// </summary>
+    public enum OperationType
+    {
+        [Description("Unset")]
+        Unset,
+
+        [Description("Request Product Activation")]
+        Activation,
+
+        [Description("Verify User Email")]
+        EMailVerification,
+
+        [Description("Upload an IAT")]
+        TestDeployment,
+
+        [Description("Resent verificsation email.")]
+        ResendEmail,
+
+        [Description("Retrieve IAT slides.")]
+        RetrieveItemSlides,
+
+        [Description("Retrieve test results.")]
+        RetrieveResults,
+
+        [Description("Server report.")]
+        ServerReport,
+
+        [Description("Delete test.")]
+        DeleteTest,
+
+        [Description("Delete test results.")]
+        DeleteResults
+    }
+
     /// <summary>
     /// Represents the state and related data for a transaction, including user information, product details, test
     /// results, and cryptographic keys.
@@ -155,6 +191,14 @@ namespace IAT.Core.Models
         public string ActivationKey { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the type of operation being performed in the transaction. This property indicates the specific action
+        /// being executed, such as activation, email verification, test deployment, or result retrieval. It is represented
+        /// as an enumeration value of the OperationType enum, which defines the various operation types supported by the transaction workflow.
+        /// </summary>
+        public OperationType Operation { get; set; } = OperationType.Unset;
+
+
+        /// <summary>
         /// Gets or sets the server report containing information about the server's response to the transaction.
         /// </summary>
         // In TransactionState.cs
@@ -191,6 +235,7 @@ namespace IAT.Core.Models
         /// state before reuse.</remarks>
         public void Clear()
         {
+            Operation = OperationType.Unset;
             ProductKey = string.Empty;
             Password = string.Empty;
             AuthToken = string.Empty;

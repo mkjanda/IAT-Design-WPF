@@ -63,6 +63,7 @@ namespace IAT.Core.Services.Network
         {
             _transactionState.Clear();
             _webSocketService.Start();
+            _transactionState.Operation = OperationType.Activation;
             _transactionState.ProductKey = productKey;
             _transactionState.UserName = userName;
             _transactionState.Email = email;

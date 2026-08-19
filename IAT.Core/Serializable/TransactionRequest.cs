@@ -1,13 +1,6 @@
 ﻿using IAT.Core.Services;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Reflection;
-using System.Text;
-using System.ComponentModel;
 using System.Xml.Serialization;
 using System.Xml.Schema;
-using System.ComponentModel.Design.Serialization;
 using IAT.Core.Enumerations;
 using MediatR;
 
@@ -56,7 +49,7 @@ namespace IAT.Core.Serializable
         /// Gets the unique identifier for the client.
         /// </summary>
         [XmlElement("ClientId", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-        public int ClientId { get; set; }
+        public long ClientId { get; set; }
 
 
         /// <summary>

@@ -8,6 +8,18 @@ using System.Text;
 namespace IAT.Core.Handlers
 {
     /// <summary>
+    /// Represents a command to request the transmission of a transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction request containing the details required to initiate the transmission. Cannot be null.</param>
+    public record RequestTransmissionCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to indicate that no such IAT (Implicit Association Test) exists for a given transaction request.
+    /// </summary>
+    /// <param name="transaction">The transaction request associated with the non-existent IAT. Cannot be null.</param>
+    public record NoSuchIATCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
     /// Represents a command to indicate that a transaction has completed successfully.
     /// </summary>
     /// <param name="transaction">The transaction request containing the details of the completed transaction. Cannot be null.</param>
@@ -302,4 +314,10 @@ namespace IAT.Core.Handlers
     /// </summary>
     /// <param name="transaction">The transaction request associated with the deployment failure. Cannot be null.</param>
     public record DeploymentFailCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    /// <summary>
+    /// Represents a command to request an authentication token for a transaction, indicating that the authentication token is needed for further processing.
+    /// </summary>
+    /// <param name="transaction"></param>
+    public record AuthTokenCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 }

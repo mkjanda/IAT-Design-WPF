@@ -25,6 +25,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(VerifyPasswordCommand request, CancellationToken cancellationToken)
         {
+            _transactionState.ClientId = request.transaction.ClientId;
             await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Type = TransactionType.VerifyPassword,

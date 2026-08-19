@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using MediatR;
 using IAT.Core.Enumerations;
+using System.Numerics;
 
 namespace IAT.Core.Serializable;
 
@@ -19,11 +20,6 @@ namespace IAT.Core.Serializable;
 /// <param name="Key">The encrypted RSA key to be processed. Cannot be null.</param>
 public record RSAKeyCommand(EncryptedRSAKey Key) : IRequest<TransactionResult>;
 
-/// <summary>
-/// Represents a command to request an RSA key as part of a transaction, which returns a transaction result.
-/// </summary>
-/// <param name="transaction">The transaction request containing the details required to request the RSA key. Cannot be null.</param>
-public record RequestRSAKeyCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 /// <summary>
 /// Contains the encrypted RSA key information, including the modulus (n), exponent (e), private exponent (d), prime factors (p and q), and other related parameters.
 /// </summary>
@@ -35,26 +31,20 @@ public class EncryptedRSAKey : IWebSocketMessage
     /// <summary>
     /// Gets or sets the string value associated with the NString XML element.
     /// </summary>
-    [XmlElement("NString", Form = XmlSchemaForm.Unqualified)]
-    public string NString { get; set; } = string.Empty;
+    [XmlElement("Modulus", Form = XmlSchemaForm.Unqualified)]
+    public string Modulus { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the value of the EString XML element.
+    /// Gets or sets the value of the Exponent XML element.
     /// </summary>
-    [XmlElement("EString", Form = XmlSchemaForm.Unqualified)]
-    public string EString { get; set; } = string.Empty;
+    [XmlElement("Exponent", Form = XmlSchemaForm.Unqualified)]
+    public string Exponent { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the encrypted key value.
     /// </summary>
     [XmlElement("EncryptedKey", Form = XmlSchemaForm.Unqualified)]
     public string EncryptedKey { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the test string value.
-    /// </summary>
-    [XmlElement("TestString", Form = XmlSchemaForm.Unqualified)]
-    public string TestString { get; set; } = string.Empty;
 
     [XmlIgnore]
     private byte[]? d, e, p, q, n, dp, dq, inverseQ;
@@ -274,6 +264,36 @@ public class EncryptedRSAKey : IWebSocketMessage
         dp = parameters.DP;
         dq = parameters.DQ;
         inverseQ = parameters.InverseQ;
+    }
+
+    /// <summary>
+    /// Tests whether the provided password can successfully decrypt the RSA key and perform a test encryption/decryption operation.
+    /// </summary>
+    /// <param name="password">The password to test for decrypting the RSA key.</param>
+    /// <returns>True if the password can successfully decrypt the RSA key and perform the test operation; otherwise, false.</returns>
+    public bool TestPassword(String password)
+    {
+        try
+        {
+            BigInteger modulus = new BigInteger(Convert.FromBase64String(Modulus));
+            BigInteger exponent = new BigInteger(Convert.FromBase64String(Exponent));
+            DecryptKey(password);
+            RSA rsa = RSACryptoServiceProvider.Create();
+            rsa.ImportParameters(GetRSAParameters());
+            var dataStream = new MemoryStream();
+            dataStream.Write(new byte[1] { 0 });
+            byte[] testData = System.Text.Encoding.UTF8.GetBytes("Test");
+            dataStream.Write(testData, 0, testData.Length);
+            BigInteger data = new BigInteger(dataStream.ToArray());
+            BigInteger encryptedData = BigInteger.ModPow(data, exponent, modulus);
+            var encryptedBytes = data.ToByteArray();
+            var decryptedBytes = rsa.Decrypt(encryptedBytes, RSAEncryptionPadding.Pkcs1);
+            return Convert.ToBase64String(encryptedBytes) == Convert.ToBase64String(decryptedBytes);
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
 

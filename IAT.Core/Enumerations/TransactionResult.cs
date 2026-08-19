@@ -98,8 +98,13 @@ namespace IAT.Core.Enumerations
         /// <summary>
         /// Represents a transaction result indicating that a backup cannot be restored.
         /// </summary>
-        public static TransactionResult CannotRestoreBackup = new _CannotRestoreBackup();   
+        public static TransactionResult CannotRestoreBackup = new _CannotRestoreBackup();
 
+        /// <summary>
+        /// Indicates that the specified IAT (Import Address Table) already exists, and the operation cannot 
+        /// proceed without user confirmation or intervention.
+        /// </summary>
+        public static TransactionResult IATExists = new _IATExists();
 
         /// <summary>
         /// Indicates that the transaction was canceled by the user or system before completion.
@@ -124,6 +129,7 @@ namespace IAT.Core.Enumerations
         private sealed record _NoSuchIAT() : TransactionResult(false, true, "The specified IAT does not exist.", "IAT Not Found");
         private sealed record _BackupRestored() : TransactionResult(false, false, "The redeployment of your IAT failed and the backup of the existing test was restored.", "Backup Restored");
         private sealed record _CannotRestoreBackup() : TransactionResult(false, true, "The redeployment of your IAT failed and the backup of the existing test could not be restored.", "Backup Restore Failed");
+        private sealed record _IATExists() : TransactionResult(false, true, "The specified IAT already exists.", "IAT Already Exists");
         private sealed record _Aborted() : TransactionResult(false, true, "The transaction was aborted.", "Transaction Aborted");
     };
 }
