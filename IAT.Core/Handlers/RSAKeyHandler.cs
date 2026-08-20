@@ -45,12 +45,14 @@ namespace IAT.Core.Handlers
         /// sending the request.</returns>
         public async Task<TransactionResult> Handle(RSAKeyCommand request, CancellationToken cancellationToken)
         {
+            _transactionState.RSA = request.Key;
             if (!request.Key.TestPassword(_transactionState.Password)) {
                 _transactionState.SetResult(TransactionResult.InvalidPassword);
                 return TransactionResult.InvalidPassword;
             }
             await _webSocketService.SendMessage(new TransactionRequest()
             {
+
                 Type = TransactionType.PasswordValid
             });
             return TransactionResult.Unset;

@@ -12,7 +12,7 @@ namespace IAT.Core.ConfigFile;
 /// (X and Y coordinates) and size (Width and Height). The ID property serves as a unique identifier for each display 
 /// item, allowing for easy reference and management within the application's configuration.
 /// </summary>
-[XmlRoot("DisplayItem")]
+[XmlType("DisplayItem")]
 public sealed class DisplayItem
 {
     /// <summary>

@@ -15,13 +15,13 @@ namespace IAT.Core.ConfigFile;
 /// The properties are decorated with XML serialization attributes to facilitate easy serialization and deserialization from XML 
 /// format when configuring the IAT blocks.
 /// </summary>
-[XmlRoot(ElementName = "BeginIATBlock")]
+[XmlType("BeginIATBlock")]
 public sealed class BeginIATBlock : Event
 {
     /// <summary>
     /// The type of event that is being represented. This is used to determine how to process the event and what properties it may have.
     /// </summary>
-    [XmlElement("EventType", Form = XmlSchemaForm.Unqualified, Type = typeof(EventType))]
+    [XmlIgnore]
     public override EventType EventType => EventType.BeginIATBlock;
 
     /// <summary>
@@ -65,9 +65,4 @@ public sealed class BeginIATBlock : Event
     /// </summary>
     [XmlElement("RightResponseDisplayID", Form = XmlSchemaForm.Unqualified)]
     public int RightResponseDisplayID { get; set; } = 0;
-
-    /// <summary>
-    /// The no-arg consstructor for the object
-    /// </summary>
-    public BeginIATBlock() { }
 }

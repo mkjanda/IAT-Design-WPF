@@ -14,7 +14,7 @@ namespace IAT.Core.ConfigFile;
 /// associated continue instructions. This class is designed to facilitate the presentation of textual instructions to users in a structured and configurable 
 /// manner, allowing for flexibility in how instructions are displayed and interacted with during the IAT process.
 /// </summary>
-[XmlRoot("TextInstructionScreen")]
+[XmlType("TextInstructionScreen")]
 public class TextInstructionScreen : Event
 {
     /// <summary>

@@ -14,13 +14,13 @@ namespace IAT.Core.ConfigFile;
 /// setup of the instruction presentation details. The properties are decorated with XML serialization attributes to facilitate 
 /// easy serialization and deserialization from XML format when configuring the instruction blocks.
 /// </summary>
-
+[XmlType("BeginInstructionBlock")]
 public sealed class BeginInstructionBlock : Event
 {
     /// <summary>
     /// Represents the event type for the beginning of an instruction block. This property is used to identify the type of event and determine how to process it within the application.
     /// </summary>
-    [XmlElement("EventType", Form = XmlSchemaForm.Unqualified, Type = typeof(EventType))]
+    [XmlIgnore]
     public override EventType EventType => EventType.BeginInstructionBlock;
 
     /// <summary>

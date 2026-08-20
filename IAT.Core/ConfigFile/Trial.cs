@@ -16,7 +16,7 @@ namespace IAT.Core.ConfigFile;
 /// properties for uniquely identifying the trial, associating it with a block and item, and specifying the direction of
 /// key input and stimulus display. Implements equality comparison based on item and block numbers, which is useful for
 /// collection operations and deduplication scenarios.</remarks>
-[XmlRoot("IATItem")]
+[XmlType("Trial")]
 public class Trial : Event, IEqualityComparer<Trial>
 {
     /// <summary>

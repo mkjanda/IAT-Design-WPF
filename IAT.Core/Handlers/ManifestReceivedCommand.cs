@@ -50,30 +50,22 @@ namespace IAT.Core.Handlers
         public async Task<TransactionResult> Handle(ManifestCommand request, CancellationToken cancellationToken)
         {
             HttpClient client = new HttpClient();
-            var response = await client.GetAsync(_stringService.GetString("ItemSlideDownloadUrl"));
+            var httpRequest= new HttpRequestMessage(HttpMethod.Get, 
+                _stringService.GetString("ItemSlideDownloadUrl") +
+                $"testName={_transactionState.IATName}" +
+                $"&clientId={_transactionState.ClientId}" +
+                $"&authToken={_transactionState.AuthToken}");
             var memStream = new MemoryStream();
-            await response.Content.CopyToAsync(memStream);
+            var httpResponse = await client.SendAsync(httpRequest);
+            await httpResponse.Content.CopyToAsync(memStream);
             memStream.Seek(0, SeekOrigin.Begin);
-            var manifest = new Manifest();
-            request.manifest.Contents.ForEach(f =>
+            foreach (var mf in _transactionState.SlideManifest.Contents.OfType<ManifestFile>())
             {
-                ManifestFile mf = new ManifestFile()
-                {
-                    ResourceType = FileResourceType.itemSlide,
-                    ResourceId = request.manifest.Contents.IndexOf(f) + 1,
-                    MimeType = "image/jpeg",
-                    Content = new byte[f.Size]
-                };
-                memStream.Write(mf.Content, 0, (int)f.Size);
-                manifest.Contents.Add(mf);
-            });
-            _transactionState.SlideManifest = manifest;
-            await _webSocketService.SendMessage(new TransactionRequest()
-            {
-                Type = TransactionType.RequestResults,
-                IATName = _transactionState.IATName
-            });
-            return TransactionResult.Unset;
+                mf.Content = new byte[mf.Size];
+                memStream.Read(mf.Content, 0, (int)mf.Size);
+            }
+            _transactionState.SetResult(TransactionResult.Success);
+            return TransactionResult.Success;
         }
     }
 }

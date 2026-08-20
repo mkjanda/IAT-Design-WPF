@@ -14,11 +14,17 @@ namespace IAT.Core.ConfigFile;
 /// behaviors, but they will all share the common EventType property defined in this base class, which is used to identify the 
 /// type of event being represented.
 /// </summary>
+[XmlInclude(typeof(BeginIATBlock))]
+[XmlInclude(typeof(EndIATBlock))]
+[XmlInclude(typeof(KeyedInstructionScreen))]
+[XmlInclude(typeof(MockItemInstructionScreen))]
+[XmlInclude(typeof(TextInstructionScreen))]
+[XmlInclude(typeof(Trial))]
 public abstract class Event
 {
     /// <summary>
     /// The type of event that is being represented. This is used to determine how to process the event and what properties it may have.
     /// </summary>
-    [XmlElement("EventType", Form = XmlSchemaForm.Unqualified)]
+    [XmlIgnore]
     public abstract EventType EventType { get; }
 }

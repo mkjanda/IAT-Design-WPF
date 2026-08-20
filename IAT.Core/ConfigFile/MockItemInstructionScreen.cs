@@ -10,7 +10,7 @@ namespace IAT.Core.ConfigFile;
 /// <summary>
 /// Represents a mock item instruction screen, which is used for testing purposes to simulate the behavior of an instruction screen in the application.
 /// </summary>
-[XmlRoot("MockItemInstructionScreen")]
+[XmlType("MockItemInstructionScreen")]
 public class MockItemInstructionScreen : Event
 {
     /// <summary>

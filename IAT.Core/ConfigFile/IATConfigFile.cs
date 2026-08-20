@@ -4,7 +4,6 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Text;
-using com.sun.tools.corba.se.idl;
 
 namespace IAT.Core.ConfigFile;
 
@@ -80,7 +79,7 @@ public class IATConfigFile
     /// <summary>
     /// Gets or sets a value indicating whether the 7-block feature is enabled.
     /// </summary>
-    [XmlElement("Is7Block", Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("IsSevenBlock", Form = XmlSchemaForm.Unqualified)]
     public bool Is7Block { get; set; } = true;
 
     /// <summary>
@@ -100,12 +99,6 @@ public class IATConfigFile
     /// </summary>
     [XmlElement("RightResponseKey", Form = XmlSchemaForm.Unqualified)]
     public char RightResponseKey { get; set; } = 'I';
-
-    /// <summary>
-    /// Gets or sets the type of randomization to apply.
-    /// </summary>
-    [XmlElement("RandomizationType", Form = XmlSchemaForm.Unqualified)]
-    public string RandomizationType { get; set; } = "SetNumberOfPresentations";
 
     /// <summary>
     /// Gets or sets the identifier for the error mark associated with this instance.
@@ -132,18 +125,29 @@ public class IATConfigFile
     public bool PrefixSelfAlternatingSurveys { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the layout configuration for this instance.
-    /// </summary>
-    [XmlElement("Layout", Form = XmlSchemaForm.Unqualified, Type = typeof(Layout))]
-    public Layout Layout { get; set; } = new Layout();
-
-
-    /// <summary>
     /// Gets or sets the collection of surveys associated with this instance.
     /// </summary>
     [XmlArray("Surveys")]
     [XmlArrayItem("Survey", Form = XmlSchemaForm.Unqualified, Type = typeof(Survey))]
     public List<Survey> Surveys { get; set; } = new List<Survey>();
+
+    /// <summary>
+    /// Gets or sets the layout configuration for this instance.
+    /// </summary>
+    [XmlElement("Layout", Form = XmlSchemaForm.Unqualified, Type = typeof(Layout))]
+    public Layout Layout { get; set; } = new Layout();
+
+    /// <summary>
+    /// Gets or sets the collection of events associated with this instance. Each event can be of various types, such as BeginIATBlock, EndIATBlock, 
+    /// KeyedInstructionScreen, MockItemInstructionScreen, TextInstructionScreen, or Trial. This property is designed to hold a list of events that define the sequence and behavior of the IAT process.
+    /// </summary>
+    [XmlElement("BeginIATBlock", Form = XmlSchemaForm.Unqualified, Type = typeof(BeginIATBlock))]
+    [XmlElement("EndIATBlock", Form = XmlSchemaForm.Unqualified, Type = typeof(EndIATBlock))]
+    [XmlElement("KeyedInstructionScreen", Form = XmlSchemaForm.Unqualified, Type = typeof(KeyedInstructionScreen))]
+    [XmlElement("MockItemInstructionScreen", Form = XmlSchemaForm.Unqualified, Type = typeof(MockItemInstructionScreen))]
+    [XmlElement("TextInstructionScreen", Form = XmlSchemaForm.Unqualified, Type = typeof(TextInstructionScreen))]
+    [XmlElement("Trial", Form = XmlSchemaForm.Unqualified, Type = typeof(Trial))]
+    public List<Event> EventList { get; set; } = new List<Event>();
 
     /// <summary>
     /// Gets or sets the unique response item associated with this instance.
@@ -152,24 +156,9 @@ public class IATConfigFile
     public UniqueResponseItem? UniqueResponseItem { get; set; } = null;
 
     /// <summary>
-    /// Gets or sets the collection of events to be serialized or deserialized as part of the containing object.
-    /// </summary>
-    /// <remarks>The collection is serialized as an XML array named "EventList", with each event represented
-    /// as an "Event" element. The property is initialized to an empty list by default.</remarks>
-    [XmlArray("EventList")]
-    [XmlArrayItem("Event", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(Event))]
-    public List<Event> EventList { get; set; } = new List<Event>();
-
-    /// <summary>
     /// Gets or sets the collection of display items to be serialized or deserialized as part of the DisplayItemList XML
     /// element.
     /// </summary>
-    [XmlArray("DisplayItemList")]
     [XmlArrayItem("DisplayItem", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(DisplayItem))]
-    public List<DisplayItem> DisplayItemList { get; set; } = new List<DisplayItem>();
-
-    /// <summary>
-    /// Gets or sets the upload time in milliseconds since the Unix epoch.  
-    /// </summary>
-    public long UploadTimeMillis { get; set; } = 0;
+    public List<DisplayItem> DisplayItems { get; set; } = new List<DisplayItem>();
 }

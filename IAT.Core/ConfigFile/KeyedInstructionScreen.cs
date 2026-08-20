@@ -11,6 +11,7 @@ namespace IAT.Core.ConfigFile;
 /// <summary>
 /// KeyedInstructionScreen represents a specific type of instruction screen that includes key-based responses for user interaction.
 /// </summary>
+[XmlType("KeyedInstructionScreen")]
 public sealed class KeyedInstructionScreen : Event
 {
     /// <summary>

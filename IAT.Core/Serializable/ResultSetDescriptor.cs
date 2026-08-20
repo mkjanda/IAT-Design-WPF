@@ -55,18 +55,6 @@ namespace IAT.Core.Serializable
         /// </summary>
         [XmlElement("RSAKey", Form = XmlSchemaForm.Unqualified, Type = typeof(EncryptedRSAKey))]
         public EncryptedRSAKey RSAKey { get; set; } = new EncryptedRSAKey();
-
-        /// <summary>
-        /// Gets or sets the type of token used in the result set.
-        /// </summary>
-        [XmlElement("TokenType", Form = XmlSchemaForm.Unqualified)]
-        public TokenType TokenType { get; set; } = TokenType.none;
-
-        /// <summary>
-        /// Gets or sets the name of the token used in the result set.
-        /// </summary>
-        [XmlElement("TokenName", Form = XmlSchemaForm.Unqualified)]
-        public string TokenName { get; set; } = string.Empty;
     }
 }
 

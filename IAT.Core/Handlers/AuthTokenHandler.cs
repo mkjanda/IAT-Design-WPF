@@ -6,6 +6,10 @@ using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
+using System.Net.Http;
+using System.IO;
+using IAT.Core.Services;
+using System.Xml.Serialization;
 
 
 namespace IAT.Core.Handlers
@@ -14,35 +18,69 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
+        private readonly IStringResourceService _strings;
 
-        public AuthTokenHandler(IWebSocketService webSocketService, TransactionState transactionState)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthTokenHandler"/> class.
+        /// </summary>
+        /// <param name="webSocketService">The web socket service.</param>
+        /// <param name="transactionState">The transaction state.</param>
+        /// <param name="stringResourceService">The string resource service.</param>
+        public AuthTokenHandler(IWebSocketService webSocketService, TransactionState transactionState, IStringResourceService stringResourceService)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
+            _strings = stringResourceService;
         }
 
+        /// <summary>
+        /// Handles the specified <see cref="AuthTokenCommand"/> request and returns a <see cref="TransactionResult"/>. 
+        /// </summary>
+        /// <param name="request">The <see cref="AuthTokenCommand"/> request.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A <see cref="TransactionResult"/> representing the result of the transaction.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the operation type is unsupported.</exception>
         public async Task<TransactionResult> Handle(AuthTokenCommand request, CancellationToken cancellationToken)
         {
             _transactionState.AuthToken = request.transaction.AuthToken;
-            object o = _transactionState.Operation switch
+            switch (_transactionState.Operation)
             {
-                OperationType.RetrieveResults => new TransactionRequest()
-                {
-                    Type = TransactionType.RequestResultDescriptor,
-                    IATName = _transactionState.IATName
-                },
-                OperationType.DeleteTest => new TransactionRequest()
-                {
-                    Type = TransactionType.DeleteIAT,
-                    IATName = _transactionState.IATName
-                },
-                OperationType.DeleteResults => new TransactionRequest()
-                {
-                    Type = TransactionType.DeleteIATData,
-                    IATName = _transactionState.IATName
-                }
-            };
-            await _webSocketService.SendMessage(o);
+                case OperationType.RetrieveResults:
+                    var client = new HttpClient();
+                    var requestBody = new HttpRequestMessage(HttpMethod.Get, $"{_strings.GetString("ResultDownloadUrl")}?" +
+                        $"clientId={_transactionState.ClientId}&" +
+                        $"iatName={_transactionState.IATName}&" +
+                        $"authToken={_transactionState.AuthToken}");
+                    var httpResponse = await client.SendAsync(requestBody);
+                    var memStream = new MemoryStream();
+                    await httpResponse.Content.CopyToAsync(memStream);
+                    memStream.Seek(0L, SeekOrigin.Begin);
+                    var serializer = new XmlSerializer(typeof(TestResults));
+                    _transactionState.TestResults = (TestResults)serializer.Deserialize(memStream);
+                    await _webSocketService.SendMessage(new TransactionRequest()
+                    {
+                        Type = TransactionType.RequestItemSlideManifest,
+                        IATName = _transactionState.IATName
+                    });
+                    break;
+
+                case OperationType.DeleteTest:
+                    await _webSocketService.SendMessage(new TransactionRequest()
+                    {
+                        Type = TransactionType.DeleteIAT,
+                        IATName = _transactionState.IATName
+                    });
+                    break;
+                case OperationType.DeleteResults:
+                    await _webSocketService.SendMessage(new TransactionRequest()
+                    {
+                        Type = TransactionType.DeleteIATData,
+                        IATName = _transactionState.IATName
+                    });
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported operation type: {_transactionState.Operation}");
+            }
             return TransactionResult.Unset;
         }
     }

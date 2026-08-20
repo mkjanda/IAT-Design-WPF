@@ -9,8 +9,8 @@
     <sys:String x:Key="IATBeingDeployedTitle">IAT Being Deployed</sys:String>
     <sys:String x:Key="InvalidPassword">Invalid Password</sys:String>
     <sys:String x:Key="WebSocketUrl">ws://127.0.0.1:8080/DataTransaction</sys:String>
-    <sys:String x:Key="ItemSlideDownloadUrl">http://127.0.0.1:8080/RetrieveResults/ItemSlides</sys:String>
-    <sys:String x:Key="ResultDownloadUrl">http://127.0.0.1:8080/RetrieveResults</sys:String>
+    <sys:String x:Key="ItemSlideDownloadUrl">http://127.0.0.1:8080/Download/ItemSlides</sys:String>
+    <sys:String x:Key="ResultDownloadUrl">http://127.0.0.1:8080/Download/Results</sys:String>
     <sys:String x:Key="DeploymentUploadUrl">http://127.0.0.1:8080/Upload/Deployment</sys:String>
     <sys:String x:Key="ItemSlideUploadUrl">http://127.0.0.1:8080/Upload/ItemSlides</sys:String>
 </ResourceDictionary>    
