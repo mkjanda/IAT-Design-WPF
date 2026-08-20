@@ -8,7 +8,7 @@ using IAT.Core.Services.Network;
 using IAT.Core.Enumerations;
 namespace IAT.Core.Handlers
 {
-    internal class RequestRSAKeyHandler : IRequestHandler<RequestRSAKeyCommand, TransactionResult>
+    internal class RequestRSAKeyHandler : IRequestHandler<RSAKeyCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
@@ -19,7 +19,7 @@ namespace IAT.Core.Handlers
             _transactionState = transactionState;
         }
 
-        public async Task<TransactionResult> Handle(RequestRSAKeyCommand request, CancellationToken cancellationToken)
+        public async Task<TransactionResult> Handle(RSAKeyCommand request, CancellationToken cancellationToken)
         {
             var key = new EncryptedRSAKey();
             key.Generate(_transactionState.Password);

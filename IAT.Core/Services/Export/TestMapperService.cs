@@ -135,7 +135,7 @@ namespace IAT.Core.Services.Export
                 LeftKeyOutlineID = 1001,
                 RightKeyOutlineID = 1002,
                 EventList = exportContext.Events,
-                DisplayItemList = exportContext.DisplayItems,
+                DisplayItems = exportContext.DisplayItems,
                 NumIATItems = test.AllTrials.Count,
                 RedirectOnComplete = "https://iatsoftware.net"
             };

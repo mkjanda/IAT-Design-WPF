@@ -52,7 +52,6 @@ namespace IAT.Core.Handlers
                 _transactionState.ConfigFile = new ConfigFile.IATConfigFile();
             }   
             _transactionState.ConfigFile.ClientID = _transactionState.ClientId;
-            _transactionState.ConfigFile.UploadTimeMillis = _transactionState.UploadTimeMillis;
             _transactionState.ConfigFile.Name = _transactionState.IATName;
             var ser = new XmlSerializer(typeof(ConfigFile.IATConfigFile));
             var memoryStream = new MemoryStream();
