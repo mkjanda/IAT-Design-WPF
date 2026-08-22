@@ -151,22 +151,16 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
         TransactionCommands = new Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>>
         {
             { TransactionType.AbortTransaction, r => new AbortTransactionCommand(r) },
-            { TransactionType.DeploymentFileManifestReceived, r => new DeploymentManifestReceivedCommand(r) },
             { TransactionType.EMailAlreadyVerified, r => new EMailAlreadyVerifiedCommand(r) },
             { TransactionType.EncryptionKeyReceived, r => new EncryptionKeyReceivedCommand(r) },
             { TransactionType.IATBeingDeployed, r => new IATBeingDeployedCommand(r) },
-            { TransactionType.ItemSlideDownloadReady, r => new ItemSlidesReadyCommand(r) },
             { TransactionType.NoSuchClient, r => new NoSuchClientCommand(r) },
-            { TransactionType.PasswordInvalid, r => new InvalidPasswordCommand(r) },
-            { TransactionType.PasswordValid, r => new PasswordValidResultsCommand(r) },
             { TransactionType.RequestIATUpload, r => new RequestIATUploadCommand(r) },
-            { TransactionType.ResultsReady, r => new ResultsReadyCommand(r) },
             { TransactionType.TransactionFail, r => new TransactionFailCommand(r) },
             { TransactionType.TransactionSuccess, r => new TransactionSuccessCommand(r) },
             { TransactionType.IATExists, r => new IATExistsCommand(r) },
-            { TransactionType.ItemSlidesReady, r => new ItemSlidesReadyCommand(r) },
-            { TransactionType.AuthToken, r => new AuthTokenCommand(r) }
-
+            { TransactionType.AuthToken, r => new AuthTokenCommand(r) },
+            { TransactionType.RequestTransmission, r => new RequestTransmissionCommand(r) }
         };
     }
 

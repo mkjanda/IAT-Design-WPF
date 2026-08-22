@@ -203,14 +203,15 @@ public partial class StimuliManagerViewModel : ObservableObject
         try
         {
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
-            var imageId = await _packageService.AddImageAsync(bytes, Path.GetFileName(dialog.FileName));
+            var leafName = Path.GetFileName(dialog.FileName);
+            var imageId = await _packageService.AddImageAsync(bytes, leafName);
 
             var newStimulus = new ImageStimulus
             {
                 Id = imageId,
-                // Store the leaf file name only. The package owns the image by Id;
-                // a full source path is ephemeral and must not appear in previews/lists.
-                FileName = dialog.FileName,
+                // Leaf name only — bytes live in the package cache keyed by Id.
+                // Full disk paths must never be persisted (save resolves from cache, not cwd).
+                FileName = leafName,
                 AltText = string.Empty
             };
 

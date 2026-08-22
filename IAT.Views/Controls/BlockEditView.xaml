@@ -31,7 +31,11 @@
 
                 <StackPanel Orientation="Vertical" Margin="12,0,12,12" DockPanel.Dock="Bottom">
                     <Button Content="+ Add Block" Command="{Binding AddBlockCommand}"
-                            Style="{StaticResource AccentButton}" Height="36" />
+                            Style="{StaticResource AccentButton}" Height="36"
+                            ToolTip="Add a practice block. Create exactly two blocks, then generate the standard 7-block IAT."/>
+                    <Button Content="Generate 7-Block IAT" Command="{Binding GenerateSevenBlockIatCommand}"
+                            Style="{StaticResource AccentButton}" Height="36" Margin="0,8,0,0"
+                            ToolTip="Requires exactly two blocks with Left/Right response keys. Builds blocks 3–7 (compatible, reversed attribute, incompatible) and locks the structure."/>
                     <Button Content="Save" Command="{Binding SaveBlockCommand}" Margin="0,8,0,0"
                             Height="36"/>
                     <Button Content="Delete" Margin="0,8,0,0" Height="36"/>

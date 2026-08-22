@@ -41,7 +41,6 @@ namespace IAT.Core.Services.Network
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _webSocketService.TransactionCommands[TransactionType.RequestItemSlides] = (request) => new RequestTransmissionItemSlideRetrievalCommand(request);
         }
 
         /// <summary>
@@ -55,16 +54,20 @@ namespace IAT.Core.Services.Network
         public async Task<TransactionResult> GetItemSlides(string iatName, string password, string productKey)
         {
             _transactionState.Clear();
+            _transactionState.Operation = OperationType.RetrieveItemSlides;
             _transactionState.IATName = iatName;
+            _transactionState.Password = password;
             _transactionState.ProductKey = productKey;
-            await _webSocketService.SendMessage(new TransactionRequest()
-            {
-                Type = TransactionType.RequestConnection,
-                IATName = iatName,
-                ProductKey = productKey,
-            });
-            await _transactionState.Completion.ConfigureAwait(false);
-            return TransactionResult.Unset;
+
+            return await WebSocketTransaction.ExecuteAsync(
+                _webSocketService,
+                _transactionState,
+                () => _webSocketService.SendMessage(new TransactionRequest
+                {
+                    Type = TransactionType.RequestConnection,
+                    IATName = iatName,
+                    ProductKey = productKey,
+                })).ConfigureAwait(false);
         }
 
 

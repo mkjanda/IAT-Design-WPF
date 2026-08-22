@@ -12,7 +12,11 @@
             BorderThickness="0,0,0,2"
             CornerRadius="0,0,4,4"
             Margin="8,4,8,0"
-            Visibility="Collapsed">
+            Visibility="Collapsed"
+            Opacity="1">
+        <Border.RenderTransform>
+            <TranslateTransform X="0" Y="0"/>
+        </Border.RenderTransform>
 
         <Grid Margin="16,12,16,12">
             <Grid.ColumnDefinitions>

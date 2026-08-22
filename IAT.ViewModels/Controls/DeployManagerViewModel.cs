@@ -25,6 +25,7 @@ public partial class DeployManagerViewModel : ObservableObject
 {
     private readonly ITestDeploymentService _deploymentService;
     private readonly IResultRetrievalService _resultService;
+    private readonly IDeletionService _deletionService;
     private readonly IServerReportService _serverReportService;
     private readonly ILocalStorageService _localStorage;
     private readonly TransactionState _transactionState;
@@ -56,6 +57,18 @@ public partial class DeployManagerViewModel : ObservableObject
 
     [ObservableProperty] private string searchText = string.Empty;
 
+    /// <summary>
+    /// Password for the currently selected deployed IAT. Auto-filled from AppData
+    /// when <see cref="ILocalStorageService.TryGetIATPassword"/> finds a stored value.
+    /// Editable so the user can supply a password for tests not deployed from this machine.
+    /// </summary>
+    [ObservableProperty] private string selectedIatPassword = string.Empty;
+
+    /// <summary>
+    /// True when the password box was populated from local storage for the current selection.
+    /// </summary>
+    [ObservableProperty] private bool hasStoredPassword;
+
     // ── Results preview (right pane) ───────────────────────────────────────
     [ObservableProperty] private string selectedTestTitle = "No test selected";
     [ObservableProperty] private double meanDScore;
@@ -71,6 +84,7 @@ public partial class DeployManagerViewModel : ObservableObject
     public DeployManagerViewModel(
         ITestDeploymentService deploymentService,
         IResultRetrievalService resultService,
+        IDeletionService deletionService,
         IServerReportService serverReportService,
         ILocalStorageService localStorage,
         TransactionState transactionState,
@@ -81,6 +95,7 @@ public partial class DeployManagerViewModel : ObservableObject
     {
         _deploymentService = deploymentService;
         _resultService = resultService;
+        _deletionService = deletionService;
         _serverReportService = serverReportService;
         _localStorage = localStorage;
         _transactionState = transactionState;
@@ -175,8 +190,24 @@ public partial class DeployManagerViewModel : ObservableObject
             SelectedTestTitle = "No test selected";
             HasResults = false;
             SurveyTabs.Clear();
+            SelectedIatPassword = string.Empty;
+            HasStoredPassword = false;
             return;
         }
+
+        // Prefer the password stored under AppData for this IAT name.
+        var stored = _localStorage.TryGetIATPassword(value.Name);
+        if (!string.IsNullOrEmpty(stored))
+        {
+            SelectedIatPassword = stored;
+            HasStoredPassword = true;
+        }
+        else
+        {
+            SelectedIatPassword = string.Empty;
+            HasStoredPassword = false;
+        }
+
         LoadPreviewFor(value);
     }
 
@@ -267,10 +298,21 @@ public partial class DeployManagerViewModel : ObservableObject
 
     /// <summary>
     /// Maps <see cref="ServerReport"/> into the account bar and the deployed-tests list.
+    /// Empty / null reports are ignored when the list already has data so a mid-transaction
+    /// reset can never blank the tab.
     /// </summary>
     private void ApplyServerReport(ServerReport report)
     {
         if (report is null)
+            return;
+
+        var hasIats = report.IATReport is { Count: > 0 };
+        var hasIdentity = !string.IsNullOrWhiteSpace(report.ContactFName)
+                          || !string.IsNullOrWhiteSpace(report.Organization);
+
+        // Guard: never replace a populated UI with an empty report (e.g. leftover event
+        // from a Clear that used to wipe ServerReport).
+        if (!hasIats && !hasIdentity && DeployedTests.Count > 0)
             return;
 
         var name = $"{report.ContactFName} {report.ContactLName}".Trim();
@@ -280,14 +322,14 @@ public partial class DeployManagerViewModel : ObservableObject
         AccountName = name;
         if (report.NumAdministrations < 0)
             AdministrationsRemaining = "Unlimited";
-        else 
-            AdministrationsRemaining = report.NumAdministrations.ToString(); // remaining administrations
+        else
+            AdministrationsRemaining = report.NumAdministrations.ToString();
 
         // DiskAlottmentRemainingKB is in KB; present as MB when ≥ 1024.
         var remainingKb = report.DiskAlottmentRemainingKB;
         if (remainingKb < 0)
             StorageRemaining = "Unlimited";
-        else  
+        else
             StorageRemaining = remainingKb >= 1024
                 ? $"{remainingKb / 1024.0:0.0} MB"
                 : $"{remainingKb} KB";
@@ -348,42 +390,220 @@ public partial class DeployManagerViewModel : ObservableObject
 
     private bool CanActOnSelected() => SelectedDeployedTest is not null;
 
+    /// <summary>
+    /// Resolves the IAT password for server operations.
+    /// Prefers the header text box (user-entered or auto-filled), then AppData storage.
+    /// </summary>
+    private string? ResolvePassword(string iatName)
+    {
+        if (!string.IsNullOrWhiteSpace(SelectedIatPassword))
+            return SelectedIatPassword.Trim();
+
+        var stored = _localStorage.TryGetIATPassword(iatName);
+        return string.IsNullOrWhiteSpace(stored) ? null : stored;
+    }
+
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]
     private async Task RetrieveResultsAsync()
     {
         if (SelectedDeployedTest is null) return;
-        SelectedDeployedTest.Status = "Retrieving…";
-        // Real path: await _resultService.RetrieveAsync(...)
-        await Task.Delay(400);
-        SelectedDeployedTest.Status = "Ready";
-        LoadPreviewFor(SelectedDeployedTest);
-        await _dialogService.ShowNotificationAsync(
-            $"Retrieved {SelectedDeployedTest.ResultCount} results for {SelectedDeployedTest.Name}.", "Results");
+
+        // Capture the item at command start so post-await updates stay on the same instance
+        // even if the user changes selection (or Refresh rebuilds the list).
+        var target = SelectedDeployedTest;
+
+        var productKey = SafeReadField(Field.ProductKey);
+        if (string.IsNullOrWhiteSpace(productKey))
+        {
+            await _dialogService.ShowNotificationAsync(
+                "Activate the product (product key + verified email) before retrieving results.",
+                "Activation Required");
+            return;
+        }
+
+        var password = ResolvePassword(target.Name);
+        if (password is null)
+        {
+            await _dialogService.ShowNotificationAsync(
+                $"Enter the password for “{target.Name}” in the header field before retrieving results.",
+                "Password Required");
+            return;
+        }
+
+        var previousStatus = target.Status;
+        target.Status = "Retrieving…";
+        try
+        {
+            _webSocket.Start();
+            var doc = await _resultService.GetResults(productKey, target.Name, password);
+
+            if (!_isActive) return;
+
+            // Terminal result is always set by a handler (RSAKeyHandler on bad password,
+            // ResultsReady on success, etc.). Never treat a null/Unset as success.
+            var result = _transactionState.Result ?? TransactionResult.Failure;
+            if (result.IsError || result == TransactionResult.Unset)
+            {
+                target.Status = previousStatus;
+                var message = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Could not retrieve results."
+                    : result.Message;
+                var title = string.IsNullOrWhiteSpace(result.Title) ? "Results" : result.Title;
+                await _dialogService.ShowNotificationAsync(message, title);
+                return;
+            }
+
+            // Keep a copy on transaction state for any downstream consumers.
+            if (doc is not null && doc.Root is not null)
+                _transactionState.TestResultsDocument = doc;
+
+            target.Status = target.ResultCount > 0 ? "Ready" : "No results";
+            if (ReferenceEquals(SelectedDeployedTest, target))
+                LoadPreviewFor(target);
+
+            await _dialogService.ShowNotificationAsync(
+                $"Retrieved results for “{target.Name}”.",
+                "Results");
+        }
+        catch (Exception ex)
+        {
+            target.Status = previousStatus;
+            if (_isActive)
+            {
+                // Unwrap so the user sees the real message, not "One or more errors occurred."
+                var root = ex is AggregateException agg
+                    ? agg.Flatten().InnerExceptions.FirstOrDefault() ?? ex
+                    : ex.InnerException ?? ex;
+                await _dialogService.ShowNotificationAsync(
+                    $"Failed to retrieve results: {root.Message}",
+                    "Results");
+            }
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]
     private async Task ClearResultsAsync()
     {
         if (SelectedDeployedTest is null) return;
+
+        // Capture the item at command start. Selection can change (or be cleared) while
+        // we await the network call; never touch SelectedDeployedTest after an await without
+        // checking it is still the same instance.
+        var target = SelectedDeployedTest;
+
         var ok = await _dialogService.ShowConfirmationAsync(
-            $"Clear all results for “{SelectedDeployedTest.Name}”? This cannot be undone.",
+            $"Clear all results for “{target.Name}”? This cannot be undone.",
             "Clear Results");
         if (!ok) return;
-        SelectedDeployedTest.ResultCount = 0;
-        SelectedDeployedTest.Status = "No results";
-        LoadPreviewFor(SelectedDeployedTest);
+
+        var password = ResolvePassword(target.Name);
+        if (password is null)
+        {
+            await _dialogService.ShowNotificationAsync(
+                $"Enter the password for “{target.Name}” in the header field before clearing results.",
+                "Password Required");
+            return;
+        }
+
+        var previousStatus = target.Status;
+        var previousCount = target.ResultCount;
+        target.Status = "Clearing…";
+        try
+        {
+            _webSocket.Start();
+            var result = await _deletionService.DeleteTestData(target.Name, password);
+
+            if (!_isActive) return;
+
+            if (!result.IsSuccess)
+            {
+                target.Status = previousStatus;
+                await _dialogService.ShowNotificationAsync(
+                    string.IsNullOrWhiteSpace(result.Message) ? "Could not clear results on the server." : result.Message,
+                    result.Title ?? "Clear Results");
+                return;
+            }
+
+            target.ResultCount = 0;
+            target.Status = "No results";
+            if (ReferenceEquals(SelectedDeployedTest, target))
+                LoadPreviewFor(target);
+
+            // Refresh account quotas / list from the server when possible.
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            target.Status = previousStatus;
+            target.ResultCount = previousCount;
+            if (_isActive)
+            {
+                await _dialogService.ShowNotificationAsync(
+                    $"Failed to clear results: {ex.Message}",
+                    "Clear Results");
+            }
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]
     private async Task DeleteTestAsync()
     {
         if (SelectedDeployedTest is null) return;
+
+        // Capture before any await — confirmation dialog and network call both yield.
+        var target = SelectedDeployedTest;
+        var targetName = target.Name;
+
         var ok = await _dialogService.ShowConfirmationAsync(
-            $"Permanently delete “{SelectedDeployedTest.Name}” and all its results from the server?",
+            $"Permanently delete “{targetName}” and all its results from the server?",
             "Delete Deployed Test");
         if (!ok) return;
-        DeployedTests.Remove(SelectedDeployedTest);
-        SelectedDeployedTest = DeployedTests.FirstOrDefault();
+
+        var password = ResolvePassword(targetName);
+        if (password is null)
+        {
+            await _dialogService.ShowNotificationAsync(
+                $"Enter the password for “{targetName}” in the header field before deleting.",
+                "Password Required");
+            return;
+        }
+
+        var previousStatus = target.Status;
+        target.Status = "Deleting…";
+        try
+        {
+            _webSocket.Start();
+            var result = await _deletionService.DeleteTest(targetName, password);
+
+            if (!_isActive) return;
+
+            if (!result.IsSuccess)
+            {
+                target.Status = previousStatus;
+                await _dialogService.ShowNotificationAsync(
+                    string.IsNullOrWhiteSpace(result.Message) ? "Could not delete the test on the server." : result.Message,
+                    result.Title ?? "Delete Deployed Test");
+                return;
+            }
+
+            var doomed = DeployedTests.FirstOrDefault(t => t.Name == targetName);
+            if (doomed is not null)
+                DeployedTests.Remove(doomed);
+            if (ReferenceEquals(SelectedDeployedTest, target) || SelectedDeployedTest?.Name == targetName)
+                SelectedDeployedTest = DeployedTests.FirstOrDefault();
+
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            target.Status = previousStatus;
+            if (_isActive)
+            {
+                await _dialogService.ShowNotificationAsync(
+                    $"Failed to delete test: {ex.Message}",
+                    "Delete Deployed Test");
+            }
+        }
     }
 
     [RelayCommand]

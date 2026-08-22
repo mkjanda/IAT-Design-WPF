@@ -267,14 +267,38 @@ public class EncryptedRSAKey : IWebSocketMessage
     }
 
     /// <summary>
+    /// Clears any partially decrypted private-key material and marks the instance as not decrypted.
+    /// Call after a failed password attempt so a later correct password can retry cleanly and so
+    /// callers never see a half-initialized key that would throw <see cref="NullReferenceException"/>.
+    /// </summary>
+    public void ResetDecryptedState()
+    {
+        IsDecrypted = false;
+        d = e = p = q = n = dp = dq = inverseQ = null;
+    }
+
+    /// <summary>
     /// Tests whether the provided password can successfully decrypt the RSA key and perform a test encryption/decryption operation.
     /// </summary>
     /// <param name="password">The password to test for decrypting the RSA key.</param>
     /// <returns>True if the password can successfully decrypt the RSA key and perform the test operation; otherwise, false.</returns>
     public bool TestPassword(String password)
     {
+        if (string.IsNullOrEmpty(password) ||
+            string.IsNullOrEmpty(Modulus) ||
+            string.IsNullOrEmpty(Exponent) ||
+            string.IsNullOrEmpty(EncryptedKey))
+        {
+            ResetDecryptedState();
+            return false;
+        }
+
         try
         {
+            // Always start from a clean slate so a previous failed attempt cannot leave IsDecrypted=true
+            // with garbage D/P/Q that later GetRSAParameters / RSA.Create would blow up on.
+            ResetDecryptedState();
+
             BigInteger modulus = new BigInteger(Convert.FromBase64String(Modulus));
             BigInteger exponent = new BigInteger(Convert.FromBase64String(Exponent));
             DecryptKey(password);
@@ -292,6 +316,9 @@ public class EncryptedRSAKey : IWebSocketMessage
         }
         catch
         {
+            // Wrong password (or corrupt key material) often decrypts to garbage that still
+            // parses as bytes. Never leave that state visible to the rest of the pipeline.
+            ResetDecryptedState();
             return false;
         }
     }

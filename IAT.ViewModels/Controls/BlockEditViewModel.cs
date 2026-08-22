@@ -2,8 +2,12 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using IAT.Core.Domain;
+using IAT.Core.Enumerations;
+using IAT.Core.Messages;
 using IAT.Core.Services;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+// ErrorNotificationMessage lives in IAT.Core.Services (same namespace as the other service contracts).
 
 namespace IAT.ViewModels.Controls;
 
@@ -20,6 +24,13 @@ public partial class BlockEditViewModel : ObservableObject
     private readonly IProjectPackageService _packageService;
     private readonly ILayoutCalculatorService _layoutCalculator;
     private readonly IatTest _currentTest;
+
+    /// <summary>
+    /// Once a standard 7-block structure has been generated from the two practice blocks,
+    /// further structural changes (Add Block / re-generate) are locked so the IAT remains valid.
+    /// </summary>
+    [ObservableProperty]
+    private bool isStandardStructureLocked;
 
     /// <summary>
     /// Live shared collection of blocks from the domain model.
@@ -72,9 +83,18 @@ public partial class BlockEditViewModel : ObservableObject
         _currentTest = currentTest ?? throw new ArgumentNullException(nameof(currentTest));
         LayoutViewModel = layoutViewModel;
 
+        // Keep Generate / Add command CanExecute in sync with the live block list.
+        Blocks.CollectionChanged += OnBlocksCollectionChanged;
+
         // Select first block if any exist
         if (Blocks.Count > 0)
             SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).First();
+    }
+
+    private void OnBlocksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        GenerateSevenBlockIatCommand.NotifyCanExecuteChanged();
+        AddBlockCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]
@@ -87,7 +107,13 @@ public partial class BlockEditViewModel : ObservableObject
         SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).FirstOrDefault();
     }
 
-    [RelayCommand]
+    /// <summary>
+    /// True while the user is still building the two practice blocks and has not yet
+    /// locked the structure by generating the standard 7-block IAT.
+    /// </summary>
+    private bool CanAddBlock() => !IsStandardStructureLocked;
+
+    [RelayCommand(CanExecute = nameof(CanAddBlock))]
     private void AddBlock()
     {
         var nextNumber = Blocks.Count + 1;
@@ -105,6 +131,164 @@ public partial class BlockEditViewModel : ObservableObject
         _currentTest.AddBlock(block);
 
         SelectedBlock = block;
+        WeakReferenceMessenger.Default.Send(TestModifiedMessage.Instance);
+    }
+
+    /// <summary>
+    /// Enabled only when exactly two blocks exist and the structure has not already been locked.
+    /// </summary>
+    private bool CanGenerateSevenBlockIat() =>
+        !IsStandardStructureLocked && Blocks.Count == 2;
+
+    /// <summary>
+    /// Builds the classic 7-block IAT structure from the two existing practice blocks.
+    /// <list type="bullet">
+    ///   <item>Blocks 3 &amp; 4 — all trials from 1+2, compatible combined keys (A or C / B or D), keyed by origin side.</item>
+    ///   <item>Block 5 — trials from block 2 with response keys transposed; trials stay keyed to the <em>term</em>.</item>
+    ///   <item>Blocks 6 &amp; 7 — all trials from 1+2, incompatible combined keys (A or D / B or C), keyed by term.</item>
+    /// </list>
+    /// Combined key labels are rendered as a vertical stack (term / or / term). After success the
+    /// block list is locked against further Add / re-generate so the structure stays valid.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanGenerateSevenBlockIat))]
+    private void GenerateSevenBlockIat()
+    {
+        var ordered = Blocks.OrderBy(b => b.BlockNumber).ToList();
+        if (ordered.Count != 2)
+            return;
+
+        var block1 = ordered[0];
+        var block2 = ordered[1];
+
+        var key1L = _currentTest.GetKeyById(block1.LeftResponseId);
+        var key1R = _currentTest.GetKeyById(block1.RightResponseId);
+        var key2L = _currentTest.GetKeyById(block2.LeftResponseId);
+        var key2R = _currentTest.GetKeyById(block2.RightResponseId);
+
+        if (key1L is null || key1R is null || key2L is null || key2R is null)
+        {
+            WeakReferenceMessenger.Default.Send(new ErrorNotificationMessage(
+                "Missing response keys",
+                "Both practice blocks must have Left and Right response keys defined before generating the 7-block structure. Set them on the Trials tab."));
+            return;
+        }
+
+        // Compatible combined keys (blocks 3 & 4): A or C  /  B or D
+        var compatLeft = CreateCombinedKey(key1L, key2L, LayoutItem.LeftKey);
+        var compatRight = CreateCombinedKey(key1R, key2R, LayoutItem.RightKey);
+        _currentTest.AddKey(compatLeft);
+        _currentTest.AddKey(compatRight);
+
+        // Incompatible combined keys (blocks 6 & 7): A or D  /  B or C
+        var incompatLeft = CreateCombinedKey(key1L, key2R, LayoutItem.LeftKey);
+        var incompatRight = CreateCombinedKey(key1R, key2L, LayoutItem.RightKey);
+        _currentTest.AddKey(incompatLeft);
+        _currentTest.AddKey(incompatRight);
+
+        // --- Blocks 3 & 4: compatible combined ---
+        for (var n = 3; n <= 4; n++)
+        {
+            var block = CreateBlock(n, compatLeft.Id, compatRight.Id);
+            AppendTrialsFrom(block1, block, flipDirection: false);
+            AppendTrialsFrom(block2, block, flipDirection: false);
+            block.NotifyTrialsChanged();
+            _currentTest.AddBlock(block);
+        }
+
+        // --- Block 5: attribute block with keys transposed; trials stay keyed to the term ---
+        // Original block2: Left=C, Right=D  →  Left=D, Right=C
+        // A trial that was Left (towards C) must become Right so it still points at C.
+        {
+            var block5 = CreateBlock(5, key2R.Id, key2L.Id);
+            AppendTrialsFrom(block2, block5, flipDirection: true);
+            block5.NotifyTrialsChanged();
+            _currentTest.AddBlock(block5);
+        }
+
+        // --- Blocks 6 & 7: incompatible combined ---
+        // Block1 terms keep their side (A stays left). Block2 terms flip (C moves to right).
+        for (var n = 6; n <= 7; n++)
+        {
+            var block = CreateBlock(n, incompatLeft.Id, incompatRight.Id);
+            AppendTrialsFrom(block1, block, flipDirection: false);
+            AppendTrialsFrom(block2, block, flipDirection: true);
+            block.NotifyTrialsChanged();
+            _currentTest.AddBlock(block);
+        }
+
+        IsStandardStructureLocked = true;
+        GenerateSevenBlockIatCommand.NotifyCanExecuteChanged();
+        AddBlockCommand.NotifyCanExecuteChanged();
+
+        // Select the newly created Block 3 so the user sees the result immediately.
+        SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).FirstOrDefault(b => b.BlockNumber == 3)
+                        ?? Blocks.OrderBy(b => b.BlockNumber).LastOrDefault();
+
+        WeakReferenceMessenger.Default.Send(TestModifiedMessage.Instance);
+    }
+
+    private static Block CreateBlock(int number, Guid leftKeyId, Guid rightKeyId) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Block {number}",
+            BlockNumber = number,
+            LeftResponseId = leftKeyId,
+            RightResponseId = rightKeyId
+        };
+
+    /// <summary>
+    /// Creates a combined response key whose display text is a vertical stack:
+    /// <c>termA</c> / <c>or</c> / <c>termB</c>.
+    /// </summary>
+    private static Key CreateCombinedKey(Key first, Key second, LayoutItem layoutSlot)
+    {
+        var t1 = first.Text?.Trim() ?? string.Empty;
+        var t2 = second.Text?.Trim() ?? string.Empty;
+        return new Key
+        {
+            Id = Guid.NewGuid(),
+            LayoutItem = layoutSlot,
+            IsCombined = true,
+            ComponentIds = new List<Guid> { first.Id, second.Id },
+            Separator = " or ",
+            LayoutMode = KeyLayoutMode.VerticalWithOr,
+            // Multi-line so the Blocks preview TextBlock renders A / or / C in a column.
+            Text = $"{t1}\nor\n{t2}",
+            Style = new TextStyle(),
+            FontFamily = first.FontFamily ?? "Segoe UI",
+            FontSize = first.FontSize > 0 ? first.FontSize : 24.0,
+            FontColor = first.FontColor
+        };
+    }
+
+    /// <summary>
+    /// Clones every trial from <paramref name="source"/> into <paramref name="target"/>,
+    /// optionally flipping Left↔Right so the trial remains keyed toward the same term
+    /// after response keys have been transposed or recombined.
+    /// </summary>
+    private void AppendTrialsFrom(Block source, Block target, bool flipDirection)
+    {
+        var nextNumber = target.TrialIds.Count + 1;
+        foreach (var srcTrial in source.Trials.OrderBy(t => t.TrialNumber))
+        {
+            var direction = srcTrial.KeyedDirection ?? KeyedDirection.None;
+            if (flipDirection && direction != KeyedDirection.None)
+                direction = direction.Opposite;
+
+            var trial = new Trial
+            {
+                Id = Guid.NewGuid(),
+                StimulusId = srcTrial.StimulusId,
+                TrialNumber = nextNumber++,
+                BlockNumber = target.BlockNumber,
+                OriginatingBlock = source.BlockNumber,
+                KeyedDirection = direction
+            };
+
+            _currentTest.AddTrial(trial);
+            target.TrialIds.Add(trial.Id);
+        }
     }
 
     partial void OnSelectedBlockChanged(Block? value)
@@ -266,9 +450,15 @@ public partial class BlockEditViewModel : ObservableObject
 
     /// <summary>
     /// Called by the shell after New/Open so selection and preview match the (possibly empty) document.
+    /// Always ends by pushing the selected sequence row into the layout stage so the first
+    /// trial is previewed immediately after open — not only when the user re-clicks it.
     /// </summary>
     public void OnDocumentReset()
     {
+        IsStandardStructureLocked = false;
+        GenerateSevenBlockIatCommand.NotifyCanExecuteChanged();
+        AddBlockCommand.NotifyCanExecuteChanged();
+
         SelectedTrial = null;
         SelectedSequenceRow = null;
         SequenceRows.Clear();
@@ -280,11 +470,23 @@ public partial class BlockEditViewModel : ObservableObject
             LayoutViewModel?.ApplyBlockKeys(null);
             LayoutViewModel?.ApplyTrialPreview(null);
             LayoutViewModel?.ApplyInstructionPreview(null);
+            return;
         }
-        else
+
+        // If the loaded document already has the classic 7-block layout, treat it as locked.
+        if (Blocks.Count == 7)
         {
-            RefreshLayoutPreview();
+            IsStandardStructureLocked = true;
+            GenerateSevenBlockIatCommand.NotifyCanExecuteChanged();
+            AddBlockCommand.NotifyCanExecuteChanged();
         }
+
+        // Rebuild rows, select first, and force the preview path even when the
+        // SelectedSequenceRow reference did not change enough to raise PropertyChanged.
+        RefreshLayoutPreview();
+        if (SelectedSequenceRow is null && SequenceRows.Count > 0)
+            SelectedSequenceRow = SequenceRows.FirstOrDefault();
+        OnSelectedSequenceRowChanged(SelectedSequenceRow);
     }
 }
 

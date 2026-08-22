@@ -67,12 +67,16 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
         try
         {
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
-            var leafName = dialog.FileName;
-            var newId = await _packageService.AddImageAsync(bytes, leafName);
+            var leafName = Path.GetFileName(dialog.FileName);
 
-            Id = newId;
-            filePath = dialog.FileName; // ephemeral source path for optional re-import
-            FileName = leafName;        // durable display name written to the domain
+            // Keep the same stimulus Id so trials that already reference it stay valid.
+            // Bytes go into the package cache under that Id — Save reads the cache, not disk.
+            if (Id == Guid.Empty)
+                Id = Guid.NewGuid();
+            _packageService.SetImageBytes(Id, bytes, leafName);
+
+            filePath = dialog.FileName; // ephemeral; never written to the domain
+            FileName = leafName;
             PreviewImage = BitmapFromBytes(bytes);
             UpdateFileInfo(bytes);
         }
@@ -109,14 +113,16 @@ public partial class ImageStimulusEditViewModel : StimulusEditViewModel
     /// </summary>
     protected override Stimulus CreateDomainStimulus()
     {
-        // Prefer the short display name already on the VM. Fall back to stripping
-        // any legacy full path that may still sit in filePath from an older package.
-        var leaf = !string.IsNullOrWhiteSpace(FileName)  ? FileName: filePath;
+        // Always persist the leaf name. Full paths are ephemeral (filePath) and must
+        // not land in JSON — Save embeds bytes from the package cache by Id.
+        var leaf = !string.IsNullOrWhiteSpace(FileName)
+            ? Path.GetFileName(FileName)
+            : Path.GetFileName(filePath);
 
         return new ImageStimulus
         {
             Id = Id,
-            FileName = string.IsNullOrWhiteSpace(leaf) ? "Image Stimulus" : leaf,
+            FileName = string.IsNullOrWhiteSpace(leaf) ? "image.png" : leaf,
             AltText = AltText
         };
     }

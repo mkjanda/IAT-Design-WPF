@@ -12,7 +12,7 @@ namespace IAT.Core.Handlers
     /// It shows a confirmation dialog to the user and either sends a redeploy request or closes the WebSocket 
     /// connection based on the user's choice.
     /// </summary>
-    public class IATExistsDeploymentHandler : IRequestHandler<IATExistsDeploymentCommand, TransactionResult>
+    public class IATExistsHandler : IRequestHandler<IATExistsCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly IDialogService _dialogService;
@@ -26,7 +26,7 @@ namespace IAT.Core.Handlers
         /// <param name="dialogService">The dialog service used to show confirmation dialogs to the user.</param>
         /// <param name="stringResourceService">The string resource service used to retrieve localized messages.</param>
         /// <param name="transactionState">The transaction state used to manage the transaction process.</param>
-        public IATExistsDeploymentHandler(IWebSocketService webSocketService, IDialogService dialogService, IStringResourceService stringResourceService, 
+        public IATExistsHandler(IWebSocketService webSocketService, IDialogService dialogService, IStringResourceService stringResourceService, 
             TransactionState transactionState)
         {
             _webSocketService = webSocketService;
@@ -43,7 +43,7 @@ namespace IAT.Core.Handlers
         /// <param name="request">The deployment command containing information about the IAT to be redeployed.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A TransactionResult value indicating whether the redeployment was initiated or the operation was aborted.</returns>
-        public async Task<TransactionResult> Handle(IATExistsDeploymentCommand request, CancellationToken cancellationToken)
+        public async Task<TransactionResult> Handle(IATExistsCommand request, CancellationToken cancellationToken)
         {
             if (_transactionState.Operation == OperationType.TestDeployment)
             {

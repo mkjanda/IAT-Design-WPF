@@ -1,86 +1,85 @@
-﻿using IAT.Core.Enumerations;
+using IAT.Core.Enumerations;
 using IAT.Core.Handlers;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace IAT.Core.Services.Network
+namespace IAT.Core.Services.Network;
+
+/// <summary>
+/// Deletes a deployed IAT (or only its result data) on the server via the WebSocket.
+/// </summary>
+public interface IDeletionService
 {
-    public interface IDeletionService
+    Task<TransactionResult> DeleteTest(string testName, string password);
+    Task<TransactionResult> DeleteTestData(string testName, string password);
+}
+
+/// <summary>
+/// RequestConnection → verify-password → DeleteIAT / DeleteIATData.
+/// Uses <see cref="WebSocketTransaction"/> so each attempt starts and ends on a clean socket
+/// (avoids hang on a second InvalidPassword against a sticky server session).
+/// </summary>
+public sealed class DeletionService : IDeletionService
+{
+    private readonly IWebSocketService _webSocketService;
+    private readonly TransactionState _transactionState;
+    private readonly ILocalStorageService _localStorage;
+
+    public DeletionService(IWebSocketService webSocketService, TransactionState transactionState, ILocalStorageService localStorage)
     {
-        /// <summary>
-        /// Deletes a test with the specified name and password by initiating a transaction request to the server.
-        /// </summary>
-        /// <param name="testName">The name of the test to delete. Cannot be null or empty.</param>
-        /// <param name="password">The password associated with the test. Cannot be null or empty.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating the outcome of the deletion request.</returns>
-        Task<TransactionResult> DeleteTest(string testName, String password);
+        _webSocketService = webSocketService ?? throw new ArgumentNullException(nameof(webSocketService));
+        _transactionState = transactionState ?? throw new ArgumentNullException(nameof(transactionState));
+        _localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
     }
 
-    public class DeletionService : IDeletionService
+    /// <inheritdoc />
+    public async Task<TransactionResult> DeleteTest(string testName, string password)
     {
-        private readonly WebSocketService _webSocketService;
-        private readonly TransactionState _transactionState;
+        if (string.IsNullOrWhiteSpace(testName))
+            throw new ArgumentException("Test name is required.", nameof(testName));
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("Password is required.", nameof(password));
 
-        /// <summary>
-        /// Initializes a new instance of the DeletionService class with the specified WebSocket service 
-        /// and transaction state.
-        /// </summary>
-        /// <param name="webSocketService">The WebSocket service used to send or receive messages related to deletion events. Cannot be null.</param>
-        /// <param name="transactionState">The object that contains state information for the transaction.</param>
-        public DeletionService(WebSocketService webSocketService, TransactionState transactionState)
-        {
-            _webSocketService = webSocketService;
-            _transactionState = transactionState;
-        }
+        _transactionState.Clear();
+        _transactionState.Operation = OperationType.DeleteTest;
+        _transactionState.IATName = testName;
+        _transactionState.Password = password;
+        _transactionState.ProductKey = _localStorage[Field.ProductKey];
 
-
-        /// <summary>
-        /// Initiates the activation process for a product using the specified product key and user information.
-        /// </summary>
-        /// <remarks>This method establishes a connection to the activation service and waits for the
-        /// activation process to complete before returning the result. The method blocks until the activation response
-        /// is received. Ensure that the calling context allows for potential blocking behavior.</remarks>
-        /// <param name="productKey">The unique key identifying the product to activate. Cannot be null or empty.</param>
-        /// <param name="userName">The name of the user requesting activation. Cannot be null or empty.</param>
-        /// <param name="email">The email address associated with the user. Cannot be null or empty.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
-        /// the outcome of the activation request.</returns>
-        public async Task<TransactionResult> DeleteTest(string testName, String password)
-        {
-            _transactionState.IATName = testName;
-            _transactionState.Password = password;
-            _webSocketService.TransactionCommands[TransactionType.NoSuchIAT] = (result) => new NoSuchIATErrorCommand(result);
-            _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (result) => new VerifyPasswordCommand(result);
-            _webSocketService.TransactionCommands[TransactionType.PasswordValid] = (result) => new PasswordValidDeleteCommand(result);
-            var transaction = new TransactionRequest()
-            {
-                Type = TransactionType.RequestConnection
-            };
-            _transactionState.Clear();
-            await _webSocketService.SendMessage(transaction);
-            await _transactionState.Completion.ConfigureAwait(false);
-            return _transactionState.Result;
-        }
-
-        public async Task<TransactionResult> DeleteTestData(string testName, String password)
-        {
-            _transactionState.IATName = testName;
-            _transactionState.Password = password;
-            _webSocketService.TransactionCommands[TransactionType.NoSuchIAT] = (result) => new NoSuchIATErrorCommand(result);
-            _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (result) => new VerifyPasswordCommand(result);
-            _webSocketService.TransactionCommands[TransactionType.PasswordValid] = (result) => new PasswordValidDeleteDataCommand(result);
-            var transaction = new TransactionRequest()
+        return await WebSocketTransaction.ExecuteAsync(
+            _webSocketService,
+            _transactionState,
+            () => _webSocketService.SendMessage(new TransactionRequest
             {
                 Type = TransactionType.RequestConnection,
-            };
-            _transactionState.Clear();
-            await _webSocketService.SendMessage(transaction);
-            await _transactionState.Completion.ConfigureAwait(false);
-            return _transactionState.Result;
-        }
+                ProductKey = _transactionState.ProductKey,
+                IATName = _transactionState.IATName
+            })).ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<TransactionResult> DeleteTestData(string testName, string password)
+    {
+        if (string.IsNullOrWhiteSpace(testName))
+            throw new ArgumentException("Test name is required.", nameof(testName));
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("Password is required.", nameof(password));
+
+        _transactionState.Clear();
+        _transactionState.Operation = OperationType.DeleteResults;
+        _transactionState.IATName = testName;
+        _transactionState.Password = password;
+        _transactionState.ProductKey = _localStorage[Field.ProductKey];
+
+        return await WebSocketTransaction.ExecuteAsync(
+            _webSocketService,
+            _transactionState,
+            () => _webSocketService.SendMessage(new TransactionRequest
+            {
+                Type = TransactionType.RequestConnection,
+                ProductKey = _transactionState.ProductKey,
+                IATName = _transactionState.IATName
+            })).ConfigureAwait(false);
+    }
+
 }

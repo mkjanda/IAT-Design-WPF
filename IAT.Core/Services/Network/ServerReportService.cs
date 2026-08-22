@@ -20,9 +20,7 @@ public interface IServerReportService
 }
 
 /// <summary>
-/// Initiates a RequestConnection → RequestServerReport exchange and stores the resulting
-/// <see cref="ServerReport"/> on <see cref="TransactionState"/>.
-/// Does not tear down the WebSocket — callers own connection lifetime.
+/// RequestConnection → RequestServerReport on a fresh socket per call.
 /// </summary>
 public sealed class ServerReportService : IServerReportService
 {
@@ -45,36 +43,20 @@ public sealed class ServerReportService : IServerReportService
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("Email is required.", nameof(email));
 
-        // Operation-specific handlers must be installed per call — other network services
-        // overwrite the same TransactionType keys for their own workflows.
-        _webSocketService.TransactionCommands[TransactionType.RequestTransmission] =
-            request => new RequestTransmissionServerReportCommand(request);
-
         _transactionState.Clear();
+        _transactionState.Operation = OperationType.ServerReport;
         _transactionState.Email = email;
         _transactionState.ProductKey = productKey;
 
-        // Ensure the socket is up; do not close it when the report arrives.
-        _webSocketService.Start();
-
-        await _webSocketService.SendMessage(new TransactionRequest
-        {
-            Type = TransactionType.RequestConnection,
-            ProductKey = productKey,
-            Email = email
-        });
-
-        try
-        {
-            // Preferred async wait — Completion is signaled by TransactionState.SetResult.
-            return await _transactionState.Completion
-                .WaitAsync(ReportTimeout)
-                .ConfigureAwait(false);
-        }
-        catch (TimeoutException)
-        {
-            _transactionState.SetResult(TransactionResult.CannotConnect);
-            return TransactionResult.CannotConnect;
-        }
+        return await WebSocketTransaction.ExecuteAsync(
+            _webSocketService,
+            _transactionState,
+            () => _webSocketService.SendMessage(new TransactionRequest
+            {
+                Type = TransactionType.RequestConnection,
+                ProductKey = productKey,
+                Email = email
+            }),
+            ReportTimeout).ConfigureAwait(false);
     }
 }

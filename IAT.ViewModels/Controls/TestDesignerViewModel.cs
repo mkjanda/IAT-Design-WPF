@@ -249,16 +249,19 @@ namespace IAT.ViewModels.Controls
 
         /// <summary>
         /// Pushes the new document state into every tab ViewModel.
+        /// BlockEditor runs last so its trial/instruction preview is the final
+        /// state on the shared LayoutViewModel after open/new.
         /// </summary>
         private void NotifyDocumentReset()
         {
             // Caller is responsible for _suppressDirty while the document is being replaced.
             LayoutEditor.ReloadGeometry();
-            BlockEditor.OnDocumentReset();
             TrialsManager.OnDocumentReset();
             StimuliManager.OnDocumentReset();
             SurveyManager.OnDocumentReset();
             InstructionManager.OnDocumentReset();
+            // Last: select first block + first sequence row and push into the layout stage.
+            BlockEditor.OnDocumentReset();
         }
 
         private static string SanitizeFileName(string? name)

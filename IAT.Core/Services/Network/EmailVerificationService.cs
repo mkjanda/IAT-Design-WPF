@@ -61,7 +61,6 @@ namespace IAT.Core.Services.Network
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionEMailVerificationCommand(request);
             _webSocketService.TransactionCommands[TransactionType.TransactionSuccess] = (request) => new EMailVerifiedCommand(request);
         }
 
@@ -76,19 +75,24 @@ namespace IAT.Core.Services.Network
         /// <param name="email">The email address to verify. Cannot be null or empty.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification process.</returns>
-        async public Task<TransactionResult> VerifyEmail(string productKey, string email)
+        public async Task<TransactionResult> VerifyEmail(string productKey, string email)
         {
-            _webSocketService.Start();
+            _webSocketService.TransactionCommands[TransactionType.TransactionSuccess] =
+                request => new EMailVerifiedCommand(request);
+
             _transactionState.Clear();
+            _transactionState.Operation = OperationType.EMailVerification;
             _transactionState.Email = email;
             _transactionState.ProductKey = productKey;
-            await _webSocketService.SendMessage(new TransactionRequest()
-            {
-                Type = TransactionType.RequestConnection,
-                ProductKey = productKey
-            });
-            await _transactionState.Completion.ConfigureAwait(false);
-            return _transactionState.Result;
+
+            return await WebSocketTransaction.ExecuteAsync(
+                _webSocketService,
+                _transactionState,
+                () => _webSocketService.SendMessage(new TransactionRequest
+                {
+                    Type = TransactionType.RequestConnection,
+                    ProductKey = productKey
+                })).ConfigureAwait(false);
         }
         
         /// <summary>

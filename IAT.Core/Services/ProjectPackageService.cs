@@ -1,141 +1,153 @@
-﻿using com.sun.corba.se.impl.copyobject;
 using IAT.Core.Domain;
 using IAT.Core.Exceptions;
-using IAT.Core.Models;
 using System.IO;
 using System.IO.Packaging;
 using System.Text.Json;
-using System.Windows.Media.Imaging;
 
 namespace IAT.Core.Services;
 
 /// <summary>
-/// Defines methods for saving and loading project packages asynchronously.
+/// Saves and loads IAT test projects as OPC packages, keeping image bytes in an in-memory cache
+/// keyed by stimulus Id so save never depends on the original disk path still existing.
 /// </summary>
-/// <remarks>Implementations of this interface provide functionality to persist and retrieve project data,
-/// typically to and from a file. Methods are asynchronous and support cancellation via a cancellation token.</remarks>
 public interface IProjectPackageService
 {
-    /// <summary>
-    /// Saves the specified IAT test project to a file at the given path asynchronously.        
-    /// </summary>
-    /// <param name="test">The IAT test project to save.</param>
-    /// <param name="filePath">The file path where the test will be saved.</param>
-    /// <param name="ct">A cancellation token that can be used to cancel the save operation.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
     Task SaveProjectAsync(IatTest test, string filePath, CancellationToken ct = default);
-
-    /// <summary>
-    /// Loads an IAT test project from the specified file path asynchronously.
-    /// </summary>
-    /// <param name="filePath">The file path from which to load the test project.</param>
-    /// <param name="ct">A cancellation token that can be used to cancel the load operation.</param>
-    /// <returns>A task that represents the asynchronous load operation. The task result contains the loaded IAT test project.</returns>    
     Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct = default);
 
     /// <summary>
-    /// Adds an image to the cache and returns a unique identifier for the stored image. This method is asynchronous and allows for cancellation via a cancellation token.
+    /// Caches image bytes under a new Id. Prefer <see cref="SetImageBytes"/> when updating an existing stimulus.
     /// </summary>
-    /// <param name="imageData">The byte array containing the image data to be added to the cache.</param>
-    /// <param name="originalFileName">The original file name of the image being added.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the unique identifier for the stored image.</returns>
     Task<Guid> AddImageAsync(byte[] imageData, string originalFileName);
 
     /// <summary>
-    /// Retrieves the byte array of an image from the cache using its unique identifier.
+    /// Stores or replaces image bytes under an existing stimulus Id (the normal path after the user picks a file).
     /// </summary>
-    /// <param name="stimulusId">The unique identifier of the image to retrieve.</param>
-    /// <returns>A byte array containing the image data.</returns>
+    void SetImageBytes(Guid stimulusId, byte[] imageData, string originalFileName);
+
     byte[] GetImageBytes(Guid stimulusId);
-
-    /// <summary>
-    /// Gets the image type associated with the specified stimulus identifier.
-    /// </summary>
-    /// <param name="stimulusId">The unique identifier of the stimulus for which to retrieve the image type.</param>
-    /// <returns>A string representing the image type of the specified stimulus. Returns an empty string if the stimulus does not
-    /// have an associated image type.</returns>
     string GetImageType(Guid stimulusId);
-
-    /// <summary>
-    /// Removes the image associated with the specified stimulus identifier.
-    /// </summary>
-    /// <param name="stimulusId">The unique identifier of the stimulus whose image is to be removed.</param>
     void RemoveImage(Guid stimulusId);
 }
 
-/// <summary>
-/// Provides functionality to save and load IAT test projects as package files.
-/// </summary>
-/// <remarks>This service serializes and deserializes IAT test data, including associated resources, to and from a
-/// file-based package format. It is intended for use in applications that require persistent storage and retrieval of
-/// IAT test projects.</remarks>
 public class ProjectPackageService : IProjectPackageService
 {
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
-        Converters =
-    {
-        new KeyedDirectionJsonConverter()          
-    }
+        Converters = { new KeyedDirectionJsonConverter() }
     };
-    
+
     private readonly Dictionary<Guid, byte[]> _imageCache = new();
-    private readonly Dictionary<Guid, string> _imageTypes = new();
+    private readonly Dictionary<Guid, string> _imageTypes = new();   // extension without dot, e.g. "png"
+    private readonly Dictionary<Guid, string> _originalNames = new(); // leaf file name only
     private readonly IImagePackageService _imagePackageService;
-    private readonly Dictionary<Guid, string> _originalNames = new();
 
-    /// <summary>
-    /// Initializes a new instance of the ProjectPackageService class with the specified image package service.
-    /// </summary>
-    /// <param name="imagePackageService">The image package service to be used by this instance. Cannot be null.</param>
-    public ProjectPackageService(IImagePackageService imagePackageService) => _imagePackageService = imagePackageService;
+    public ProjectPackageService(IImagePackageService imagePackageService) =>
+        _imagePackageService = imagePackageService ?? throw new ArgumentNullException(nameof(imagePackageService));
 
-    /// <summary>
-    /// Asynchronously saves the specified IAT test to a file at the given path.
-    /// </summary>
-    /// <remarks>The method validates the test before saving. The file is created or overwritten at the
-    /// specified path. The operation can be cancelled via the provided cancellation token.</remarks>
-    /// <param name="test">The IAT test to be saved. Must be a fully validated test instance.</param>
-    /// <param name="filePath">The file path where the test will be saved. If the file exists, it will be overwritten.</param>
-    /// <param name="ct">A cancellation token that can be used to cancel the save operation.</param>
-    /// <returns>A task that represents the asynchronous save operation.</returns>
-    public async Task SaveProjectAsync(IatTest test, string filePath, CancellationToken ct)
+    /// <inheritdoc />
+    public async Task SaveProjectAsync(IatTest test, string filePath, CancellationToken ct = default)
     {
-        // Project save persists work-in-progress. Full structural validation belongs at Deploy time,
-        // not when the author hits Save on an incomplete design.
         ArgumentNullException.ThrowIfNull(test);
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentException("File path is required.", nameof(filePath));
 
         using var package = Package.Open(filePath, FileMode.Create);
 
-        // Create and serialize the main test JSON part
-        Uri testPartUri = PackUriHelper.CreatePartUri(new Uri("test.json", UriKind.Relative));
-        PackagePart testPart = package.CreatePart(testPartUri, "application/json");
-        using (Stream testStream = testPart.GetStream())
+        var testPartUri = PackUriHelper.CreatePartUri(new Uri("test.json", UriKind.Relative));
+        var testPart = package.CreatePart(testPartUri, "application/json");
+        await using (var testStream = testPart.GetStream())
         {
-            await JsonSerializer.SerializeAsync(testStream, test, _jsonOptions, ct);
+            await JsonSerializer.SerializeAsync(testStream, test, _jsonOptions, ct).ConfigureAwait(false);
         }
 
-        foreach (var stim in test.AllStimuli) {
+        foreach (var stim in test.AllStimuli)
+        {
             if (stim is ImageStimulus imageStim)
             {
-                // Assume sourceFilePath is available (e.g., from stimulus.FileName or a lookup)
-                string sourceFilePath = GetSourceFilePath(imageStim);
-                await _imagePackageService.ImportImageStimulusAsync(imageStim, sourceFilePath, package, ct);
-            } else if (stim is TextStimulus textStim)
-                await _imagePackageService.ImportTextStimulusAsync(textStim, package, ct);
+                await EmbedImageAsync(imageStim, package, ct).ConfigureAwait(false);
+            }
+            else if (stim is TextStimulus textStim)
+            {
+                await _imagePackageService.ImportTextStimulusAsync(textStim, package, ct).ConfigureAwait(false);
+            }
         }
-
     }
 
     /// <summary>
-    /// Asynchronously loads an IAT test project from the specified file path.
+    /// Embeds one image into the package. Resolution order:
+    /// 1. In-memory cache (bytes loaded at Add / Load / Change Image) — preferred, no disk access.
+    /// 2. Absolute path still on disk (legacy FileName that stored a full path).
+    /// Never resolves a leaf name against the process working directory.
     /// </summary>
-    /// <param name="filePath">The path to the project file to load. The file must exist and be accessible.</param>
-    /// <param name="ct">A cancellation token that can be used to cancel the asynchronous operation.</param>
-    /// <returns>A task that represents the asynchronous load operation. The task result contains the loaded IAT test project.</returns>
+    private async Task EmbedImageAsync(ImageStimulus imageStim, Package package, CancellationToken ct)
+    {
+        var cached = GetImageBytes(imageStim.Id);
+        if (cached.Length > 0)
+        {
+            var ext = GetExtensionFor(imageStim);
+            await _imagePackageService
+                .ImportImageStimulusFromBytesAsync(imageStim, cached, ext, package, ct)
+                .ConfigureAwait(false);
+            // Normalize domain to leaf name so JSON never carries a machine-local path.
+            imageStim.FileName = Path.GetFileName(
+                string.IsNullOrWhiteSpace(imageStim.FileName)
+                    ? (_originalNames.GetValueOrDefault(imageStim.Id) ?? $"image{ext}")
+                    : imageStim.FileName);
+            return;
+        }
+
+        var diskPath = ResolveExistingAbsolutePath(imageStim);
+        if (diskPath is not null)
+        {
+            await _imagePackageService
+                .ImportImageStimulusAsync(imageStim, diskPath, package, ct)
+                .ConfigureAwait(false);
+
+            // Cache for subsequent saves in this session and normalize FileName to leaf.
+            var bytes = await File.ReadAllBytesAsync(diskPath, ct).ConfigureAwait(false);
+            SetImageBytes(imageStim.Id, bytes, diskPath);
+            imageStim.FileName = Path.GetFileName(diskPath);
+            return;
+        }
+
+        throw new FileNotFoundException(
+            $"Image data for stimulus '{imageStim.Id}' is not in the package cache and no absolute source file is available. " +
+            $"Stored FileName was '{imageStim.FileName}'. Re-add the image or open the original .iat package.",
+            imageStim.FileName);
+    }
+
+    /// <summary>
+    /// Returns an absolute path that still exists on disk, or null.
+    /// Leaf names and relative paths are intentionally rejected — they resolve against cwd and are wrong.
+    /// </summary>
+    private static string? ResolveExistingAbsolutePath(ImageStimulus imageStim)
+    {
+        var candidate = imageStim.FileName;
+        if (string.IsNullOrWhiteSpace(candidate))
+            return null;
+
+        if (Path.IsPathRooted(candidate) && File.Exists(candidate))
+            return candidate;
+
+        return null;
+    }
+
+    private string GetExtensionFor(ImageStimulus imageStim)
+    {
+        var type = GetImageType(imageStim.Id);
+        if (!string.IsNullOrWhiteSpace(type))
+            return type.StartsWith('.') ? type : "." + type;
+
+        var fromName = Path.GetExtension(imageStim.FileName);
+        if (!string.IsNullOrWhiteSpace(fromName))
+            return fromName;
+
+        return ".png";
+    }
+
+    /// <inheritdoc />
     public async Task<IatTest> LoadProjectAsync(string filePath, CancellationToken ct = default)
     {
         using var package = Package.Open(filePath, FileMode.Open);
@@ -145,98 +157,86 @@ public class ProjectPackageService : IProjectPackageService
             throw new FileNotFoundException("Test data not found in package.");
 
         await using var testStream = package.GetPart(testPartUri).GetStream();
-        var test = await JsonSerializer.DeserializeAsync<IatTest>(testStream, _jsonOptions, ct)
+        var test = await JsonSerializer.DeserializeAsync<IatTest>(testStream, _jsonOptions, ct).ConfigureAwait(false)
                    ?? throw new JsonException("Failed to deserialize IatTest.");
 
-        // 1. Populate image cache while the package is still open
+        // Populate image cache while the package is still open so subsequent Save works offline.
         foreach (var stim in test.Stimuli.OfType<ImageStimulus>())
         {
-            foreach (var ext in new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif" })
+            foreach (var ext in new[] { ".png", ".jpg", ".jpeg", ".bmp", ".gif" })
             {
                 var uri = PackUriHelper.CreatePartUri(new Uri($"images/{stim.Id}{ext}", UriKind.Relative));
                 if (!package.PartExists(uri)) continue;
 
                 await using var partStream = package.GetPart(uri).GetStream();
                 using var ms = new MemoryStream();
-                await partStream.CopyToAsync(ms, ct);
-                _imageCache[stim.Id] = ms.ToArray();
+                await partStream.CopyToAsync(ms, ct).ConfigureAwait(false);
+                var bytes = ms.ToArray();
+                _imageCache[stim.Id] = bytes;
                 _imageTypes[stim.Id] = ext.TrimStart('.');
+                _originalNames[stim.Id] = string.IsNullOrWhiteSpace(stim.FileName)
+                    ? $"image{ext}"
+                    : Path.GetFileName(stim.FileName);
                 stim.PackageUri = uri;
+                // Never keep a machine-local full path in the domain after load.
+                stim.FileName = Path.GetFileName(stim.FileName);
                 break;
             }
         }
 
-        // 2. Rebuild the internal lookup caches
         test.RebuildCaches();
 
-        // 3. Wire the back-references that the domain expects
         foreach (var stim in test.Stimuli)
             stim.IatTest = test;
         foreach (var block in test.Blocks)
             block.IatTest = test;
 
-
         return test;
     }
 
-    /// <summary>
-    /// Asynchronously adds an image to the cache and returns a unique identifier for the stored image.
-    /// </summary>
-    /// <param name="imageData">The binary data of the image to add. Cannot be null or empty.</param>
-    /// <param name="originalFileName">The original file name of the image, including its extension. Used to determine the image type.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the unique identifier assigned to
-    /// the stored image.</returns>
-    /// <exception cref="ArgumentException">Thrown if imageData is null or empty.</exception>
+    /// <inheritdoc />
     public Task<Guid> AddImageAsync(byte[] imageData, string originalFileName)
     {
-        if (imageData == null || imageData.Length == 0)
-        {
+        if (imageData is null || imageData.Length == 0)
             throw new ArgumentException("Image data cannot be null or empty.", nameof(imageData));
-        }
+
         var imageId = Guid.NewGuid();
-        _imageCache[imageId] = imageData; _imageTypes[imageId] = originalFileName.Reverse().TakeWhile(ch => ch != '.').Reverse().ToString()?.ToLowerInvariant() ?? string.Empty;
-        _originalNames[imageId] = originalFileName;
+        SetImageBytes(imageId, imageData, originalFileName);
         return Task.FromResult(imageId);
     }
 
-
-    /// <summary>
-    /// Retrieves the image data associated with the specified stimulus identifier.
-    /// </summary>
-    /// <param name="stimulusId">The unique identifier of the stimulus whose image data is to be retrieved.</param>
-    /// <returns>A read-only memory region containing the image bytes for the specified stimulus. Returns an empty memory region
-    /// if no image is found for the given identifier.</returns>
-    public byte[] GetImageBytes(Guid stimulusId) => _imageCache.GetValueOrDefault(stimulusId) ?? Array.Empty<byte>();
-
-    /// <summary>
-    /// Retrieves the image type associated with the specified stimulus identifier.
-    /// </summary>
-    /// <param name="stimulusId">The unique identifier of the stimulus for which to retrieve the image type.</param>
-    /// <returns>A string representing the image type associated with the specified stimulus identifier, or null if no image type
-    /// is found.</returns>
-    public string GetImageType(Guid stimulusId) => _imageTypes.GetValueOrDefault(stimulusId) ?? string.Empty;
-
-
-
-
-    /// <summary>
-    /// Removes the image data associated with the specified stimulus ID from the cache. This is useful for managing memory and ensuring that 
-    /// outdated or unused image data does not consume resources unnecessarily.
-    /// </summary>
-    /// <param name="stimulusId">The ID of the stimulus whose image data should be removed from the cache.</param>
-    public void RemoveImage(Guid stimulusId)
+    /// <inheritdoc />
+    public void SetImageBytes(Guid stimulusId, byte[] imageData, string originalFileName)
     {
-        if (_imageCache.ContainsKey(stimulusId))
-        {
-            _imageCache.Remove(stimulusId);
-            _imageTypes.Remove(stimulusId);
-            _originalNames.Remove(stimulusId);
-        }
+        if (imageData is null || imageData.Length == 0)
+            throw new ArgumentException("Image data cannot be null or empty.", nameof(imageData));
+
+        var leaf = string.IsNullOrWhiteSpace(originalFileName)
+            ? "image.png"
+            : Path.GetFileName(originalFileName);
+
+        var ext = Path.GetExtension(leaf);
+        if (string.IsNullOrWhiteSpace(ext))
+            ext = ".png";
+
+        _imageCache[stimulusId] = imageData;
+        _imageTypes[stimulusId] = ext.TrimStart('.').ToLowerInvariant();
+        _originalNames[stimulusId] = leaf;
     }
 
+    /// <inheritdoc />
+    public byte[] GetImageBytes(Guid stimulusId) =>
+        _imageCache.GetValueOrDefault(stimulusId) ?? Array.Empty<byte>();
 
-    private string GetSourceFilePath(ImageStimulus stimulus)
+    /// <inheritdoc />
+    public string GetImageType(Guid stimulusId) =>
+        _imageTypes.GetValueOrDefault(stimulusId) ?? string.Empty;
+
+    /// <inheritdoc />
+    public void RemoveImage(Guid stimulusId)
     {
-        return stimulus.FileName;
+        _imageCache.Remove(stimulusId);
+        _imageTypes.Remove(stimulusId);
+        _originalNames.Remove(stimulusId);
     }
 }

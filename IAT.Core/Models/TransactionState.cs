@@ -228,11 +228,20 @@ namespace IAT.Core.Models
         public TestResults TestResults { get; set; } = new TestResults();
 
         /// <summary>
-        /// Resets all user and session-related properties to their default values and arms a fresh
-        /// <see cref="Completion"/> task for the next transaction.
+        /// Resets transaction-scoped fields and arms a fresh <see cref="Completion"/> task.
         /// </summary>
-        /// <remarks>Call this method to clear sensitive information and restore the object to its initial
-        /// state before reuse.</remarks>
+        /// <remarks>
+        /// <para>
+        /// Does <b>not</b> clear <see cref="ServerReport"/>. That object is account-level UI state
+        /// (Deploy tab list + quota bar). Wiping it on every results/delete/deploy start was firing
+        /// <see cref="ServerReportChanged"/> with an empty report and depopulating the tab until
+        /// the user clicked Refresh.
+        /// </para>
+        /// <para>
+        /// Call <see cref="ClearServerReport"/> only when the account session itself is ending
+        /// (logout / product-key change), not between ordinary transactions.
+        /// </para>
+        /// </remarks>
         public void Clear()
         {
             Operation = OperationType.Unset;
@@ -248,13 +257,21 @@ namespace IAT.Core.Models
             RSA = new EncryptedRSAKey();
             Result = TransactionResult.Unset;
             ActivationKey = string.Empty;
-            ServerReport = new ServerReport();
+            // Intentionally keep ServerReport — see remarks.
             TestResults = new TestResults();
             NumResults = 0;
             ClientId = 0;
             DeploymentId = 0;
             UploadTimeMillis = 0;
             ResetCompletion();
+        }
+
+        /// <summary>
+        /// Drops the cached server report and notifies listeners. Use on logout / account switch only.
+        /// </summary>
+        public void ClearServerReport()
+        {
+            ServerReport = new ServerReport();
         }
     }
 }

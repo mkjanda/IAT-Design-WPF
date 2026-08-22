@@ -42,7 +42,6 @@ namespace IAT.Core.Services.Network
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _webSocketService.TransactionCommands[TransactionType.RequestTransmission] = (request) => new RequestTransmissionResendEMailCommand(request);
         }
 
         /// <summary>
@@ -53,16 +52,19 @@ namespace IAT.Core.Services.Network
         /// <returns>A task that represents the asynchronous operation. The task result contains the transaction result.</returns>
         public async Task<TransactionResult> ResendEmailVerification(string productKey, string email)
         {
-            _webSocketService.Start();
+            _transactionState.Clear();
+            _transactionState.Operation = OperationType.ResendEmail;
             _transactionState.Email = email;
             _transactionState.ProductKey = productKey;
-            await _webSocketService.SendMessage(new TransactionRequest()
-            {
-                Type = TransactionType.RequestConnection,
-                ProductKey = productKey
-            });
-            await _transactionState.Completion.ConfigureAwait(false);
-            return _transactionState.Result;
+
+            return await WebSocketTransaction.ExecuteAsync(
+                _webSocketService,
+                _transactionState,
+                () => _webSocketService.SendMessage(new TransactionRequest
+                {
+                    Type = TransactionType.RequestConnection,
+                    ProductKey = productKey
+                })).ConfigureAwait(false);
         }
     }
 }

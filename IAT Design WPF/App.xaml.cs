@@ -74,6 +74,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<IGetItemSlidesService, GetItemSlidesService>();
             services.AddSingleton<IResendEmailVerificationService, ResendEmailVerificationService>();
             services.AddSingleton<IResultRetrievalService, ResultRetrievalService>();
+            services.AddSingleton<IDeletionService, DeletionService>();
             services.AddSingleton<IServerReportService, ServerReportService>();
             services.AddSingleton<ITestDeploymentService, TestDeploymentService>();
             services.AddSingleton<IBlockExportProcessor, BlockExportProcessor>();

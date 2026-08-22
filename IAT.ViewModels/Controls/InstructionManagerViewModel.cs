@@ -328,12 +328,18 @@ public partial class InstructionManagerViewModel : ObservableObject
 
     /// <summary>
     /// Called when the underlying document is reset or replaced.
+    /// Resets this tab's selection only — does <b>not</b> clear the shared
+    /// <see cref="LayoutViewModel"/> stage. Clearing here wiped the Blocks-tab
+    /// trial preview that <c>BlockEditor.OnDocumentReset</c> had just applied
+    /// (same LayoutViewModel instance is shared across tabs).
+    /// Stage content is owned by whichever tab is visible; Instructions re-paints
+    /// on its own IsVisibleChanged / selection path.
     /// </summary>
     public void OnDocumentReset()
     {
         SelectedScreen = null;
         BlockAssignments.Clear();
-        RefreshInstructionPreview();
+        // Intentionally no RefreshInstructionPreview / ClearStageForInstructionsIdle.
     }
 
     // ── Selection changed ──────────────────────────────────────────────────

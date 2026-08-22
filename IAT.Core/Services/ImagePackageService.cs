@@ -22,14 +22,16 @@ public interface IImagePackageService
     Task ImportTextStimulusAsync(TextStimulus stimulus, Package package, CancellationToken ct);
 
     /// <summary>
-    /// Imports an image stimulus into the specified package asynchronously.
+    /// Imports an image stimulus into the specified package from a disk file.
+    /// Prefer <see cref="ImportImageStimulusFromBytesAsync"/> when the bytes are already in memory.
     /// </summary>
-    /// <param name="stimulus">The image stimulus to be imported. Cannot be null.</param>
-    /// <param name="sourceFilePath">The full file path to the source image to import. Must refer to an existing file.</param>
-    /// <param name="package">The package into which the image stimulus will be imported. Cannot be null.</param>
-    /// <param name="ct">A cancellation token that can be used to cancel the import operation.</param>
-    /// <returns>A task that represents the asynchronous import operation.</returns>
     Task ImportImageStimulusAsync(ImageStimulus stimulus, string sourceFilePath, Package package, CancellationToken ct);
+
+    /// <summary>
+    /// Imports an image stimulus into the package from an in-memory byte buffer (the normal save path).
+    /// </summary>
+    /// <param name="extension">File extension including the dot (e.g. ".png"). Used for content-type and part URI.</param>
+    Task ImportImageStimulusFromBytesAsync(ImageStimulus stimulus, byte[] imageBytes, string extension, Package package, CancellationToken ct);
 
     /// <summary>
     /// Asynchronously retrieves a resized bitmap image for the specified stimulus using the given dimensions and
@@ -100,35 +102,71 @@ public class ImagePackageService : IImagePackageService
     /// <exception cref="ValidationException">Thrown if the specified stimulus is not valid.</exception>
     public async Task ImportImageStimulusAsync(ImageStimulus stimulus, string sourceFilePath, Package package, CancellationToken ct)
     {
-        // Validate the stimulus
+        if (string.IsNullOrWhiteSpace(sourceFilePath) || !File.Exists(sourceFilePath))
+            throw new FileNotFoundException("Image source file not found.", sourceFilePath);
+
+        await using var sourceStream = File.OpenRead(sourceFilePath);
+        var extension = Path.GetExtension(sourceFilePath);
+        await WriteImagePartAsync(stimulus, sourceStream, extension, package, ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task ImportImageStimulusFromBytesAsync(
+        ImageStimulus stimulus, byte[] imageBytes, string extension, Package package, CancellationToken ct)
+    {
+        if (imageBytes is null || imageBytes.Length == 0)
+            throw new ArgumentException("Image bytes cannot be empty.", nameof(imageBytes));
+
+        await using var sourceStream = new MemoryStream(imageBytes, writable: false);
+        await WriteImagePartAsync(stimulus, sourceStream, extension, package, ct).ConfigureAwait(false);
+    }
+
+    private static async Task WriteImagePartAsync(
+        ImageStimulus stimulus, Stream sourceStream, string extension, Package package, CancellationToken ct)
+    {
         var validationResult = stimulus.Validate();
         if (!validationResult.IsValid)
-        {
-            throw new ValidationException($"Invalid ImageStimulus: " + String.Join("|", validationResult.Errors));
-        }
+            throw new ValidationException("Invalid ImageStimulus: " + string.Join("|", validationResult.Errors));
 
-        // Create a URI for the image part (e.g., /images/{ImageId}.png)
-        string extension = Path.GetExtension(sourceFilePath).ToLowerInvariant();
-        string contentType = extension switch
+        extension = NormalizeExtension(extension);
+        var contentType = extension switch
         {
             ".png" => "image/png",
             ".jpg" or ".jpeg" => "image/jpeg",
             ".bmp" => "image/bmp",
             ".gif" => "image/gif",
-            _ => "image/png" // Default fallback
+            _ => "image/png"
         };
-        Uri imagePartUri = PackUriHelper.CreatePartUri(new Uri($"images/{stimulus.Id}{extension}", UriKind.Relative));
 
-        // Create the package part and copy the file
-        PackagePart imagePart = package.CreatePart(imagePartUri, contentType);
-        using (Stream sourceStream = File.OpenRead(sourceFilePath))
-        using (Stream partStream = imagePart.GetStream())
+        var imagePartUri = PackUriHelper.CreatePartUri(new Uri($"images/{stimulus.Id}{extension}", UriKind.Relative));
+
+        // Replace an existing part on re-save so we never hit "part already exists".
+        if (package.PartExists(imagePartUri))
+            package.DeletePart(imagePartUri);
+
+        var imagePart = package.CreatePart(imagePartUri, contentType);
+        await using (var partStream = imagePart.GetStream())
         {
-            await sourceStream.CopyToAsync(partStream, ct);
+            if (sourceStream.CanSeek)
+                sourceStream.Position = 0;
+            await sourceStream.CopyToAsync(partStream, ct).ConfigureAwait(false);
         }
 
-        // Optionally, set a PackageUri on the stimulus for reference (add this property to ImageStimulus if needed)
         stimulus.PackageUri = imagePartUri;
+    }
+
+    private static string NormalizeExtension(string? extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension))
+            return ".png";
+        extension = extension.Trim().ToLowerInvariant();
+        if (!extension.StartsWith('.'))
+            extension = "." + extension;
+        return extension switch
+        {
+            ".jpeg" => ".jpg",
+            _ => extension
+        };
     }
 
     /// <summary>

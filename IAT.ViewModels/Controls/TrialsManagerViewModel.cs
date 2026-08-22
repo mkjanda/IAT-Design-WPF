@@ -345,6 +345,7 @@ public partial class TrialsManagerViewModel : ObservableObject
 
     /// <summary>
     /// Called by the shell after New/Open so the Trials tab reflects the current document.
+    /// Selects the first block and its first trial so the list is not left empty-selected.
     /// </summary>
     public void OnDocumentReset()
     {
@@ -356,7 +357,11 @@ public partial class TrialsManagerViewModel : ObservableObject
             NumPresentations = 0;
             LeftKeyText = string.Empty;
             RightKeyText = string.Empty;
+            return;
         }
+
+        // OnSelectedBlockChanged already reloaded Trials; pick the first row.
+        SelectedTrial = Trials.FirstOrDefault();
     }
 }
 

@@ -107,15 +107,48 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Header row -->
+                    <!-- Header row: title · password · actions -->
                     <Border Grid.Row="0" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1" Padding="12,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Deployed Tests" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+
+                            <TextBlock Text="Deployed Tests" FontSize="15" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="0,0,16,0"/>
+
+                            <!-- Password for the selected IAT (auto-filled from AppData when available) -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                        VerticalAlignment="Center" Margin="0,0,12,0">
+                                <TextBlock Text="Password" Foreground="#AAAAAA" FontSize="12"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox Text="{Binding SelectedIatPassword, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource DarkTextBox}"
+                                         Width="160" Height="28" Padding="8,2"
+                                         VerticalContentAlignment="Center"
+                                         IsEnabled="{Binding SelectedDeployedTest, Converter={StaticResource NullToBool}}"
+                                         ToolTip="IAT password. Auto-filled from local AppData when this machine previously deployed the test."/>
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                           Foreground="#7CB342"
+                                           ToolTip="Password was loaded from AppData for this IAT.">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value=""/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasStoredPassword}" Value="True">
+                                                    <Setter Property="Text" Value="saved"/>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Content="Retrieve" Command="{Binding RetrieveResultsCommand}"
                                         Style="{StaticResource SecondaryButton}"
                                         Margin="0,0,6,0" MinWidth="72"/>
