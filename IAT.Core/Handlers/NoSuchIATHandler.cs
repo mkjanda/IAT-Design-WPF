@@ -45,10 +45,14 @@ namespace IAT.Core.Handlers
             object o;
             if (_transactionState.Operation == OperationType.TestDeployment)
             {
-                o = new TransactionRequest()
+                await _webSocketService.SendMessage(new TransactionRequest()
                 {
-                    Type = TransactionType.RequestIATUpload
-                };
+                    Type = TransactionType.RequestIATUpload,
+                    ProductKey = _transactionState.ProductKey,
+                    IATName = _transactionState.IATName,
+                    ClientId = _transactionState.ClientId
+                });
+                return TransactionResult.Unset;
             } else if (_transactionState.Operation == OperationType.RetrieveItemSlides ||
                 _transactionState.Operation == OperationType.RetrieveResults ||
                 _transactionState.Operation == OperationType.DeleteResults ||
@@ -58,7 +62,7 @@ namespace IAT.Core.Handlers
                 _transactionState.SetResult(TransactionResult.NoSuchIAT);
                 return TransactionResult.NoSuchIAT;
             }
-            _transactionState.Result = TransactionResult.InvalidRequest;
+            _transactionState.SetResult(TransactionResult.InvalidRequest)   ;
             return TransactionResult.InvalidRequest;
         }
     }

@@ -264,7 +264,7 @@ public partial class DeployManagerViewModel : ObservableObject
             // Ensure socket is up for the report exchange; leave it open afterwards.
             _webSocket.Start();
 
-            var result = await _serverReportService.RetrieveServerReport(productKey, email);
+            var result = await _serverReportService.RetrieveServerReport(productKey, email, CancellationToken.None);
 
             if (!_isActive)
                 return; // Tab left while the request was in flight.
@@ -435,7 +435,7 @@ public partial class DeployManagerViewModel : ObservableObject
         try
         {
             _webSocket.Start();
-            var doc = await _resultService.GetResults(productKey, target.Name, password);
+            var doc = await _resultService.GetResults(productKey, target.Name, password, CancellationToken.None);
 
             if (!_isActive) return;
 
@@ -454,8 +454,8 @@ public partial class DeployManagerViewModel : ObservableObject
             }
 
             // Keep a copy on transaction state for any downstream consumers.
-            if (doc is not null && doc.Root is not null)
-                _transactionState.TestResultsDocument = doc;
+//            if (doc is not null && doc.Root is not null)
+  //              _transactionState.TestResultsDocument = doc;
 
             target.Status = target.ResultCount > 0 ? "Ready" : "No results";
             if (ReferenceEquals(SelectedDeployedTest, target))
@@ -511,7 +511,7 @@ public partial class DeployManagerViewModel : ObservableObject
         try
         {
             _webSocket.Start();
-            var result = await _deletionService.DeleteTestData(target.Name, password);
+            var result = await _deletionService.DeleteTestData(target.Name, password, CancellationToken.None);
 
             if (!_isActive) return;
 
@@ -573,7 +573,7 @@ public partial class DeployManagerViewModel : ObservableObject
         try
         {
             _webSocket.Start();
-            var result = await _deletionService.DeleteTest(targetName, password);
+            var result = await _deletionService.DeleteTest(targetName, password, CancellationToken.None);
 
             if (!_isActive) return;
 

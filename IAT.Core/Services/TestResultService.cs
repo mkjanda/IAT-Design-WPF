@@ -59,13 +59,14 @@ namespace IAT.Core.Services
         /// <exception cref="NullReferenceException">Thrown if the configuration or result data cannot be deserialized from the response.</exception>
         public void Retrieve(String iatName, String password)
         {
-            _ = _resultRetrievalService.GetResults(_localStorageService[Field.ProductKey], iatName, password).ContinueWith(t =>
+            _ = _resultRetrievalService.GetResults(_localStorageService[Field.ProductKey], iatName, password, CancellationToken.None).ContinueWith(t =>
             {
-                var xDoc = t.Result;
-                var ser = new XmlSerializer(typeof(ConfigFile.IATConfigFile), new XmlRootAttribute("ConfigFile"));
-                ConfigFile = ser.Deserialize(xDoc.CreateReader()) as ConfigFile.IATConfigFile ?? throw new NullReferenceException();
-                ser = new XmlSerializer(typeof(List<ResultPacket>), new XmlRootAttribute("ResultSet"));
-                Results = ser.Deserialize(xDoc.CreateReader()) as List<ResultPacket> ?? throw new NullReferenceException();
+                //    var xDoc = t.Result;
+                //  var ser = new XmlSerializer(typeof(ConfigFile.IATConfigFile), new XmlRootAttribute("ConfigFile"));
+                //ConfigFile = ser.Deserialize(xDoc.CreateReader()) as ConfigFile.IATConfigFile ?? throw new NullReferenceException();
+                // ser = new XmlSerializer(typeof(List<ResultPacket>), new XmlRootAttribute("ResultSet"));
+                // Results = ser.Deserialize(xDoc.CreateReader()) as List<ResultPacket> ?? throw new NullReferenceException();
+//                Results = t.Result.ResultSets
                 var rsa = RSA.Create(_state.RSA.GetRSAParameters());
                 foreach (var resultPacket in Results)
                 {

@@ -16,7 +16,7 @@ public interface IServerReportService
     /// and returns the transaction result. On success the report is available on
     /// <see cref="TransactionState.ServerReport"/>.
     /// </summary>
-    Task<TransactionResult> RetrieveServerReport(string productKey, string email);
+    Task<TransactionResult> RetrieveServerReport(string productKey, string email, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -36,7 +36,8 @@ public sealed class ServerReportService : IServerReportService
     }
 
     /// <inheritdoc />
-    public async Task<TransactionResult> RetrieveServerReport(string productKey, string email)
+    public async Task<TransactionResult> RetrieveServerReport(string productKey, string email,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(productKey))
             throw new ArgumentException("Product key is required.", nameof(productKey));
@@ -48,15 +49,18 @@ public sealed class ServerReportService : IServerReportService
         _transactionState.Email = email;
         _transactionState.ProductKey = productKey;
 
-        return await WebSocketTransaction.ExecuteAsync(
-            _webSocketService,
-            _transactionState,
-            () => _webSocketService.SendMessage(new TransactionRequest
-            {
-                Type = TransactionType.RequestConnection,
-                ProductKey = productKey,
-                Email = email
-            }),
-            ReportTimeout).ConfigureAwait(false);
+        await _webSocketService.SendMessage(new TransactionRequest
+        {
+            Type = TransactionType.RequestConnection,
+            ProductKey = productKey,
+            Email = email
+        });
+        await _transactionState.Completion.WaitAsync(cancellationToken);
+        await _webSocketService.SendMessage(new TransactionRequest
+        {
+            Type = TransactionType.ClearSessionState,
+            ProductKey = productKey
+        }); 
+        return _transactionState.Result;
     }
 }

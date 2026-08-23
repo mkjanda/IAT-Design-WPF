@@ -145,7 +145,7 @@ namespace IAT.Core.Services
                     else
                         return ActivationStatus.NotActivated;
                 }
-                var transResult = _emailVerificationService.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail]).Result;
+                var transResult = _emailVerificationService.VerifyEmail(this[Field.ProductKey], this[Field.UserEmail], CancellationToken.None).Result;
                 if (transResult != TransactionResult.Success)
                     return ActivationStatus.EMailNotVerified;
                 if (_emailVerificationService.ActivationKey != string.Empty)

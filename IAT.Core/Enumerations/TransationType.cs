@@ -344,7 +344,13 @@ namespace IAT.Core.Enumerations
         /// Represents a transaction that contains an authentication token for secure communication or verification purposes.
         /// </summary>
         [Description("A transaction that contain an authentication token.")]
-        AuthToken
+        AuthToken,
+
+        /// <summary>
+        /// Represents a request to clear the session state on the server, effectively resetting any stored session data.
+        /// </summary>
+        [Description("An instruction to the server to clear the session state.")]
+        ClearSessionState
 
 
     };

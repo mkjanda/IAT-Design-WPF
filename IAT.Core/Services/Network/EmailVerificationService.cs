@@ -26,9 +26,10 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique key identifying the product for which the email verification is requested. Cannot be null or
         /// empty.</param>
         /// <param name="email">The email address to verify. Must be a valid, non-empty email address.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification request.</returns>
-        Task<TransactionResult> VerifyEmail(string productKey, string email);
+        Task<TransactionResult> VerifyEmail(string productKey, string email, CancellationToken cancellationToken);
 
         /// <summary>
         /// The activation key for the software
@@ -73,9 +74,10 @@ namespace IAT.Core.Services.Network
         /// <param name="productKey">The unique identifier for the product to associate with the email verification request. Cannot be null or
         /// empty.</param>
         /// <param name="email">The email address to verify. Cannot be null or empty.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a TransactionResult indicating
         /// the outcome of the verification process.</returns>
-        public async Task<TransactionResult> VerifyEmail(string productKey, string email)
+        public async Task<TransactionResult> VerifyEmail(string productKey, string email, CancellationToken cancellationToken)
         {
             _webSocketService.TransactionCommands[TransactionType.TransactionSuccess] =
                 request => new EMailVerifiedCommand(request);
@@ -85,14 +87,14 @@ namespace IAT.Core.Services.Network
             _transactionState.Email = email;
             _transactionState.ProductKey = productKey;
 
-            return await WebSocketTransaction.ExecuteAsync(
-                _webSocketService,
-                _transactionState,
-                () => _webSocketService.SendMessage(new TransactionRequest
-                {
-                    Type = TransactionType.RequestConnection,
-                    ProductKey = productKey
-                })).ConfigureAwait(false);
+            await _webSocketService.SendMessage(new TransactionRequest() 
+            { 
+                Type = TransactionType.RequestEMailVerification,
+                ProductKey = productKey,
+                Email = email
+            });
+            await _transactionState.Completion.WaitAsync(cancellationToken);
+            return _transactionState.Result;
         }
         
         /// <summary>

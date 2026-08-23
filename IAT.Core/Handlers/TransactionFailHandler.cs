@@ -40,7 +40,6 @@ namespace IAT.Core.Handlers
         /// transaction has failed.</returns>
         public async Task<TransactionResult> Handle(TransactionFailCommand request, CancellationToken cancellationToken)
         {
-            await _wss.CloseSocketAsync();
             _state.SetResult(TransactionResult.Failure);
             return TransactionResult.Failure;
         }

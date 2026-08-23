@@ -3,6 +3,7 @@ using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Enumerations;
 using System.Xml.Linq;
+using net.sf.saxon.serialize;
 
 namespace IAT.Core.Services.Network
 {
@@ -12,7 +13,8 @@ namespace IAT.Core.Services.Network
         /// Runs the result-retrieval transaction. On failure returns an empty document —
         /// always inspect <see cref="TransactionState.Result"/>.
         /// </summary>
-        Task<XDocument> GetResults(string productKey, string iatName, string password);
+        Task<TestResults> GetResults(string productKey, string iatName, string password, 
+            CancellationToken cancellationToken);
     }
 
     /// <summary>
@@ -24,6 +26,12 @@ namespace IAT.Core.Services.Network
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ResultRetrievalService"/> class with the specified web socket service and transaction state.
+        /// </summary>
+        /// <param name="webSocketService">The web socket service used to manage transaction commands and communication.</param>
+        /// <param name="transactionState">The transaction state object used to track and manage the current transaction lifecycle.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="webSocketService"/> or <paramref name="transactionState"/> is null.</exception>
         public ResultRetrievalService(IWebSocketService webSocketService, TransactionState transactionState)
         {
             _webSocketService = webSocketService ?? throw new ArgumentNullException(nameof(webSocketService));
@@ -31,7 +39,8 @@ namespace IAT.Core.Services.Network
         }
 
         /// <inheritdoc />
-        public async Task<XDocument> GetResults(string productKey, string iatName, string password)
+        public async Task<TestResults> GetResults(string productKey, string iatName, string password,
+            CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(productKey))
                 throw new ArgumentException("Product key is required.", nameof(productKey));
@@ -49,19 +58,19 @@ namespace IAT.Core.Services.Network
             _transactionState.IATName = iatName;
             _transactionState.Password = password;
 
-            await WebSocketTransaction.ExecuteAsync(
-                _webSocketService,
-                _transactionState,
-                () => _webSocketService.SendMessage(new TransactionRequest
-                {
-                    Type = TransactionType.RequestConnection,
-                })).ConfigureAwait(false);
-
-            var doc = _transactionState.TestResultsDocument;
-            if (doc is null || _transactionState.Result.IsError)
-                return new XDocument();
-
-            return doc;
+            await _webSocketService.SendMessage(new TransactionRequest()
+            {
+                Type = TransactionType.RequestConnection,
+                ProductKey = productKey,
+                IATName = iatName,
+            });
+            await _transactionState.Completion.WaitAsync(cancellationToken);
+            await _webSocketService.SendMessage(new TransactionRequest()
+            {
+                Type = TransactionType.ClearSessionState,
+                ProductKey = productKey
+            });
+            return _transactionState.TestResults;
         }
     }
 }

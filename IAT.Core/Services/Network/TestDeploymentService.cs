@@ -8,7 +8,16 @@ namespace IAT.Core.Services.Network
 {
     public interface ITestDeploymentService
     {
-        Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult);
+        /// <summary>
+        /// Deploys a test package with the specified name, password, and export result over a fresh WebSocket session.
+        /// </summary>
+        /// <param name="name">The name of the test package.</param>
+        /// <param name="password">The password for the test package.</param>
+        /// <param name="exportResult">The export result containing the test package data.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the transaction.</returns>
+        Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult, 
+            CancellationToken cancellationToken);
     }
 
     /// <summary>
@@ -18,14 +27,32 @@ namespace IAT.Core.Services.Network
     {
         private readonly IWebSocketService _webSocket;
         private readonly TransactionState _state;
+        private readonly ILocalStorageService _localStorage;
 
-        public TestDeploymentService(IWebSocketService webSocket, TransactionState state)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TestDeploymentService"/> class with the specified web socket service, transaction state, and local storage service.
+        /// </summary>
+        /// <param name="webSocket">The web socket service.</param>
+        /// <param name="state">The transaction state.</param>
+        /// <param name="localStorage">The local storage service.</param>
+        /// <exception cref="ArgumentNullException">Thrown if any of the parameters are null.</exception>
+        public TestDeploymentService(IWebSocketService webSocket, TransactionState state, ILocalStorageService localStorage)
         {
             _webSocket = webSocket ?? throw new ArgumentNullException(nameof(webSocket));
             _state = state ?? throw new ArgumentNullException(nameof(state));
+            _localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
         }
 
-        public async Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult)
+        /// <summary>
+        /// Deploys a test package with the specified name, password, and export result over a fresh WebSocket session. 
+        /// </summary>
+        /// <param name="name">The name of the test package.</param>
+        /// <param name="password">The password for the test package.</param>
+        /// <param name="exportResult">The export result containing the test package data.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>The result of the transaction.</returns>
+        public async Task<TransactionResult> Deploy(string name, string password, ExportResult exportResult,
+            CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(exportResult);
 
@@ -56,14 +83,14 @@ namespace IAT.Core.Services.Network
             _state.Password = password;
             _state.IATName = name;
 
-            return await WebSocketTransaction.ExecuteAsync(
-                _webSocket,
-                _state,
-                () => _webSocket.SendMessage(new TransactionRequest
-                {
-                    Type = TransactionType.RequestConnection
-                }),
-                timeout: TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+            await _webSocket.SendMessage(new TransactionRequest()
+            {
+                Type = TransactionType.RequestConnection,
+                ProductKey = _localStorage[Field.ProductKey],
+                IATName = name
+            });
+            await _state.Completion.WaitAsync(cancellationToken);
+            return _state.Result;
         }
     }
 }
