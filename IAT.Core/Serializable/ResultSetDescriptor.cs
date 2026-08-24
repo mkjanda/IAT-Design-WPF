@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿
 using System.Xml.Schema;
 using System.Xml.Serialization;
 using IAT.Core.ConfigFile;

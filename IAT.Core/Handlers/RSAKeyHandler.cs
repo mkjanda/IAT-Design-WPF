@@ -3,6 +3,7 @@ using IAT.Core.Serializable;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Services.Network;
+using IAT.Core.Services;
 
 namespace IAT.Core.Handlers
 {
@@ -15,11 +16,13 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
+        private readonly ILocalStorageService _localStorage;
 
-        public RSAKeyHandler(IWebSocketService webSocketService, TransactionState transactionState)
+        public RSAKeyHandler(IWebSocketService webSocketService, TransactionState transactionState, ILocalStorageService localStorage)
         {
-            _webSocketService = webSocketService ?? throw new ArgumentNullException(nameof(webSocketService));
-            _transactionState = transactionState ?? throw new ArgumentNullException(nameof(transactionState));
+            _webSocketService = webSocketService;
+            _transactionState = transactionState;
+            _localStorage = localStorage;
         }
 
         /// <summary>

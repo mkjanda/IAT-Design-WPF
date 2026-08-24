@@ -1,16 +1,20 @@
-﻿using System;
-using System.ComponentModel.Design;
+﻿using IAT.Core.Enumerations;
+using Konscious.Security.Cryptography;
+using MediatR;
+using sun.security.util;
+using System;
+using System.Text;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
-using System.Xml.Serialization;
-using System.Xml.Schema;
-using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
-using MediatR;
-using IAT.Core.Enumerations;
-using System.Numerics;
+using System.Xml.Linq;
+using System.Xml.Schema;
+using System.Xml.Serialization;
+using com.sun.beans.editors;
+using IAT.Core.Services;
 
 namespace IAT.Core.Serializable;
 
@@ -25,6 +29,9 @@ public record RSAKeyCommand(EncryptedRSAKey Key) : IRequest<TransactionResult>;
 /// </summary>
 public class EncryptedRSAKey : IWebSocketMessage
 {
+    /// <summary>
+    /// The product key
+    /// </summary>
     [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
     public string ProductKey { get; set; } = string.Empty;
 
@@ -49,110 +56,54 @@ public class EncryptedRSAKey : IWebSocketMessage
     [XmlIgnore]
     private byte[]? d, e, p, q, n, dp, dq, inverseQ;
 
-    [XmlIgnore]
-    private bool IsDecrypted { get; set; } = false;
 
-    [XmlIgnore]
-    private byte[] IV = new byte[] { (byte)0xFA, (byte)0x64, (byte)0x92, (byte)0x21, (byte)0x4A, (byte)0x74, (byte)0x41, (byte)0xE9 };
-
-    /// <summary>
-    /// Initializes a new instance of the EncryptedRSAKey class.
-    /// </summary>
-    public EncryptedRSAKey() { }
-
-
-    /// <summary>
-    /// Generates an 8-byte DES cipher key from the specified input string.
-    /// </summary>
-    /// <remarks>The generated key is derived deterministically from the input string using a custom
-    /// algorithm. The same input will always produce the same key. This method does not perform any validation to
-    /// ensure the key meets DES parity requirements.</remarks>
-    /// <param name="input">The input string to be converted into a DES cipher key. Cannot be null.</param>
-    /// <returns>A byte array containing the generated 8-byte DES cipher key.</returns>
-    public static byte[] stringToDESCipherKey(String input)
+    static byte[] DeriveAesKey(string password, byte[] salt, int keyBytes = 32)
     {
-        byte[] productHex = System.Text.Encoding.Unicode.GetBytes(input);
-        uint[] productNums = new uint[12];
-        for (int ctr = 0; ctr < 12; ctr++)
-            productNums[ctr] = 0;
-        int ndx = 0;
-
-
-        for (int ctr = 0; ctr < productHex.Length; ctr++)
+        var argon = new Argon2id(Encoding.UTF8.GetBytes(password))
         {
-            productNums[ndx] ^= (uint)(productHex[ctr] & 0xFF);
-            productNums[11 - ndx] ^= (uint)(productHex[ctr] << 8) & 0xFF00;
-            ndx++;
-            if (ndx >= 12)
-                ndx = 0;
-        }
-        ulong[] cipherNums = new ulong[14];
-        cipherNums[0] = productNums[6] * productNums[11];
-        cipherNums[5] = productNums[Math.Abs((int)(cipherNums[0] % 12))] * productNums[2];
-        cipherNums[11] = productNums[Math.Abs((int)(cipherNums[5] % 12))] * productNums[Math.Abs((int)(cipherNums[0] % 12))];
-        cipherNums[2] = productNums[Math.Abs((int)(cipherNums[5] % 12))] * productNums[Math.Abs((int)(cipherNums[5] % 12))];
-        cipherNums[13] = productNums[Math.Abs((int)(cipherNums[11] % 12))] * productNums[Math.Abs((int)(cipherNums[2] % 12))];
-        cipherNums[1] = productNums[Math.Abs((int)(cipherNums[13] % 12))] * productNums[Math.Abs((int)(cipherNums[0] % 12))];
-        cipherNums[7] = productNums[Math.Abs((int)(cipherNums[1] % 12))] * productNums[Math.Abs((int)(cipherNums[11] % 12))];
-        cipherNums[3] = productNums[Math.Abs((int)(cipherNums[7] % 12))] * productNums[Math.Abs((int)(cipherNums[5] % 12))];
-        cipherNums[9] = productNums[Math.Abs((int)(cipherNums[2] % 12))] * productNums[Math.Abs((int)(cipherNums[2] % 12))];
-        cipherNums[4] = productNums[Math.Abs((int)(cipherNums[13] % 12))] * productNums[Math.Abs((int)(cipherNums[1] % 12))];
-        cipherNums[6] = productNums[Math.Abs((int)(cipherNums[5] % 12))] * productNums[Math.Abs((int)(cipherNums[2] % 12))];
-        cipherNums[8] = productNums[Math.Abs((int)(cipherNums[6] % 12))] * productNums[Math.Abs((int)(cipherNums[4] % 12))];
-        cipherNums[10] = productNums[Math.Abs((int)(cipherNums[3] % 12))] * productNums[Math.Abs((int)(cipherNums[9] % 12))];
-        cipherNums[12] = productNums[Math.Abs((int)(cipherNums[10] % 12))] * productNums[Math.Abs((int)(cipherNums[13] % 12))];
-
-
-        byte[] cipher = new byte[8];
-        for (int ctr = 0; ctr < 8; ctr++)
-            cipher[ctr] = 0;
-        for (int ctr = 0; ctr < 7; ctr++)
-        {
-            ulong val = ((ulong)cipherNums[ctr] << 32) + (ulong)cipherNums[7 + ctr];
-            cipher[0] ^= (byte)(0xFF & (val >> 56));
-            cipher[1] ^= (byte)(0xFF & (val >> 48));
-            cipher[2] ^= (byte)(0xFF & (val >> 40));
-            cipher[3] ^= (byte)(0xFF & (val >> 32));
-            cipher[4] ^= (byte)(0xFF & (val >> 24));
-            cipher[5] ^= (byte)(0xFF & (val >> 16));
-            cipher[6] ^= (byte)(0xFF & (val >> 8));
-            cipher[7] ^= (byte)(0xFF & (val));
-        }
-        return cipher;
+            Salt = salt,
+            DegreeOfParallelism = 4,   // lanes
+            MemorySize = 64 * 1024,    // 64 MB — tune for your clients
+            Iterations = 3
+        };
+        return argon.GetBytes(keyBytes);
     }
 
-    /// <summary>
-    /// Decrypts the stored key using the specified password.
-    /// </summary>
-    /// <remarks>If the key has already been decrypted, this method performs no action. The method updates the
-    /// internal state with the decrypted key components upon successful decryption.</remarks>
-    /// <param name="password">The password used to decrypt the key. If the password starts with "secret:", it is interpreted as a
-    /// hexadecimal-encoded key and IV; otherwise, it is used directly to derive the decryption key. Cannot be null.</param>
-    public void DecryptKey(String password)
+    private byte[] EncryptKey(string password, byte[] plaintext)
     {
-        if (IsDecrypted)
-            return;
-        byte[] desCipher;
-        if (password.StartsWith("secret:"))
-        {
-            password = password.Remove(0, "secret:".Length);
-            var bytes = password.Split('-').Select(b => Byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
-            desCipher = bytes.Where((b, ndx) => ndx < 8).ToArray();
-            IV = bytes.Where((b, ndx) => ndx >= 8).ToArray();
-        }
-        else
-            desCipher = stringToDESCipherKey(password);
-        MemoryStream memStream = new MemoryStream(Convert.FromBase64String(EncryptedKey));
-        using var des = DES.Create();
-        des.Mode = CipherMode.CBC;
-        des.Padding = PaddingMode.None;
-        MemoryStream keyStream = new MemoryStream();
-        var cStream = new CryptoStream(keyStream, des.CreateDecryptor(desCipher, IV), CryptoStreamMode.Write);
-        memStream.Seek(0, SeekOrigin.Begin);
-        cStream.Write(memStream.ToArray(), 0, (int)memStream.Length);
-        cStream.FlushFinalBlock();
-        keyStream.Position = 0;
-        BinaryReader bReader = new BinaryReader(keyStream);
+        byte[] salt = RandomNumberGenerator.GetBytes(16);   // store with ciphertext
+        byte[] key = DeriveAesKey(password, salt);
+        byte[] nonce = RandomNumberGenerator.GetBytes(12);  // AES-GCM
+        byte[] tag = new byte[16];
+        byte[] ciphertext = new byte[plaintext.Length];
+        
+        var aesGcm = new AesGcm(key, 16);
+
+        aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+        var memStream = new MemoryStream();
+        memStream.Write(salt);
+        memStream.Write(nonce);
+        memStream.Write(ciphertext);
+        memStream.Write(tag);
+        return memStream.ToArray();
+    }
+
+    private RSAParameters DecryptKey(byte[] cipherbytes, string password)
+    {
+        var memoryStream = new MemoryStream(cipherbytes);
+        byte[] salt = new byte[16], nonce = new byte[12], tag = new byte[16];
+        byte[] ciphertext = new byte[cipherbytes.Length - 44];
+        var memStream = new MemoryStream(cipherbytes);
+        memStream.Read(salt);
+        memStream.Read(nonce);
+        memStream.Read(ciphertext, 0, cipherbytes.Length - 44);
+        memStream.Read(tag);
+        byte[] key = DeriveAesKey(password, salt);
+        var aes = new AesGcm(key, 16);
+        byte[] plaintext = new byte[ciphertext.Length];
+        aes.Decrypt(nonce, ciphertext, tag, plaintext);
+        memStream.Dispose(); memStream = new MemoryStream(plaintext);
+        BinaryReader bReader = new BinaryReader(memStream);
         int len = bReader.ReadInt32();
         n = bReader.ReadBytes(len);
         len = bReader.ReadInt32();
@@ -169,7 +120,17 @@ public class EncryptedRSAKey : IWebSocketMessage
         dq = bReader.ReadBytes(len);
         len = bReader.ReadInt32();
         inverseQ = bReader.ReadBytes(len);
-        IsDecrypted = true;
+        return new RSAParameters()
+        {
+            Modulus = n,
+            Exponent = e,
+            D = d,
+            P = p,
+            Q = q,
+            DP = dp,
+            DQ = dq,
+            InverseQ = inverseQ
+        };
     }
 
     /// <summary>
@@ -178,13 +139,12 @@ public class EncryptedRSAKey : IWebSocketMessage
     /// <remarks>The generated RSA key parameters are encrypted with DES using the key and IV derived from the
     /// provided password. The encrypted key and public key components are stored in corresponding fields. The password
     /// must be in the expected format; otherwise, the method may fail.</remarks>
+    /// <param name="test">A string parameter for testing purposes.</param>
     /// <param name="password">A string containing the password in the format 'secret:XX-XX-...-XX', where each 'XX' is a hexadecimal byte.
     /// Used to derive the DES encryption key and initialization vector.</param>
-    public void Generate(String password)
+    /// <param name="storePassword">A boolean indicating whether to store the password in local storage.</param>
+    public void Generate(string test, string password, bool storePassword = false)
     {
-        Regex r = new Regex("secret:(.+)");
-        var bytes = r.Match(password).Groups[1].Value.Split('-')
-                        .Select(b => Byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
         RSACryptoServiceProvider rsaCrypt = new RSACryptoServiceProvider();
         RSAParameters rsaParams = rsaCrypt.ExportParameters(true);
         n = rsaParams.Modulus;
@@ -214,15 +174,8 @@ public class EncryptedRSAKey : IWebSocketMessage
         bWriter.Write(inverseQ?.Length ?? 0);
         bWriter.Write(inverseQ ?? Array.Empty<byte>());
         bWriter.Flush();
-        MemoryStream encryptedKeyBytes = new MemoryStream();
-        using var desCrypt = DES.Create();
-        var desCipher = bytes.Where((b, ndx) => ndx < 8).ToArray();
-        var iv = bytes.Where((b, ndx) => ndx >= 8).ToArray();
-        CryptoStream cStream = new CryptoStream(encryptedKeyBytes, desCrypt.CreateEncryptor(desCipher, iv), CryptoStreamMode.Write);
-        memStream.Seek(0, SeekOrigin.Begin);
-        cStream.Write(memStream.ToArray(), 0, (int)memStream.Length);
-        cStream.FlushFinalBlock();
-        EncryptedKey = Convert.ToBase64String(encryptedKeyBytes.ToArray());
+        byte[] encryptedbytes = EncryptKey(password, memStream.ToArray());
+        EncryptedKey = Convert.ToBase64String(encryptedbytes.ToArray());
         Modulus = Convert.ToBase64String(rsaParams.Modulus ?? throw new ArgumentNullException(nameof(rsaParams.Modulus)));
         Exponent = Convert.ToBase64String(rsaParams.Exponent ?? throw new ArgumentNullException(nameof(rsaParams.Exponent)));
     }
@@ -273,7 +226,6 @@ public class EncryptedRSAKey : IWebSocketMessage
     /// </summary>
     public void ResetDecryptedState()
     {
-        IsDecrypted = false;
         d = e = p = q = n = dp = dq = inverseQ = null;
     }
 
@@ -282,7 +234,7 @@ public class EncryptedRSAKey : IWebSocketMessage
     /// </summary>
     /// <param name="password">The password to test for decrypting the RSA key.</param>
     /// <returns>True if the password can successfully decrypt the RSA key and perform the test operation; otherwise, false.</returns>
-    public bool TestPassword(String password)
+    public bool TestPassword(string password)
     {
         if (string.IsNullOrEmpty(password) ||
             string.IsNullOrEmpty(Modulus) ||
@@ -292,21 +244,18 @@ public class EncryptedRSAKey : IWebSocketMessage
             ResetDecryptedState();
             return false;
         }
-
         try
         {
-            // Always start from a clean slate so a previous failed attempt cannot leave IsDecrypted=true
-            // with garbage D/P/Q that later GetRSAParameters / RSA.Create would blow up on.
             ResetDecryptedState();
-
             BigInteger modulus = new BigInteger(Convert.FromBase64String(Modulus));
             BigInteger exponent = new BigInteger(Convert.FromBase64String(Exponent));
-            DecryptKey(password);
+            byte[] cipherbytes = Convert.FromBase64String(EncryptedKey);
+            RSAParameters rsaParams = DecryptKey(cipherbytes, password);
             RSA rsa = RSACryptoServiceProvider.Create();
-            rsa.ImportParameters(GetRSAParameters());
+            rsa.ImportParameters(rsaParams);
             var dataStream = new MemoryStream();
             dataStream.Write(new byte[1] { 0 });
-            byte[] testData = System.Text.Encoding.UTF8.GetBytes("Test");
+            byte[] testData = System.Text.Encoding.UTF8.GetBytes("ZippyTheWorldTortoise");
             dataStream.Write(testData, 0, testData.Length);
             BigInteger data = new BigInteger(dataStream.ToArray());
             BigInteger encryptedData = BigInteger.ModPow(data, exponent, modulus);

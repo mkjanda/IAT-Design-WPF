@@ -7,10 +7,6 @@ using System.Text;
 using System.Xml.Linq;
 using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
-using System.Collections;
-using com.sun.org.apache.bcel.@internal.generic;
-using System.ComponentModel.DataAnnotations;
-using sun.awt.image;
 
 namespace IAT.Core.Services
 {
@@ -38,6 +34,18 @@ namespace IAT.Core.Services
         /// <param name="iatName">Deployed IAT name.</param>
         /// <returns>The decrypted password, or <c>null</c> if no password is stored or decryption fails.</returns>
         string? TryGetIATPassword(string iatName);
+
+        /// <summary>
+        /// Sets the password of the IAT with the given name
+        /// </summary>
+        /// <param name="iatName">The name of the IAT</param>
+        /// <param name="password">The password</param>
+        public void SetIATPassword(string iatName, string password);
+
+        /// <summary>
+        /// Deletes the IAT with the given name from local storage, including its associated password and any other related data.
+        /// </summary>
+        public ActivationStatus Activated { get; }
     }
 
 
@@ -50,29 +58,6 @@ namespace IAT.Core.Services
     /// </summary>
     public class LocalStorageService : ILocalStorageService
     {
-        /// <summary>
-        /// Specifies the activation status of a user or entity.
-        /// </summary>
-        /// <remarks>Use this enumeration to represent and check the current activation state, such as
-        /// whether email verification is required or if there is a version inconsistency.</remarks>
-        public enum ActivationStatus { 
-            /// <summary>
-            /// The user or entity has not been activated.
-            /// </summary>
-            NotActivated,
-            /// <summary>
-            /// The user's email has not been verified.
-            /// </summary>
-            EMailNotVerified,
-            /// <summary>
-            /// The user or entity is activated.
-            /// </summary>
-            Activated,
-            /// <summary>
-            /// There is a version inconsistency.
-            /// </summary>
-            InconsistentVersion
-        };
         private static readonly byte[] key = { 59, 207,  78,  40, 237, 240, 82, 223, 61, 99, 218, 147, 77, 174, 189, 80,
                                                 240, 128, 216, 112, 182, 247, 222, 212, 104, 30, 54, 76, 56, 193, 227, 140 };
         private static readonly byte[] storageKey = { 49, 132, 90, 177, 63, 214, 120, 45, 173, 200, 34, 167, 88, 155, 201, 114,
