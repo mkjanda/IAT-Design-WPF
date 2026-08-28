@@ -31,7 +31,7 @@ namespace IAT.Core.Domain
         /// </summary>
         public string Text { get; set; } = string.Empty;
 
-        /// <summary>
+        /// <summary>SSS
         /// Gets or sets the text style applied to the content.
         /// </summary>
         public TextStyle Style { get; set; } = new TextStyle();

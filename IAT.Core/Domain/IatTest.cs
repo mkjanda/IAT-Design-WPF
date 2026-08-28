@@ -22,9 +22,11 @@ public partial class IatTest : ObservableObject
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
-    /// Gets or sets the name of the IAT test.
+    /// Display / deployment name of the IAT test. Independent of the package file path.
+    /// Editable on the Deploy tab before upload; persisted in the project package.
     /// </summary>
-    public string Name { get; set; } = "New IAT Test";
+    [ObservableProperty]
+    private string name = "New IAT Test";
 
     /// <summary>
     /// Represents the layout of the test, including positions and sizes of various UI elements. This property is initialized with a default layout configuration.
@@ -147,6 +149,29 @@ public partial class IatTest : ObservableObject
     public ObservableCollection<Survey> SurveysCollection => Surveys;
 
     /// <summary>
+    /// Formatted-text fragments owned by this test (block instructions, etc.).
+    /// Referenced by Guid from domain objects such as <see cref="Block.BlockInstructionsId"/>.
+    /// Prefer <see cref="AddFormattedText"/> / <see cref="RemoveFormattedText"/> /
+    /// <see cref="EnsureBlockInstructions"/> for mutation so the lookup cache stays consistent.
+    /// </summary>
+    public ObservableCollection<FormattedText> FormattedTexts { get; } = new();
+
+    /// <summary>
+    /// JSON-friendly alias for <see cref="FormattedTexts"/> (same pattern as <see cref="AllKeys"/>).
+    /// </summary>
+    public List<FormattedText> AllFormattedTexts
+    {
+        get => FormattedTexts.ToList();
+        set
+        {
+            if (FormattedTexts.Count > 0 || value is null) return;
+            FormattedTexts.Clear();
+            foreach (var ft in value)
+                FormattedTexts.Add(ft);
+        }
+    }
+
+    /// <summary>
     /// Add stimulus to the test and update the stimulus cache. This method ensures that 
     /// the stimulus is properly associated with the test and that the cache is kept up to 
     /// date for efficient retrieval.
@@ -172,21 +197,53 @@ public partial class IatTest : ObservableObject
     }
 
     /// <summary>
-    /// Updates an existing stimulus in the collection and cache. If the stimulus with the same ID exists, it 
-    /// is replaced with the new stimulus.
+    /// Updates an existing stimulus in the collection and cache.
+    /// Prefers in-place property copy when the runtime type matches so the
+    /// ObservableCollection item identity is preserved. That keeps ListBox
+    /// selection stable and prevents the editor's Saved handler from being
+    /// detached mid-Save (Remove would clear SelectedItem → OnSelectedItemChanged(null)
+    /// → DetachEditorEvents before Saved?.Invoke runs).
+    /// Falls back to Remove+Add only when the concrete type changes.
     /// </summary>
     /// <param name="stim">The stimulus to update.</param>
     public void UpdateStimulus(Stimulus stim)
     {
         if (stim is null) return;
         var existing = Stimuli.FirstOrDefault(s => s.Id == stim.Id);
-        if (existing is not null)
+        if (existing is null) return;
+
+        // Same concrete type → mutate in place (preserves object identity / selection).
+        if (existing is TextStimulus existingText && stim is TextStimulus newText)
         {
-            _stimulusCache[stim.Id] = stim;
-            Stimuli.Remove(existing);
-            Stimuli.Add(stim);
-            stim.IatTest = this;
+            existingText.Text = newText.Text;
+            existingText.Style = new TextStyle
+            {
+                FontFamily = newText.Style?.FontFamily ?? existingText.Style?.FontFamily ?? "Segoe UI",
+                FontSize   = newText.Style?.FontSize   ?? existingText.Style?.FontSize   ?? 24.0,
+                FontColor  = newText.Style?.FontColor  ?? existingText.Style?.FontColor  ?? System.Windows.Media.Colors.Black
+            };
+            existingText.OriginatingBlock = newText.OriginatingBlock;
+            existingText.KeyedDirection   = newText.KeyedDirection;
+            _stimulusCache[stim.Id] = existingText;
+            return;
         }
+
+        if (existing is ImageStimulus existingImage && stim is ImageStimulus newImage)
+        {
+            existingImage.FileName   = newImage.FileName;
+            existingImage.AltText    = newImage.AltText;
+            existingImage.PackageUri = newImage.PackageUri;
+            existingImage.OriginatingBlock = newImage.OriginatingBlock;
+            existingImage.KeyedDirection   = newImage.KeyedDirection;
+            _stimulusCache[stim.Id] = existingImage;
+            return;
+        }
+
+        // Type changed (rare) — fall back to replace.
+        _stimulusCache[stim.Id] = stim;
+        Stimuli.Remove(existing);
+        Stimuli.Add(stim);
+        stim.IatTest = this;
     }
 
     /// <summary>
@@ -201,7 +258,8 @@ public partial class IatTest : ObservableObject
     }
 
     /// <summary>
-    /// Removes a block from the collection and cache.
+    /// Removes a block from the collection and cache, and drops its block-instructions
+    /// <see cref="FormattedText"/> when no other block still references that Id.
     /// </summary>
     /// <param name="block">The block to remove.</param>
     /// <returns>The removed block.</returns>
@@ -209,6 +267,14 @@ public partial class IatTest : ObservableObject
     {
         Blocks.Remove(block);
         _blockCache.Remove(block.Id);
+
+        if (block.BlockInstructionsId != Guid.Empty
+            && !Blocks.Any(b => b.BlockInstructionsId == block.BlockInstructionsId)
+            && _formattedTextCache.TryGetValue(block.BlockInstructionsId, out var ft))
+        {
+            RemoveFormattedText(ft);
+        }
+
         return block;
     }
 
@@ -274,6 +340,73 @@ public partial class IatTest : ObservableObject
             return key;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Registers a <see cref="FormattedText"/> in the collection and lookup cache.
+    /// No-ops when <paramref name="text"/> is null or already cached under the same Id.
+    /// </summary>
+    public void AddFormattedText(FormattedText text)
+    {
+        if (text is null) return;
+        if (_formattedTextCache.ContainsKey(text.Id)) return;
+        FormattedTexts.Add(text);
+        _formattedTextCache[text.Id] = text;
+    }
+
+    /// <summary>
+    /// Removes a <see cref="FormattedText"/> from the collection and cache.
+    /// </summary>
+    public FormattedText? RemoveFormattedText(FormattedText text)
+    {
+        if (text is null) return null;
+        if (!FormattedTexts.Remove(text)) return null;
+        _formattedTextCache.Remove(text.Id);
+        return text;
+    }
+
+    /// <summary>
+    /// Ensures <paramref name="block"/> has a live <see cref="FormattedText"/> for its
+    /// block-level instructions. Creates one when missing, migrates legacy string-only
+    /// data, and keeps <see cref="Block.BlockInstructions"/> / <see cref="Block.BlockInstructionsId"/>
+    /// in sync with the FormattedText entry (the form export and slide rendering consume).
+    /// </summary>
+    /// <param name="block">Block whose instructions should be resolved.</param>
+    /// <param name="text">Optional text override; when null the existing block / FormattedText value is kept.</param>
+    /// <param name="style">Optional style override; when null the existing style (or defaults) is kept.</param>
+    /// <returns>The FormattedText bound to the block.</returns>
+    public FormattedText EnsureBlockInstructions(Block block, string? text = null, TextStyle? style = null)
+    {
+        ArgumentNullException.ThrowIfNull(block);
+
+        FormattedText ft;
+        if (block.BlockInstructionsId != Guid.Empty
+            && _formattedTextCache.TryGetValue(block.BlockInstructionsId, out var existing))
+        {
+            ft = existing;
+        }
+        else
+        {
+            ft = new FormattedText
+            {
+                Id = Guid.NewGuid(),
+                LayoutItem = IAT.Core.Enumerations.LayoutItem.BlockInstructions,
+                Text = text ?? block.BlockInstructions ?? string.Empty,
+                Style = style ?? new TextStyle()
+            };
+            AddFormattedText(ft);
+            block.BlockInstructionsId = ft.Id;
+        }
+
+        if (text is not null)
+            ft.Text = text;
+
+        if (style is not null)
+            ft.Style = style;
+
+        // Keep the convenience string on Block aligned with the FormattedText source of truth.
+        block.BlockInstructions = ft.Text ?? string.Empty;
+        return ft;
     }
 
     /// <summary>
@@ -417,6 +550,9 @@ public partial class IatTest : ObservableObject
         _keyCache.Clear();
         foreach (var key in Keys)
             _keyCache[key.Id] = key;
+        _formattedTextCache.Clear();
+        foreach (var ft in FormattedTexts)
+            _formattedTextCache[ft.Id] = ft;
     }
 
     /// <summary>
@@ -468,6 +604,7 @@ public partial class IatTest : ObservableObject
         Keys.Clear();
         InstructionScreens.Clear();
         Surveys.Clear();
+        FormattedTexts.Clear();
 
         _stimulusCache.Clear();
         _blockCache.Clear();
@@ -494,6 +631,7 @@ public partial class IatTest : ObservableObject
         Keys.Clear();
         InstructionScreens.Clear();
         Surveys.Clear();
+        FormattedTexts.Clear();
 
         _stimulusCache.Clear();
         _blockCache.Clear();
@@ -509,7 +647,10 @@ public partial class IatTest : ObservableObject
         if (source.Layout is not null)
             Layout.CopyFrom(source.Layout);
 
-        // Order matters for referential integrity: stimuli/keys before trials/blocks.
+        // Order matters for referential integrity: formatted text / stimuli / keys before trials / blocks.
+        foreach (var ft in source.AllFormattedTexts)
+            AddFormattedText(ft);
+
         foreach (var stimulus in source.AllStimuli)
             AddStimulus(stimulus);
 

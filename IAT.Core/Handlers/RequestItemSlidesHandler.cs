@@ -30,7 +30,7 @@ namespace IAT.Core.Handlers
             var client = new HttpClient();
             var urlString = $"{_stringResourceService.GetString("ItemSlideUploadUrl")}?DeploymentId={_transactionState.DeploymentId}";
             var memStream = new MemoryStream();
-            foreach (var file in _transactionState.SlideManifest.Contents.Where(fe => fe.FileEntityType == FileEntity.EFileEntityType.File).Cast<ManifestFile>())
+            foreach (var file in _transactionState.SlideManifest.Files)
             {
                 memStream.Write(file.Content);
             }

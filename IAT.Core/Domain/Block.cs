@@ -37,8 +37,9 @@ namespace IAT.Core.Domain
         public Guid Id { get; set; } = Guid.NewGuid();
 
         /// <summary>
-        /// Gets or sets the number of trials to perform in the operation.
-        /// Raises PropertyChanged so the Trials-tab block list and Blocks-tab trial count update live.
+        /// Number of presentations administered in this block (independent of the trial-pool size).
+        /// Classic 7-block defaults: 10 on blocks 1, 2, 3, 5, 6 and 20 on blocks 4 and 7.
+        /// Raises PropertyChanged so Blocks-tab and Trials-tab editors stay in sync.
         /// </summary>
         [ObservableProperty]
         private int numPresentations = 0;
@@ -104,16 +105,12 @@ namespace IAT.Core.Domain
         }
 
         /// <summary>
-        /// Raises PropertyChanged for <see cref="Trials"/> and syncs <see cref="NumPresentations"/>
-        /// so any bound grid or count label updates immediately.
+        /// Raises PropertyChanged for <see cref="Trials"/> so the Blocks-tab sequence grid refreshes.
+        /// Does <b>not</b> mutate <see cref="NumPresentations"/> — that is an independent
+        /// administration count (how many presentations to run), not the length of the trial pool.
         /// </summary>
         public void NotifyTrialsChanged()
         {
-            var count = TrialIds.Count;
-            // Only assign when the value changes so ObservableProperty does not
-            // raise a redundant PropertyChanged that can re-enter bindings.
-            if (NumPresentations != count)
-                NumPresentations = count;
             OnPropertyChanged(nameof(Trials));
         }
 

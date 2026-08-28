@@ -57,43 +57,75 @@ namespace IAT.Core.Services
         public string GetResolvedDisplayText(IatTest test, Guid keyId)
         {
             var key = test.AllKeys.FirstOrDefault(k => k.Id == keyId);
-            if (key == null || !key.IsCombined)
-                return key?.Text ?? string.Empty;
+            if (key == null)
+                return string.Empty;
+
+            // Prefer the stored authoring text (already "A or B" for combined keys).
+            // Fall back to component join when Text was never set.
+            if (!string.IsNullOrWhiteSpace(key.Text))
+                return Key.FormatAuthoringDisplay(key.Text);
+
+            if (!key.IsCombined)
+                return string.Empty;
 
             var parts = key.ComponentIds
                 .Select(id => test.AllKeys.FirstOrDefault(k => k.Id == id)?.Text ?? "")
+                .Select(Key.FormatAuthoringDisplay)
                 .Where(t => !string.IsNullOrEmpty(t))
                 .ToList();
 
-            return string.Join(key.Separator, parts);   // or build multi-line
+            return string.Join(key.Separator, parts);
         }
 
         /// <summary>
-        /// Resolves and returns the text for the specified key, combining component texts if the key is marked as
-        /// combined.
+        /// Resolves and returns a <see cref="Key"/> suitable for image generation.
+        /// Combined (or "X or Y") keys are stacked to three rows so participant slides match
+        /// the classic IAT column layout.
         /// </summary>
-        /// <remarks>If the specified key is marked as combined, the method concatenates the texts of its
-        /// component keys using the defined separator. If any component key is missing, an empty string is used in its
-        /// place.</remarks>
-        /// <param name="test">The test instance containing the collection of keys to search and resolve.</param>
-        /// <param name="keyId">The unique identifier of the key to resolve.</param>
-        /// <returns>A Key object representing the resolved key. If the key is combined, its text is constructed by joining the
-        /// texts of its component keys; otherwise, the original key is returned. If the key is not found, a new Key
-        /// with the specified keyId and an empty text is returned.</returns>
         public Key GetResolvedKey(IatTest test, Guid keyId)
         {
             var key = test.AllKeys.FirstOrDefault(k => k.Id == keyId);
-            if (key == null || !key.IsCombined)
-                return key ?? new Key { Id = keyId, Style = new TextStyle(), Text = "" };
-            var resolvedKey = new Key
+            if (key == null)
+                return new Key { Id = keyId, Style = new TextStyle(), Text = "" };
+
+            string authoring;
+            if (!string.IsNullOrWhiteSpace(key.Text))
+            {
+                authoring = Key.FormatAuthoringDisplay(key.Text);
+            }
+            else if (key.IsCombined)
+            {
+                authoring = string.Join(
+                    key.Separator,
+                    key.ComponentIds
+                        .Select(id => test.AllKeys.FirstOrDefault(k => k.Id == id)?.Text ?? "")
+                        .Select(Key.FormatAuthoringDisplay)
+                        .Where(t => !string.IsNullOrEmpty(t)));
+            }
+            else
+            {
+                authoring = string.Empty;
+            }
+
+            var style = key.Style ?? new TextStyle
+            {
+                FontFamily = key.FontFamily ?? "Segoe UI",
+                FontSize = key.FontSize > 0 ? key.FontSize : 24.0,
+                FontColor = key.FontColor
+            };
+
+            return new Key
             {
                 Id = key.Id,
-                Style = new TextStyle(),
-                IsCombined = false,
-                Text = string.Join(key.Separator, 
-                    key.ComponentIds.Select(id => test.AllKeys.FirstOrDefault(k => k.Id == id)?.Text ?? ""))
+                Style = style,
+                FontFamily = style.FontFamily,
+                FontSize = style.FontSize,
+                FontColor = style.FontColor,
+                IsCombined = key.IsCombined || authoring.Contains(" or ", StringComparison.OrdinalIgnoreCase),
+                LayoutMode = KeyLayoutMode.VerticalWithOr,
+                // Stacked for slides / bitmap render.
+                Text = Key.FormatStackedDisplay(authoring)
             };
-            return resolvedKey;
         }
     }
 }

@@ -29,9 +29,9 @@ public sealed class KeyedDirectionJsonConverter : JsonConverter<KeyedDirection>
 
         return name switch
         {
-            "Left" => KeyedDirection.Left,
-            "Right" => KeyedDirection.Right,
-            "None" => KeyedDirection.None,
+            "Left" => KeyedDirection.left,
+            "Right" => KeyedDirection.right,
+            "None" => KeyedDirection.none,
             _ => throw new JsonException($"Unknown KeyedDirection value: '{name}'")
         };
     }
@@ -45,7 +45,7 @@ public sealed class KeyedDirectionJsonConverter : JsonConverter<KeyedDirection>
     public override void Write(Utf8JsonWriter writer, KeyedDirection value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
-        writer.WriteString("Name", value.Name);
+        writer.WriteString("Name", (value == KeyedDirection.left) ? "Left" : "Right");
         writer.WriteEndObject();
     }
 }

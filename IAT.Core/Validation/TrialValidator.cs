@@ -14,7 +14,7 @@ namespace IAT.Core.Validation
             RuleFor(x => x.Id).NotNull().NotEmpty().NotEqual(Guid.Empty).WithMessage("Trial ID is required and cannot be empty");
             RuleFor(x => x.StimulusId).NotNull().NotEmpty().NotEqual(Guid.Empty).WithMessage("Stimulus ID is required and cannot be empty");
             RuleFor(x => x.KeyedDirection)
-                .Must(r => r == KeyedDirection.Left || r == KeyedDirection.Right)
+                .Must(r => r == KeyedDirection.left || r == KeyedDirection.right)
                 .WithMessage("Correct response must be either Left or Right");
         }
     }

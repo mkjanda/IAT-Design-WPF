@@ -17,15 +17,15 @@ public partial class StimulusEditViewModel : ObservableObject
 
     [ObservableProperty] private Guid id;
     [ObservableProperty] private string text = string.Empty;
-    [ObservableProperty] private string fontFamily = "Arial";
+    [ObservableProperty] private string fontFamily = "Segoe UI";
     [ObservableProperty] private double fontSize = 24.0;
     [ObservableProperty] private Color textColor = Colors.Black;
     [ObservableProperty] private bool isEditPanelVisible = true;
 
     public ObservableCollection<string> AvailableFontFamilies { get; } = new()
     {
-        "Arial",
         "Segoe UI",
+        "Arial",
         "Calibri",
         "Verdana",
         "Trebuchet MS",
@@ -62,7 +62,7 @@ public partial class StimulusEditViewModel : ObservableObject
     {
         Id = stimulus.Id;
         Text = stimulus.Text ?? string.Empty;
-        FontFamily = stimulus.Style?.FontFamily ?? "Arial";
+        FontFamily = stimulus.Style?.FontFamily ?? "Segoe UI";
         FontSize = stimulus.Style?.FontSize ?? 24.0;
 
         if (stimulus.Style?.FontColor != null)
@@ -132,11 +132,19 @@ public partial class StimulusEditViewModel : ObservableObject
     /// <summary>
     /// Saves the current edit state into the singleton IatTest.Stimuli ObservableCollection
     /// (adds if new, updates if the Id already exists).
+    /// Saved is raised *before* any collection mutation so the manager's handler
+    /// is still attached. (UpdateStimulus used to Remove+Add the selected item,
+    /// which cleared ListBox selection → OnSelectedItemChanged(null) → DetachEditorEvents
+    /// before the event could fire.)
     /// </summary>
     [RelayCommand]
     private void Save()
     {
         var domain = CreateDomainStimulus();
+
+        // Capture style / refresh selection while the subscription is still live.
+        Saved?.Invoke();
+
         if (_iatTest.GetStimulusById(domain.Id) is null)
         {
             _iatTest.AddStimulus(domain);
@@ -145,7 +153,6 @@ public partial class StimulusEditViewModel : ObservableObject
         {
             _iatTest.UpdateStimulus(domain);
         }
-        Saved?.Invoke();
     }
 
     [RelayCommand]

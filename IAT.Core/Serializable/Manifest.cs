@@ -4,50 +4,12 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Xml.Schema;
-using System.Xml.Serialization;
 using IAT.Core.Enumerations;
+using System.Xml.Serialization;
 using MediatR;
 
 namespace IAT.Core.Serializable
 {
-    /// <summary>
-    /// Specifies the types of resources that can be managed or referenced within the application.
-    /// </summary>
-    /// <remarks>Use this enumeration to indicate the kind of resource being handled, such as slides,
-    /// configuration settings, files, images, error markers, or key outlines. The meaning and usage of each value
-    /// depend on the application context where the resource is required.</remarks>
-    public enum FileResourceType { 
-        /// <summary>
-        /// Gets or sets the slide item associated with this instance.
-        /// </summary>
-        itemSlide, 
-
-        /// <summary>
-        /// Gets or sets the test configuration settings used by the application.
-        /// </summary>
-        testConfiguration, 
-
-        /// <summary>
-        /// Updates the contents of a file with new data.
-        /// </summary>
-        updateFile, 
-
-        /// <summary>
-        /// Gets or sets the image associated with this instance.
-        /// </summary>
-        image, 
-
-        /// <summary>
-        /// Gets or sets the error marker associated with the current operation.
-        /// </summary>
-        errorMark, 
-
-        /// <summary>
-        /// Gets or sets the outline of the key, typically used to define the visual shape or border of a key element.
-        /// </summary>
-        keyOutline 
-    };
-
     /// <summary>
     /// Represents a request to execute a manifest operation and obtain a transaction result.
     /// </summary>
@@ -63,29 +25,13 @@ namespace IAT.Core.Serializable
     /// scenarios where file system entities need to be modeled or serialized.</remarks>
     public abstract class FileEntity
     {
-        /// <summary>
-        /// Specifies the type of a file system entity, such as a file or a directory.
-        /// </summary>
-        /// <remarks>Use this enumeration to distinguish between files and directories when working with
-        /// file system operations. This can help determine the appropriate handling or processing logic based on the
-        /// entity type.</remarks>
-        public enum EFileEntityType { 
-            /// <summary>
-            /// The entity is a file
-            /// </summary>
-            File, 
-            
-            /// <summary>
-            /// The entity is a directory
-            /// </summary>
-            Directory 
-        };
 
         /// <summary>
-        /// Gets or sets the size of the item in bytes.
+        /// Gets or sets the name of the file entity, which can be used for identification or display purposes. The name should be unique within the 
+        /// context of its parent directory or collection.
         /// </summary>
-        [XmlElement("Size", Form = XmlSchemaForm.Unqualified, Type = typeof(long))]
-        public virtual long Size { get; set; } = 0;
+        [XmlElement("Name", Form = XmlSchemaForm.Unqualified)]
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the file system or resource path associated with this instance.
@@ -94,10 +40,17 @@ namespace IAT.Core.Serializable
         public virtual string Path { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets the type of the file entity represented by this instance.
+        /// Gets or sets the size of the file entity in bytes. For files, this represents the actual size of the file content. For directories, this may represent the cumulative size of all contained files and subdirectories. The property is ignored during XML serialization to avoid 
+        /// including potentially large binary data directly in the XML representation.
         /// </summary>
-        [XmlElement("FileEntityType", Form = XmlSchemaForm.Unqualified, Type = typeof(EFileEntityType))]
-        public abstract EFileEntityType FileEntityType { get; }
+        [XmlIgnore]
+        public abstract int Size { get; set; }
+
+        /// <summary>
+        /// Gets the type of the file entity, indicating whether it is a file or a directory. This property is abstract and must be implemented by derived classes to specify the appropriate entity type. The value can be used to determine how to handle the entity in various operations, 
+        /// such as serialization, processing, or display.
+        /// </summary>
+        public abstract FileEntityType FileEntityType { get; }
     }
 
     /// <summary>
@@ -110,17 +63,32 @@ namespace IAT.Core.Serializable
     /// functionality.</remarks>
     public class ManifestFile : FileEntity
     {
-
         /// <summary>
         /// Gets or sets the type of the file entity.
         /// </summary>
-        public override EFileEntityType FileEntityType => EFileEntityType.File;
+        [XmlIgnore]
+        public override FileEntityType FileEntityType => FileEntityType.File;
+
+        /// <summary>
+        /// Gets or sets the MIME type of the content.
+        /// </summary>
+        /// <remarks>The default value is "text/plain". Set this property to specify the media type of the
+        /// data being represented, such as "application/json" or "image/png".</remarks>
+        [XmlElement("MimeType", Form = XmlSchemaForm.Unqualified)]
+        public string MimeType { get; set; } = "text/plain";
+
+        /// <summary>
+        /// Gets or sets the size of the file in bytes. The default value is 0, indicating an empty file. This property can be used to track the 
+        /// file's size for validation, display, or processing purposes within the manifest context.
+        /// </summary>
+        [XmlElement("Size", Form = XmlSchemaForm.Unqualified, Type = typeof(int))]
+        public override int Size { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the type of resource represented by this instance.
         /// </summary>
-        [XmlElement("ResourceType", Form = XmlSchemaForm.Unqualified, Type = typeof(FileResourceType))]
-        public FileResourceType ResourceType { get; set; }
+        [XmlElement("ResourceType", Form = XmlSchemaForm.Unqualified, Type = typeof(ResourceType))]
+        public ResourceType ResourceType { get; set; }
 
         /// <summary>
         /// Gets or sets the unique identifier for the associated resource.
@@ -133,18 +101,8 @@ namespace IAT.Core.Serializable
         /// </summary>
         /// <remarks>The collection is read-only from outside the class. Items can be added or removed
         /// only within the class implementation.</remarks>
-        [XmlArray("ReferenceIds", Form = XmlSchemaForm.Unqualified)]
-        [XmlArrayItem("ReferenceId", Form = XmlSchemaForm.Unqualified, Type = typeof(int))]
+        [XmlElement("ReferenceId", Form = XmlSchemaForm.Unqualified, Type = typeof(int))]
         public List<int> ReferenceIds { get; set; } = new List<int>();
-
-        /// <summary>
-        /// Gets or sets the MIME type of the content.
-        /// </summary>
-        /// <remarks>The default value is "text/plain". Set this property to specify the media type of the
-        /// data being represented, such as "application/json" or "image/png".</remarks>
-        [XmlElement("MimeType", Form = XmlSchemaForm.Unqualified)]
-        public String MimeType { get; set; } = "text/plain";
-
 
         /// <summary>
         /// The byte array representing the content of the file. This property is ignored during XML serialization, as it may 
@@ -164,63 +122,42 @@ namespace IAT.Core.Serializable
     public class ManifestDirectory : FileEntity
     {
         /// <summary>
-        /// Gets or sets the collection of file entities contained within this object.
+        /// Gets or sets the collection of subdirectories contained within this directory. Each item in the collection represents a ManifestDirectory instance, allowing for nested directory structures. 
+        /// The collection may be empty if no subdirectories are present.
         /// </summary>
-        /// <remarks>Each item in the collection represents a file entity. The collection may be empty if
-        /// no file entities are present.</remarks>
-        [XmlArray]
-        [XmlArrayItem("FileEntity", Type = typeof(FileEntity))]
-        public List<FileEntity> Contents { get; set; } = new();
+        [XmlElement("Directory", Type = typeof(ManifestDirectory))]
+        public List<ManifestDirectory> Directories { get; set; } = new();
 
         /// <summary>
-        /// Returns the FileEntity at the specified index in the Contents collection. This indexer provides 
-        /// convenient access to the file entities contained within the directory, allowing retrieval based 
-        /// on their position in the collection. Note that the index is zero-based, and an exception will be 
-        /// thrown if the index is out of range. Use this indexer to access specific file entities when iterating 
-        /// through the directory contents or when you know the position of the desired entity.
+        /// Gets or sets the collection of files contained within this directory. Each item in the collection represents a ManifestFile instance, allowing for the inclusion of multiple files. 
+        /// The collection may be empty if no files are present.
         /// </summary>
-        /// <param name="ctr"></param>
-        /// <returns></returns>
-        [XmlIgnore]        
-        public FileEntity this[int ctr]
-        {
-            get
-            {
-                return Contents[ctr];
-            }
-        }
+        [XmlElement("File", Type = typeof(ManifestFile))]
+        public List<ManifestFile> Files { get; set; } = new();
+
 
         /// <summary>
         /// Returns Directory as the file entity type.
         /// </summary>
-        public override EFileEntityType FileEntityType => EFileEntityType.Directory;
-
-
-        /// <summary>
-        /// Gets or sets the file system path associated with this instance.
-        /// </summary>
-        public override string Path { get; set; } = string.Empty;
+        [XmlIgnore]
+        public override FileEntityType FileEntityType => FileEntityType.Directory;
 
         /// <summary>
         /// The size in bytes of the directory, calculated as the sum of the sizes of all contained file entities. 
         /// </summary>
-        public override long Size
+        [XmlIgnore]
+        public override int Size
         {
             get
             {
-                long totalSize = 0;
-                Contents.Where(fe => fe.FileEntityType == EFileEntityType.Directory).Cast<ManifestDirectory>().ToList().ForEach(fe => totalSize += fe.Size);
-                Contents.Where(fe => fe.FileEntityType == EFileEntityType.File).Cast<ManifestFile>().ToList().ForEach(fe => totalSize += fe.Size);
+                int totalSize = 0;
+                Directories.ToList().ForEach(fe => totalSize += fe.Size);
+                Files.ToList().ForEach(fe => totalSize += fe.Size);
                 return totalSize;
             }
+            set;
         }
     }
-
-    /// <summary>
-    /// Represents a command that is sent when a manifest is received, containing the manifest data and expecting a transaction result in response.
-    /// </summary>
-    /// <param name="m">The manifest</param>
-    public record ManifestReceivedCommand(Manifest m) : IRequest<TransactionResult>;
 
     /// <summary>
     /// Represents a manifest that contains metadata for XML serialization, including the client identifier and IAT
@@ -231,27 +168,20 @@ namespace IAT.Core.Serializable
         /// <summary>
         /// Gets or sets the type of the manifest, indicating whether it is a file manifest or an item slide manifest.
         /// </summary>
-        [XmlAttribute("ManifestType", Form = XmlSchemaForm.Unqualified, Type = typeof(ManifestType))]
+        [XmlAttribute("ManifestType", Form = XmlSchemaForm.Unqualified)]
         public ManifestType ManifestType { get; set; }
 
         /// <summary>
-        /// Gets or sets the product key associated with the manifest, 
-        /// used for authentication or identification purposes.
+        /// Gets or sets the product key associated with the manifest, used for authentication or identification purposes.
         /// </summary>
         [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
-        public string ProductKey { get; set; } = String.Empty;
+        public String ProductKey { get; set; } = String.Empty;
 
         /// <summary>
         /// Gets or sets the name of the IAT element for XML serialization.
         /// </summary>
         [XmlElement("IATName", Form = XmlSchemaForm.Unqualified)]
         public string IATName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the unique identifier for the client.
-        /// </summary>
-        [XmlElement("ClientId", Form = XmlSchemaForm.Unqualified, Type = typeof(long))]
-        public long ClientId { get; set; } = 0;
 
     }
 }

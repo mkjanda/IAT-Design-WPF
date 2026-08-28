@@ -67,7 +67,7 @@ public class IatTestValidationTests
         var trial = new Trial
         {
             StimulusId = Guid.Empty,
-            KeyedDirection = KeyedDirection.Left
+            KeyedDirection = KeyedDirection.left
         };
         var result = trial.Validate(stimulus: null);
         Assert.False(result.IsValid);
@@ -81,7 +81,7 @@ public class IatTestValidationTests
         var trial = new Trial
         {
             StimulusId = stim.Id,
-            KeyedDirection = KeyedDirection.None
+            KeyedDirection = KeyedDirection.none
         };
         var result = trial.Validate(stim);
         Assert.False(result.IsValid);
@@ -95,7 +95,7 @@ public class IatTestValidationTests
         var trial = new Trial
         {
             StimulusId = stim.Id,
-            KeyedDirection = KeyedDirection.Left
+            KeyedDirection = KeyedDirection.left
         };
         Assert.True(trial.Validate(stim).IsValid);
     }
@@ -283,7 +283,7 @@ public class IatTestValidationTests
         {
             Id = Guid.NewGuid(),
             StimulusId = stim.Id,
-            KeyedDirection = KeyedDirection.Left,
+            KeyedDirection = KeyedDirection.left,
             TrialNumber = 1
         };
         test.AddTrial(trial);

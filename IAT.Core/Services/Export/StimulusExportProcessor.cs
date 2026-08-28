@@ -96,7 +96,7 @@ namespace IAT.Core.Services.Export
                     pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
                     pngEncoder.Save(memStream);
                     filename = $"stimulus{exportContext.IdDictionary[stimulus.Id]}.png";
-                    _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, FileResourceType.image, "image/png", memStream.ToArray());
+                    _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, ResourceType.Image, "image/png", memStream.ToArray());
                 }
                 else if (stimulus is ImageStimulus imageStimulus)
                 {
@@ -134,7 +134,7 @@ namespace IAT.Core.Services.Export
                         jpegEncoder.Frames.Add(BitmapFrame.Create(resizedStimulus));
                         jpegEncoder.Save(memStream);
                     }
-                    _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, FileResourceType.image, mimeType, memStream.ToArray());
+                    _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, ResourceType.Image, mimeType, memStream.ToArray());
                 }
                 exportContext.DisplayItems.Add(new DisplayItem()
                 {

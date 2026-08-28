@@ -150,17 +150,19 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
 
         TransactionCommands = new Dictionary<TransactionType, Func<TransactionRequest, IRequest<TransactionResult>>>
         {
-            { TransactionType.AbortTransaction, r => new AbortTransactionCommand(r) },
             { TransactionType.EMailAlreadyVerified, r => new EMailAlreadyVerifiedCommand(r) },
-            { TransactionType.EncryptionKeyReceived, r => new EncryptionKeyReceivedCommand(r) },
-            { TransactionType.IATBeingDeployed, r => new IATBeingDeployedCommand(r) },
             { TransactionType.NoSuchClient, r => new NoSuchClientCommand(r) },
-            { TransactionType.RequestIATUpload, r => new RequestIATUploadCommand(r) },
             { TransactionType.TransactionFail, r => new TransactionFailCommand(r) },
             { TransactionType.TransactionSuccess, r => new TransactionSuccessCommand(r) },
             { TransactionType.IATExists, r => new IATExistsCommand(r) },
             { TransactionType.AuthToken, r => new AuthTokenCommand(r) },
-            { TransactionType.RequestTransmission, r => new RequestTransmissionCommand(r) }
+            { TransactionType.RequestTransmission, r => new RequestTransmissionCommand(r) },
+            { TransactionType.RequestItemSlideManifest, r => new RequestManifestCommand(r) },
+            { TransactionType.RequestFileManifest, r => new RequestManifestCommand(r) },
+            { TransactionType.RequestFiles, r => new RequestUploadCommand(r) },
+            { TransactionType.RequestItemSlides, r => new RequestUploadCommand(r) },
+            { TransactionType.RequestEncryptionKey, r => new RequestEncryptionKeyCommand(r) },
+            { TransactionType.RequestConfigFile, r => new RequestConfigFileCommand(r) }
         };
     }
 

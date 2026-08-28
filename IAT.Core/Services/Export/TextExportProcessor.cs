@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Extensions;
+using IAT.Core.Enumerations;
 using IAT.Core.ConfigFile;
 
 
@@ -71,10 +72,13 @@ namespace IAT.Core.Services.Export
             {
                 exportContext.IdDictionary[text.Id] = exportContext.IdDictionary.Count + 1;
                 var textBmp = _imageGenerationService.RenderTextToBitmap(text, textRect);
+                encoder.Frames.Clear();
+                encoder.Frames.Add(BitmapFrame.Create(textBmp));
                 var memStream = new MemoryStream();
                 encoder.Save(memStream);
+                memStream.Dispose();
                 filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
-                _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, FileResourceType.image, "image/png", memStream.ToArray());
+                _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, ResourceType.Image, "image/png", memStream.ToArray());
             }
             filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
             exportContext.DisplayItems.Add(new DisplayItem()

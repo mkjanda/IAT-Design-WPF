@@ -12,10 +12,17 @@ namespace IAT.Core.Domain;
 /// such as cognitive or psychological testing environments.</remarks>
 public sealed class TextStimulus : Stimulus, IFormattedText
 {
+    private string _text = string.Empty;
+
     /// <summary>
-    /// Gets or sets the text content.
+    /// Gets or sets the text content. Raises PropertyChanged so the Stimuli list
+    /// updates in place after Save without Remove+Add.
     /// </summary>
-    public override string Text { get; set; } = string.Empty;
+    public override string Text
+    {
+        get => _text;
+        set => SetProperty(ref _text, value);
+    }
 
     /// <summary>
     /// The styling information for the text stimulus, including font, size, color, and other formatting options. 

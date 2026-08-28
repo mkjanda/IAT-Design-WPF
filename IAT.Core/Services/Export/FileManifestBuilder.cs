@@ -4,7 +4,7 @@ using System.Security.RightsManagement;
 using System.Text;
 using IAT.Core.Extensions;
 using IAT.Core.Serializable;
-using sun.awt.image;
+using IAT.Core.Enumerations;
 
 namespace IAT.Core.Services.Export
 {
@@ -26,7 +26,7 @@ namespace IAT.Core.Services.Export
         /// <param name="resourceType">The type of the file resource to add. Specifies how the file will be categorized.</param>
         /// <param name="mimeType">The MIME type of the file, such as "image/png" or "application/pdf". Cannot be null or empty.</param>
         /// <param name="content">The binary content of the file to add, or null to add a file reference without content.</param>
-        void AddFile(Manifest manifest, string path, FileResourceType resourceType, string mimeType, byte[]? content = null);
+        void AddFile(Manifest manifest, string path, ResourceType resourceType, string mimeType, byte[]? content = null);
 
         /// <summary>
         /// Sets the content for the specified resource identifier.
@@ -54,10 +54,10 @@ namespace IAT.Core.Services.Export
         /// <param name="resourceType">The type of the file resource to add. Specifies how the file is categorized within the manifest.</param>
         /// <param name="mimeType">The MIME type of the file, such as "application/pdf" or "image/png". Cannot be null or empty.</param>
         /// <param name="content">The binary content of the file. If null, a default single-byte array is used.</param>
-        public void AddFile(Manifest manifest, string path, FileResourceType resourceType, string mimeType, byte[]? content = null)
+        public void AddFile(Manifest manifest, string path, ResourceType resourceType, string mimeType, byte[]? content = null)
         {
             manifest.AddFile(new ManifestFile() { Path = path, 
-                ResourceId = manifest.Contents.Where(fe => fe is ManifestFile).Count() + 1, 
+                ResourceId = manifest.Files.Count + 1, 
                 ResourceType = resourceType, 
                 Size = content?.Length ?? 1, 
                 MimeType = mimeType, 
@@ -75,7 +75,7 @@ namespace IAT.Core.Services.Export
         /// <param name="content">The byte array containing the new content to assign to the file. Cannot be null.</param>
         public void SetContent(Manifest manifest, int resourceId, byte[] content)
         {
-            var file = manifest.Contents.Where(fe => fe is ManifestFile).Cast<ManifestFile>().Where(mf => mf.ResourceId == resourceId).FirstOrDefault();
+            var file = manifest.Files.Where(mf => mf.ResourceId == resourceId).FirstOrDefault();
             if (file != null)
             {
                 file.Content = content;

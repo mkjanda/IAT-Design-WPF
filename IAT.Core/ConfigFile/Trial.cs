@@ -63,7 +63,7 @@ public class Trial : Event, IEqualityComparer<Trial>
     /// Gets or sets the direction associated with the key input.
     /// </summary>
     [XmlElement("KeyedDir", Form = XmlSchemaForm.Unqualified)]
-    public KeyedDirection KeyedDir { get; set; } = KeyedDirection.None;
+    public KeyedDirection KeyedDir { get; set; } = KeyedDirection.none;
 
     /// <summary>
     /// Gets or sets the item number associated with this instance.

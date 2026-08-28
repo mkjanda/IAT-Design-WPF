@@ -55,7 +55,7 @@ namespace IAT.Core.Domain
         /// <summary>
         /// The direction associated with the response key for the stimulus being presented on this instruction screen. 
         /// </summary>
-        public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.None;
+        public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.none;
 
 
         /// <summary>

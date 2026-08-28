@@ -6,6 +6,7 @@ using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using IAT.Core.ConfigFile;
 using IAT.Core.Serializable;
+using IAT.Core.Services;
 
 namespace IAT.Core.Services.Export
 {
@@ -30,7 +31,7 @@ namespace IAT.Core.Services.Export
     /// </summary>
     public class BlockExportProcessor : IBlockExportProcessor
     {
-        private readonly ImageGenerationService _imageGenerationService;
+        private readonly IImageGenerationService _imageGenerationService;
         private readonly IFileManifestBuilder _fileManifestBuilder;
         private readonly ITextExportProcessor _textExportProcessor;
         private readonly IStimulusExportProcessor _stimulusExportProcessor;
@@ -44,7 +45,7 @@ namespace IAT.Core.Services.Export
         /// <param name="textExportProcessor">Processor for exporting text content.</param>
         /// <param name="stimulusExportProcessor">Processor for exporting stimulus content.</param>
         /// <param name="projectPackageService">Service for managing project packages.</param>
-        public BlockExportProcessor(ImageGenerationService imageGenerationService, IFileManifestBuilder fileManifestBuilder, 
+        public BlockExportProcessor(IImageGenerationService imageGenerationService, IFileManifestBuilder fileManifestBuilder, 
             ITextExportProcessor textExportProcessor, IStimulusExportProcessor stimulusExportProcessor,
             IProjectPackageService projectPackageService)
         {
@@ -83,9 +84,14 @@ namespace IAT.Core.Services.Export
         {
             _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.KeyedInstructions, exportContext);
             _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(screen.LeftResponseId) ?? throw new ArgumentException(), 
+            // Response keys live in the key cache, not FormattedTexts.
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetKeyById(screen.LeftResponseId)
+                    ?? throw new ArgumentException($"Left response key not found: {screen.LeftResponseId}"),
                 exportContext.LayoutRects.LeftKey, exportContext);
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(screen.RightResponseId) ?? throw new ArgumentException(), 
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetKeyById(screen.RightResponseId)
+                    ?? throw new ArgumentException($"Right response key not found: {screen.RightResponseId}"),
                 exportContext.LayoutRects.RightKey, exportContext);
                 
             exportContext.Events.Add(new ConfigFile.KeyedInstructionScreen()
@@ -109,8 +115,14 @@ namespace IAT.Core.Services.Export
         {
             _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.MockItemInstructions, exportContext);
             _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(screen.LeftResponseId) ?? throw new ArgumentException(), exportContext.LayoutRects.LeftKey, exportContext);
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(screen.RightResponseId) ?? throw new ArgumentException(), exportContext.LayoutRects.RightKey, exportContext);
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetKeyById(screen.LeftResponseId)
+                    ?? throw new ArgumentException($"Left response key not found: {screen.LeftResponseId}"),
+                exportContext.LayoutRects.LeftKey, exportContext);
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetKeyById(screen.RightResponseId)
+                    ?? throw new ArgumentException($"Right response key not found: {screen.RightResponseId}"),
+                exportContext.LayoutRects.RightKey, exportContext);
             _stimulusExportProcessor.ProcessStimulus(exportContext.Test.GetStimulusById(screen.StimulusId) ?? throw new ArgumentNullException(), exportContext);
             exportContext.Events.Add(new ConfigFile.MockItemInstructionScreen()
             {
@@ -120,8 +132,8 @@ namespace IAT.Core.Services.Export
                 RightResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.RightResponseId).Select(di => di.Id).FirstOrDefault(),
                 StimulusDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.StimulusId).Select(di => di.Id).FirstOrDefault(),
                 ErrorMarkIsDisplayed = screen.ShowErrorMark,
-                OutlineLeftResponse = (screen.KeyedDirection == KeyedDirection.Left) && screen.OutlineCorrectResponse,
-                OutlineRightResponse = (screen.KeyedDirection == KeyedDirection.Right) && screen.OutlineCorrectResponse
+                OutlineLeftResponse = (screen.KeyedDirection == KeyedDirection.left) && screen.OutlineCorrectResponse,
+                OutlineRightResponse = (screen.KeyedDirection == KeyedDirection.right) && screen.OutlineCorrectResponse
             });
         }
 
@@ -158,11 +170,21 @@ namespace IAT.Core.Services.Export
             }
 
 
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(block.BlockInstructionsId) ?? throw new ArgumentNullException(), 
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetFormattedTextById(block.BlockInstructionsId)
+                    ?? throw new ArgumentNullException(nameof(block.BlockInstructionsId),
+                        $"Block instructions FormattedText not found: {block.BlockInstructionsId}"),
                 exportContext.LayoutRects.BlockInstructions, exportContext);
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(block.LeftResponseId) ?? throw new ArgumentNullException(), 
+            // Left/RightResponseId reference Key instances (IFormattedText) in the key cache.
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetKeyById(block.LeftResponseId)
+                    ?? throw new ArgumentNullException(nameof(block.LeftResponseId),
+                        $"Left response key not found: {block.LeftResponseId}"),
                 exportContext.LayoutRects.LeftKey, exportContext);
-            _textExportProcessor.ProcessText(exportContext.Test.GetFormattedTextById(block.RightResponseId) ?? throw new ArgumentNullException(), 
+            _textExportProcessor.ProcessText(
+                exportContext.Test.GetKeyById(block.RightResponseId)
+                    ?? throw new ArgumentNullException(nameof(block.RightResponseId),
+                        $"Right response key not found: {block.RightResponseId}"),
                 exportContext.LayoutRects.RightKey, exportContext);
             exportContext.AddEvent(new BeginIATBlock()
             {

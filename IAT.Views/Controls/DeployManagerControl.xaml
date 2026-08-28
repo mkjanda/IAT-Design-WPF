@@ -478,22 +478,26 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="+ Deploy Current Test"
-                    Command="{Binding DeployCurrentTestCommand}"
-                    Style="{StaticResource AccentButton}"
-                    HorizontalAlignment="Left" Padding="20,10" Height="40" FontSize="14"
-                    MinWidth="180"/>
+            <!-- Test name is the server-facing IAT name (IatTest.Name), not the package filename. -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Test Name" Foreground="#AAAAAA" FontSize="13"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBox Text="{Binding TestName, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource DarkTextBox}"
+                         Width="280" Height="36" Padding="8,6"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Name used on the server when this test is deployed. Independent of the .iat file name."/>
+                <Button Content="+ Deploy Current Test"
+                        Command="{Binding DeployCurrentTestCommand}"
+                        Style="{StaticResource AccentButton}"
+                        Margin="16,0,0,0"
+                        Padding="20,10" Height="40" FontSize="14"
+                        MinWidth="180"/>
+            </StackPanel>
 
-            <Button Grid.Column="1" Content="Download All Results"
-                    Command="{Binding DownloadAllResultsCommand}"
-                    Style="{StaticResource SecondaryButton}"
-                    Padding="18,10" Height="40" Margin="0,0,10,0" FontSize="13"
-                    MinWidth="160"/>
-
-            <Button Grid.Column="2" Content="Delete Selected"
+            <Button Grid.Column="1" Content="Delete Selected"
                     Command="{Binding DeleteSelectedCommand}"
                     Style="{StaticResource DangerButton}"
                     Padding="18,10" Height="40" FontSize="13"

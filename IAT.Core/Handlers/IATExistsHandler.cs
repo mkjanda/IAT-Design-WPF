@@ -47,7 +47,6 @@ namespace IAT.Core.Handlers
         {
             if (_transactionState.Operation == OperationType.TestDeployment)
             {
-                await _dialogService.ShowNotificationAsync(TransactionResult.IATExists.Message, TransactionResult.IATExists.Title);
                 _transactionState.SetResult(TransactionResult.IATExists);
                 return TransactionResult.IATExists;
             }

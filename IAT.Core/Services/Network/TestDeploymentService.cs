@@ -56,23 +56,6 @@ namespace IAT.Core.Services.Network
         {
             ArgumentNullException.ThrowIfNull(exportResult);
 
-            _webSocket.TransactionCommands[TransactionType.IATExists] =
-                request => new IATExistsCommand(request);
-            _webSocket.TransactionCommands[TransactionType.RequestTransmission] =
-                request => new RequestTransmissionCommand(request);
-            _webSocket.TransactionCommands[TransactionType.RequestItemSlides] =
-                request => new RequestItemSlidesCommand(request);
-            _webSocket.TransactionCommands[TransactionType.RequestItemSlideManifest] =
-                request => new RequestItemSlideManifestCommand(request);
-            _webSocket.TransactionCommands[TransactionType.RequestFiles] =
-                request => new RequestFilesCommand(request);
-            _webSocket.TransactionCommands[TransactionType.RequestFileManifest] =
-                request => new RequestFileManifestCommand(request);
-            _webSocket.TransactionCommands[TransactionType.TransactionSuccess] =
-                request => new DeploymentSuccessCommand(request);
-            _webSocket.TransactionCommands[TransactionType.TransactionFail] =
-                request => new DeploymentFailCommand(request);
-
             // Do not Clear() — that would wipe ConfigFile / manifests. Reset completion only.
             _state.ResetCompletion();
             _state.Result = TransactionResult.Unset;
@@ -80,14 +63,15 @@ namespace IAT.Core.Services.Network
             _state.ConfigFile = exportResult.ConfigFile;
             _state.FileManifest = exportResult.FileManifest;
             _state.SlideManifest = exportResult.SlideManifest;
+            _state.ProductKey = _localStorage[Field.ProductKey];
             _state.Password = password;
             _state.IATName = name;
+            _state.ProductKey = _localStorage[Field.ProductKey];
 
             await _webSocket.SendMessage(new TransactionRequest()
             {
                 Type = TransactionType.RequestConnection,
-                ProductKey = _localStorage[Field.ProductKey],
-                IATName = name
+                ProductKey = _state.ProductKey
             });
             await _state.Completion.WaitAsync(cancellationToken);
             return _state.Result;

@@ -62,20 +62,7 @@
                          Background="#2D2D2D" BorderBrush="#3C3C3C" Foreground="#CCCCCC"
                          Tag="Search stimuli..." DockPanel.Dock="Top"/>
 
-                <!-- 
-                    Bind to DisplayedStimuli which always points at either the live
-                    IatTest.Stimuli ObservableCollection or a filtered snapshot.
-                    Add/Update/Remove on the domain collection therefore appear immediately.
-                -->
-                <ListBox ItemsSource="{Binding DisplayedStimuli}"
-                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                         Background="Transparent" BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         Margin="4,0,4,4" DockPanel.Dock="Top"
-                         ItemContainerStyle="{StaticResource DarkListBoxItem}">
-                    <!-- DataTemplates above handle rendering per concrete Stimulus type -->
-                </ListBox>
-
+                <!-- Buttons stay pinned at the bottom so the list can scroll in the remaining space. -->
                 <StackPanel Orientation="Vertical" Margin="8" DockPanel.Dock="Bottom">
                     <Button Content="+ Add Text Stimulus" 
                             Command="{Binding AddTextStimulusCommand}"
@@ -84,6 +71,22 @@
                             Command="{Binding AddImageStimulusCommand}"
                             Style="{StaticResource AccentButton}" Width="auto" Height="36" Margin="0,0,0,0"/>
                 </StackPanel>
+
+                <!-- 
+                    Last child of DockPanel (no Dock) fills remaining height.
+                    Bind to DisplayedStimuli which always points at either the live
+                    IatTest.Stimuli ObservableCollection or a filtered snapshot.
+                    Vertical scroll activates once the list exceeds available height.
+                -->
+                <ListBox ItemsSource="{Binding DisplayedStimuli}"
+                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                         Background="Transparent" BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         Margin="4,0,4,4"
+                         ItemContainerStyle="{StaticResource DarkListBoxItem}">
+                    <!-- DataTemplates above handle rendering per concrete Stimulus type -->
+                </ListBox>
             </DockPanel>
         </Border>
 

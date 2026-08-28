@@ -4,6 +4,7 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using System.Text;
+using IAT.Core.Serializable;
 
 namespace IAT.Core.ConfigFile;
 
@@ -13,15 +14,9 @@ namespace IAT.Core.ConfigFile;
 /// of configuration data. The ConfigFile class encapsulates all necessary parameters to configure the behavior and appearance of the IAT application, 
 /// making it a central component for managing application settings in a structured manner.
 /// </summary>
-[XmlRoot("ConfigFile]")]
-public class IATConfigFile
+[XmlRoot("ConfigFile")]
+public class IATConfigFile : IWebSocketMessage  
 {
-    /// <summary>
-    /// Gets or sets the width of the slide, in pixels.
-    /// </summary>
-    [XmlIgnore]
-    public int SlideWidth => 500;
-
     /// <summary>
     /// Gets or sets the number of surveys to be conducted before the main survey sequence begins.
     /// </summary>
@@ -33,6 +28,17 @@ public class IATConfigFile
     /// </summary>
     [XmlAttribute("NumAfterSurveys")]
     public int NumAfterSurveys { get; set; } = 0;
+    /// <summary>
+    /// Gets or sets the width of the slide, in pixels.
+    /// </summary>
+    [XmlIgnore]
+    public int SlideWidth => 500;
+
+    /// <summary>
+    /// Gets or sets the product key
+    /// </summary>
+    [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
+    public string ProductKey { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the version number of the result data format.
@@ -119,12 +125,6 @@ public class IATConfigFile
     public int RightKeyOutlineID { get; set; } = 3;
 
     /// <summary>
-    /// Gets or sets a value indicating whether self-alternating surveys should be prefixed.
-    /// </summary>
-    [XmlElement("PrefixSelfAlternatingSurveys", Form = XmlSchemaForm.Unqualified)]
-    public bool PrefixSelfAlternatingSurveys { get; set; } = false;
-
-    /// <summary>
     /// Gets or sets the collection of surveys associated with this instance.
     /// </summary>
     [XmlArray("Surveys")]
@@ -148,12 +148,6 @@ public class IATConfigFile
     [XmlElement("TextInstructionScreen", Form = XmlSchemaForm.Unqualified, Type = typeof(TextInstructionScreen))]
     [XmlElement("Trial", Form = XmlSchemaForm.Unqualified, Type = typeof(Trial))]
     public List<Event> EventList { get; set; } = new List<Event>();
-
-    /// <summary>
-    /// Gets or sets the unique response item associated with this instance.
-    /// </summary>
-    [XmlElement("UniqueResponse", Form = XmlSchemaForm.Unqualified, Type = typeof(UniqueResponseItem), IsNullable = true)]
-    public UniqueResponseItem? UniqueResponseItem { get; set; } = null;
 
     /// <summary>
     /// Gets or sets the collection of display items to be serialized or deserialized as part of the DisplayItemList XML

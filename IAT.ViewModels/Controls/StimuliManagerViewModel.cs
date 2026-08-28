@@ -6,6 +6,7 @@ using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 
 namespace IAT.ViewModels.Controls;
 
@@ -45,6 +46,14 @@ public partial class StimuliManagerViewModel : ObservableObject
     private ObservableCollection<Stimulus>? _filteredStimuli;
 
     private ObservableCollection<StimulusEditViewModel> StimuliLibrary = new ObservableCollection<StimulusEditViewModel>();
+
+    // Remember the last text-stimulus style the user chose so successive
+    // "Add Text Stimulus" clicks start with the same face / size / color.
+    // Defaults match TextStyle domain defaults (Segoe UI / 24 / Black).
+    private string _lastFontFamily = "Segoe UI";
+    private double _lastFontSize = 24.0;
+    private Color _lastTextColor = Colors.Black;
+
     public ObservableCollection<Stimulus>? FilteredStimuli
     {
         get => _filteredStimuli;
@@ -147,14 +156,24 @@ public partial class StimuliManagerViewModel : ObservableObject
 
     private void OnEditorSaved()
     {
-        // Domain collection already notified via AddStimulus / UpdateStimulus.
-        // Re-select so the ListBox and editor stay consistent after a replace.
-        var id = SelectedItem?.Id;
-        if (id.HasValue)
+        // Capture text style so the next "Add Text Stimulus" reuses it.
+        // Only from a pure text editor — ImageStimulusEditViewModel inherits the
+        // base class and would otherwise overwrite the remembered style with
+        // its own (unused) defaults whenever an image is saved.
+        //
+        // Note: Saved is raised *before* UpdateStimulus mutates the collection,
+        // so this handler still runs even if a Remove+Add path clears selection.
+        if (CurrentEditViewModel is StimulusEditViewModel textEditor
+            && CurrentEditViewModel is not ImageStimulusEditViewModel)
         {
-            SelectedItem = _currentTest.GetStimulusById(id.Value);
+            _lastFontFamily = textEditor.FontFamily;
+            _lastFontSize = textEditor.FontSize;
+            _lastTextColor = textEditor.TextColor;
         }
-        // Also refresh filter if active
+
+        // Do NOT re-assign SelectedItem here. UpdateStimulus now mutates in place
+        // (same object identity), so selection stays. Forcing a re-select after
+        // a Remove+Add was the old band-aid and itself caused the null path.
         if (_filteredStimuli is not null)
             OnSearchTextChanged(SearchText);
     }
@@ -183,10 +202,16 @@ public partial class StimuliManagerViewModel : ObservableObject
         var newStimulus = new TextStimulus
         {
             Id = Guid.NewGuid(),
-            Text = "New Text Stimulus"
+            Text = "New Text Stimulus",
+            Style = new TextStyle
+            {
+                FontFamily = _lastFontFamily,
+                FontSize = _lastFontSize,
+                FontColor = _lastTextColor
+            }
         };
         _currentTest.AddStimulus(newStimulus);
-        SelectedItem = newStimulus; // triggers creation of edit VM
+        SelectedItem = newStimulus; // triggers creation of edit VM which loads Style
     }
 
     [RelayCommand]

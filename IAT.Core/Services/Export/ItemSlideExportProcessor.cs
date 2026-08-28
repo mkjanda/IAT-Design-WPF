@@ -58,10 +58,6 @@ public class ItemSlideExportProcessor : IItemSlideExportProcessor
     /// <param name="context">The export context containing the test data, layout rectangles, and slide manifest to populate.</param>
     public void ProcessItemSlides(ExportContext context)
     {
-        JpegBitmapEncoder encoder = new JpegBitmapEncoder()
-        {
-            QualityLevel = 90
-        };
         foreach (var block in context.Test.AllBlocks)
         {
             foreach (var trial in block.TrialIds.Select(tId => context.Test.AllTrials.First(t => t.Id == tId)))
@@ -69,16 +65,21 @@ public class ItemSlideExportProcessor : IItemSlideExportProcessor
                 var bmp = _imageGenerationService.RenderSlide(context.Test, block.Id, trial.Id, context.LayoutRects);
                 var filename = $"slide_{block.Id}_{trial.Id}.png";
                 var memStream = new MemoryStream();
+                JpegBitmapEncoder encoder = new JpegBitmapEncoder()
+                {
+                    QualityLevel = 90
+                };
                 encoder.Frames.Clear();
                 encoder.Frames.Add(BitmapFrame.Create(bmp));
                 encoder.Save(memStream);
                 context.SlideManifest.AddFile(new Serializable.ManifestFile()
                 {
-                    ResourceType = FileResourceType.itemSlide,
+                    ResourceType = ResourceType.ItemSlide,
                     MimeType = "image/jpeg",
-                    Size = memStream.Length,
+                    Size = (int)memStream.Length,
                     Content = memStream.ToArray()
                 });
+                memStream.Dispose();
             }
         }
     }

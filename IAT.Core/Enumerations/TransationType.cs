@@ -234,22 +234,10 @@ namespace IAT.Core.Enumerations
         EncryptionKeysReceived,
 
         /// <summary>
-        /// Gets or sets the deployment file manifest that was received.
-        /// </summary>
-        [Description("Indicates whether the deployment file manifest has been received")]
-        DeploymentFileManifestReceived,
-
-        /// <summary>
-        /// Gets or sets the manifest data received for the item slide.
-        /// </summary>
-        [Description("Indicates whether the manifest data for the item slide has been received")]
-        ItemSlideManifestReceived,
-
-        /// <summary>
         /// Initiates a handshake request with a remote endpoint to establish communication or verify connectivity.
         /// </summary>
-        [Description("Initiates a handshake request with a remote endpoint to establish communication or verify connectivity")]
-        RequestHandshake,
+//        [Description("Initiates a handshake request with a remote endpoint to establish communication or verify connectivity")]
+  //      RequestHandshake,
 
         /// <summary>
         /// Aborts the current deployment process, stopping any ongoing operations and rolling back changes if

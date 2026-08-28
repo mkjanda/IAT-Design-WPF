@@ -90,9 +90,11 @@
                     </StackPanel>
                 </DockPanel>
 
-                <!-- Response Keys card -->
+                <!-- Response Keys card: text + basic style. After Generate 7-Block, blocks 3–7 are
+                     read-only and follow practice keys (1–2) via propagation. -->
                 <Border Background="#2A2A2A" BorderBrush="#3C3C3C" BorderThickness="1"
-                        CornerRadius="4" Padding="12" Margin="0,0,0,16">
+                        CornerRadius="4" Padding="12" Margin="0,0,0,16"
+                        IsEnabled="{Binding AreResponseKeysEditable}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -105,14 +107,70 @@
                             <TextBlock Text="Left Response Key" Style="{StaticResource SectionHeader}"/>
                             <TextBox Text="{Binding LeftKeyText, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource DarkTextBox}"
-                                     Height="36" Padding="8,6"/>
+                                     Height="36" Padding="8,6"
+                                     ToolTip="Practice blocks (1–2) only after Generate 7-Block. Changes propagate to derived keys."/>
+                            <TextBlock Text="Key Style" Foreground="#AAAAAA" FontSize="11" Margin="0,8,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <ComboBox Width="130" Margin="0,0,8,0"
+                                          ItemsSource="{Binding AvailableFontFamilies}"
+                                          SelectedItem="{Binding LeftKeyFontFamily}"
+                                          Style="{StaticResource DarkComboBox}"/>
+                                <ComboBox Width="72"
+                                          ItemsSource="{Binding AvailableFontSizes}"
+                                          SelectedItem="{Binding LeftKeyFontSize}"
+                                          Style="{StaticResource DarkComboBox}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Width="20" Height="20" Margin="1" Background="#000000" BorderBrush="#555"
+                                        Command="{Binding ApplyLeftKeyPaletteCommand}" CommandParameter="Black" ToolTip="Black"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#FFFFFF" BorderBrush="#555"
+                                        Command="{Binding ApplyLeftKeyPaletteCommand}" CommandParameter="White" ToolTip="White"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#CD212A" BorderBrush="#555"
+                                        Command="{Binding ApplyLeftKeyPaletteCommand}" CommandParameter="Flame Scarlet" ToolTip="Flame Scarlet"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#00A1B4" BorderBrush="#555"
+                                        Command="{Binding ApplyLeftKeyPaletteCommand}" CommandParameter="Bluebird" ToolTip="Bluebird"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#009473" BorderBrush="#555"
+                                        Command="{Binding ApplyLeftKeyPaletteCommand}" CommandParameter="Emerald" ToolTip="Emerald"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#5F4B8B" BorderBrush="#555"
+                                        Command="{Binding ApplyLeftKeyPaletteCommand}" CommandParameter="Ultra Violet" ToolTip="Ultra Violet"/>
+                                <Border Width="20" Height="20" Margin="4,1,1,1" BorderBrush="#888" BorderThickness="1"
+                                        Background="{Binding LeftKeyPreviewBrush}" ToolTip="Current left key color"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Right Response Key" Style="{StaticResource SectionHeader}"/>
                             <TextBox Text="{Binding RightKeyText, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource DarkTextBox}"
-                                     Height="36" Padding="8,6"/>
+                                     Height="36" Padding="8,6"
+                                     ToolTip="Practice blocks (1–2) only after Generate 7-Block. Changes propagate to derived keys."/>
+                            <TextBlock Text="Key Style" Foreground="#AAAAAA" FontSize="11" Margin="0,8,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <ComboBox Width="130" Margin="0,0,8,0"
+                                          ItemsSource="{Binding AvailableFontFamilies}"
+                                          SelectedItem="{Binding RightKeyFontFamily}"
+                                          Style="{StaticResource DarkComboBox}"/>
+                                <ComboBox Width="72"
+                                          ItemsSource="{Binding AvailableFontSizes}"
+                                          SelectedItem="{Binding RightKeyFontSize}"
+                                          Style="{StaticResource DarkComboBox}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Width="20" Height="20" Margin="1" Background="#000000" BorderBrush="#555"
+                                        Command="{Binding ApplyRightKeyPaletteCommand}" CommandParameter="Black" ToolTip="Black"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#FFFFFF" BorderBrush="#555"
+                                        Command="{Binding ApplyRightKeyPaletteCommand}" CommandParameter="White" ToolTip="White"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#CD212A" BorderBrush="#555"
+                                        Command="{Binding ApplyRightKeyPaletteCommand}" CommandParameter="Flame Scarlet" ToolTip="Flame Scarlet"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#00A1B4" BorderBrush="#555"
+                                        Command="{Binding ApplyRightKeyPaletteCommand}" CommandParameter="Bluebird" ToolTip="Bluebird"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#009473" BorderBrush="#555"
+                                        Command="{Binding ApplyRightKeyPaletteCommand}" CommandParameter="Emerald" ToolTip="Emerald"/>
+                                <Button Width="20" Height="20" Margin="1" Background="#5F4B8B" BorderBrush="#555"
+                                        Command="{Binding ApplyRightKeyPaletteCommand}" CommandParameter="Ultra Violet" ToolTip="Ultra Violet"/>
+                                <Border Width="20" Height="20" Margin="4,1,1,1" BorderBrush="#888" BorderThickness="1"
+                                        Background="{Binding RightKeyPreviewBrush}" ToolTip="Current right key color"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <Button Grid.Column="3" Content="Save Keys"

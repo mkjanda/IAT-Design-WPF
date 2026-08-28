@@ -398,7 +398,9 @@ public partial class InstructionManagerViewModel : ObservableObject
                     SelectedStimulus = _currentTest.GetStimulusById(mock.StimulusId);
                     ShowErrorMark = mock.ShowErrorMark;
                     OutlineCorrectResponse = mock.OutlineCorrectResponse;
-                    SelectedDirection = mock.KeyedDirection?.Name ?? "None";
+                    SelectedDirection = (mock.KeyedDirection is KeyedDirection.left) ? "Left"
+                        : (mock.KeyedDirection is KeyedDirection.right) ? "Right"
+                        : "None";
                 }
             }
 
@@ -678,11 +680,13 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is not MockItemInstructionScreen mock) return;
         try
         {
-            mock.KeyedDirection = KeyedDirection.FromName(value ?? "None");
+            mock.KeyedDirection = (value is "Left") ? KeyedDirection.left
+                : (value is "Right") ? KeyedDirection.right
+                : KeyedDirection.none;
         }
         catch (ArgumentException)
         {
-            mock.KeyedDirection = KeyedDirection.None;
+            mock.KeyedDirection = KeyedDirection.none;
             SelectedDirection = "None";
             RefreshInstructionPreview();
             return;
@@ -749,7 +753,7 @@ public partial class InstructionManagerViewModel : ObservableObject
                 StimulusId = stimId,
                 ShowErrorMark = showErr,
                 OutlineCorrectResponse = outline,
-                KeyedDirection = KeyedDirection.None
+                KeyedDirection = KeyedDirection.none
             },
             _ => new TextInstructionScreen
             {
@@ -845,7 +849,7 @@ public partial class InstructionManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             Text = "New mock-item instructions",
             ContinueKey = " ",
-            KeyedDirection = KeyedDirection.None
+            KeyedDirection = KeyedDirection.none
         };
         screen.ContinueInstructions.Text = "Press the spacebar to continue";
         _currentTest.AddInstructionScreen(screen);

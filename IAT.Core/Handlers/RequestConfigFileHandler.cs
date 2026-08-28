@@ -21,7 +21,7 @@ namespace IAT.Core.Handlers
         public async Task<TransactionResult> Handle(RequestConfigFileCommand command, CancellationToken cancellationToken)
         {
             _transactionState.DeploymentId = command.transaction.DeploymentId;
-            _transactionState.AuthToken = command.transaction.AuthToken;
+            _transactionState.ConfigFile.ProductKey = _transactionState.ProductKey;
             await _webSocketService.SendMessage(_transactionState.ConfigFile);
             return TransactionResult.Unset;
         }

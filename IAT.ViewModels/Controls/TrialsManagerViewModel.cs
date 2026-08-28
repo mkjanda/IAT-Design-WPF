@@ -5,6 +5,7 @@ using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Media;
 
 namespace IAT.ViewModels.Controls;
 
@@ -44,12 +45,64 @@ public partial class TrialsManagerViewModel : ObservableObject
     private string _rightKeyText = string.Empty;
 
     [ObservableProperty]
+    private string _leftKeyFontFamily = "Segoe UI";
+
+    [ObservableProperty]
+    private double _leftKeyFontSize = 24.0;
+
+    [ObservableProperty]
+    private Color _leftKeyTextColor = Colors.Black;
+
+    [ObservableProperty]
+    private string _rightKeyFontFamily = "Segoe UI";
+
+    [ObservableProperty]
+    private double _rightKeyFontSize = 24.0;
+
+    [ObservableProperty]
+    private Color _rightKeyTextColor = Colors.Black;
+
+    [ObservableProperty]
     private int _numPresentations;
+
+    /// <summary>Swatch brush for the left key color control.</summary>
+    public SolidColorBrush LeftKeyPreviewBrush => new(LeftKeyTextColor);
+
+    /// <summary>Swatch brush for the right key color control.</summary>
+    public SolidColorBrush RightKeyPreviewBrush => new(RightKeyTextColor);
+
+    /// <summary>
+    /// Shared font list (identical to Blocks / Stimuli authoring) for a consistent look.
+    /// </summary>
+    public ObservableCollection<string> AvailableFontFamilies { get; } = new()
+    {
+        "Segoe UI", "Arial", "Calibri", "Verdana", "Trebuchet MS", "Tahoma",
+        "Georgia", "Times New Roman", "Cambria", "Garamond", "Palatino Linotype",
+        "Consolas", "Courier New", "Segoe Script", "Impact"
+    };
+
+    public ObservableCollection<double> AvailableFontSizes { get; } =
+        new() { 12, 16, 18, 20, 24, 28, 32, 36, 48, 54, 66, 72 };
 
     /// <summary>
     /// All stimuli available for assignment (bound to ComboBoxes in the trial list).
     /// </summary>
     public ObservableCollection<Stimulus> AvailableStimuli => _currentTest.Stimuli;
+
+    /// <summary>
+    /// True while key text / style fields are being filled from the selected block.
+    /// Suppresses persist so loading one block cannot overwrite another block's keys.
+    /// </summary>
+    private bool _loadingKeys;
+
+    /// <summary>
+    /// Practice keys (blocks 1–2) are authoritative. After a standard 7-block structure
+    /// exists, blocks 3–7 are derived: text boxes and style controls are read-only and
+    /// follow practice-key edits via propagation.
+    /// </summary>
+    public bool AreResponseKeysEditable =>
+        SelectedBlock is not null
+        && !(Blocks.Count == 7 && SelectedBlock.BlockNumber is >= 3 and <= 7);
 
     public TrialsManagerViewModel(IatTest currentTest)
     {
@@ -64,27 +117,88 @@ public partial class TrialsManagerViewModel : ObservableObject
     {
         if (value is null)
         {
-            Trials.Clear();
-            NumPresentations = 0;
-            LeftKeyText = string.Empty;
-            RightKeyText = string.Empty;
+            _loadingKeys = true;
+            try
+            {
+                Trials.Clear();
+                NumPresentations = 0;
+                LeftKeyText = string.Empty;
+                RightKeyText = string.Empty;
+                ResetKeyStyleEditors();
+            }
+            finally
+            {
+                _loadingKeys = false;
+            }
+            OnPropertyChanged(nameof(AreResponseKeysEditable));
             return;
         }
 
         NumPresentations = value.NumPresentations;
 
-        // Load left / right key text
-        var leftKey = value.LeftResponseId != Guid.Empty
-            ? _currentTest.GetKeyById(value.LeftResponseId)
-            : null;
-        var rightKey = value.RightResponseId != Guid.Empty
-            ? _currentTest.GetKeyById(value.RightResponseId)
-            : null;
+        // Load left / right key text + style WITHOUT writing back. Setting bound properties
+        // fires On*Changed → Persist; without this guard the first assignment would push the
+        // previous block's still-stale opposite side onto the newly selected block (and onto
+        // any Key instance shared after Generate 7-Block).
+        _loadingKeys = true;
+        try
+        {
+            var leftKey = value.LeftResponseId != Guid.Empty
+                ? _currentTest.GetKeyById(value.LeftResponseId)
+                : null;
+            var rightKey = value.RightResponseId != Guid.Empty
+                ? _currentTest.GetKeyById(value.RightResponseId)
+                : null;
 
-        LeftKeyText = leftKey?.Text ?? string.Empty;
-        RightKeyText = rightKey?.Text ?? string.Empty;
+            // Authoring form is always single-line ("Good or Flower"); stacked multiline
+            // from older packages is collapsed so the Trials text boxes stay readable.
+            LeftKeyText = Key.FormatAuthoringDisplay(leftKey?.Text);
+            RightKeyText = Key.FormatAuthoringDisplay(rightKey?.Text);
+            LoadKeyStyleEditor(isLeft: true, leftKey);
+            LoadKeyStyleEditor(isLeft: false, rightKey);
+        }
+        finally
+        {
+            _loadingKeys = false;
+        }
 
+        OnPropertyChanged(nameof(AreResponseKeysEditable));
         ReloadTrialsForSelectedBlock();
+    }
+
+    private void ResetKeyStyleEditors()
+    {
+        LeftKeyFontFamily = "Segoe UI";
+        LeftKeyFontSize = 24.0;
+        LeftKeyTextColor = Colors.Black;
+        RightKeyFontFamily = "Segoe UI";
+        RightKeyFontSize = 24.0;
+        RightKeyTextColor = Colors.Black;
+        OnPropertyChanged(nameof(LeftKeyPreviewBrush));
+        OnPropertyChanged(nameof(RightKeyPreviewBrush));
+    }
+
+    private void LoadKeyStyleEditor(bool isLeft, Key? key)
+    {
+        var family = key?.Style?.FontFamily ?? key?.FontFamily ?? "Segoe UI";
+        var size = key?.Style?.FontSize > 0 ? key.Style.FontSize
+            : key is { FontSize: > 0 } ? key.FontSize : 24.0;
+        var color = key?.Style?.FontColor ?? key?.FontColor ?? Colors.Black;
+
+        if (isLeft)
+        {
+            LeftKeyFontFamily = family;
+            LeftKeyFontSize = size;
+            LeftKeyTextColor = color;
+            OnPropertyChanged(nameof(LeftKeyPreviewBrush));
+        }
+        else
+        {
+            RightKeyFontFamily = family;
+            RightKeyFontSize = size;
+            RightKeyTextColor = color;
+            OnPropertyChanged(nameof(RightKeyPreviewBrush));
+        }
     }
 
     partial void OnNumPresentationsChanged(int value)
@@ -144,7 +258,7 @@ public partial class TrialsManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             BlockNumber = SelectedBlock.BlockNumber,
             TrialNumber = Trials.Count + 1,
-            KeyedDirection = KeyedDirection.Left,
+            KeyedDirection = KeyedDirection.left,
             StimulusId = AvailableStimuli.FirstOrDefault()?.Id ?? Guid.Empty
         };
 
@@ -210,7 +324,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         for (int i = 0; i < NumPresentations; i++)
         {
             var stim = stimList[i % stimList.Count];
-            var direction = (i % 2 == 0) ? KeyedDirection.Left : KeyedDirection.Right;
+            var direction = (i % 2 == 0) ? KeyedDirection.left : KeyedDirection.right;
 
             var trial = new Trial
             {
@@ -250,53 +364,319 @@ public partial class TrialsManagerViewModel : ObservableObject
     /// </summary>
     partial void OnLeftKeyTextChanged(string value)
     {
-        PersistKeys();
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: true, text: value, styleOnly: false);
     }
 
     partial void OnRightKeyTextChanged(string value)
     {
-        PersistKeys();
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: false, text: value, styleOnly: false);
+    }
+
+    partial void OnLeftKeyFontFamilyChanged(string value)
+    {
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: true, styleOnly: true);
+    }
+
+    partial void OnLeftKeyFontSizeChanged(double value)
+    {
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: true, styleOnly: true);
+    }
+
+    partial void OnLeftKeyTextColorChanged(Color value)
+    {
+        OnPropertyChanged(nameof(LeftKeyPreviewBrush));
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: true, styleOnly: true);
+    }
+
+    partial void OnRightKeyFontFamilyChanged(string value)
+    {
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: false, styleOnly: true);
+    }
+
+    partial void OnRightKeyFontSizeChanged(double value)
+    {
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: false, styleOnly: true);
+    }
+
+    partial void OnRightKeyTextColorChanged(Color value)
+    {
+        OnPropertyChanged(nameof(RightKeyPreviewBrush));
+        if (_loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: false, styleOnly: true);
     }
 
     [RelayCommand]
-    private void SaveKeys() => PersistKeys();
+    private void SaveKeys()
+    {
+        if (SelectedBlock is null || _loadingKeys || !AreResponseKeysEditable) return;
+        PersistKeySide(isLeft: true, text: LeftKeyText, styleOnly: false);
+        PersistKeySide(isLeft: false, text: RightKeyText, styleOnly: false);
+    }
+
+    [RelayCommand]
+    private void ApplyLeftKeyPalette(string paletteType)
+    {
+        if (!AreResponseKeysEditable) return;
+        LeftKeyTextColor = ResolvePaletteColor(paletteType, LeftKeyTextColor);
+    }
+
+    [RelayCommand]
+    private void ApplyRightKeyPalette(string paletteType)
+    {
+        if (!AreResponseKeysEditable) return;
+        RightKeyTextColor = ResolvePaletteColor(paletteType, RightKeyTextColor);
+    }
+
+    private static Color ResolvePaletteColor(string paletteType, Color fallback) =>
+        paletteType.ToLowerInvariant() switch
+        {
+            "black" => Colors.Black,
+            "white" => Colors.White,
+            "flame scarlet" => Color.FromRgb(205, 33, 42),
+            "firefly" => Color.FromRgb(209, 206, 32),
+            "silver sconce" => Color.FromRgb(161, 159, 165),
+            "ultra violet" => Color.FromRgb(95, 75, 139),
+            "knockout pink" => Color.FromRgb(255, 62, 165),
+            "emerald" => Color.FromRgb(0, 148, 115),
+            "sunset gold" => Color.FromRgb(247, 196, 148),
+            "radiant orchid" => Color.FromRgb(174, 93, 153),
+            "raspberry" => Color.FromRgb(255, 46, 94),
+            "acid lime" => Color.FromRgb(187, 223, 50),
+            "bluebird" => Color.FromRgb(0, 161, 180),
+            "star sapphire" => Color.FromRgb(69, 104, 154),
+            "angel blue" => Color.FromRgb(131, 198, 207),
+            "ember glow" => Color.FromRgb(234, 103, 89),
+            "pale gold" => Color.FromRgb(189, 152, 101),
+            "blackened pearl" => Color.FromRgb(77, 75, 80),
+            _ => fallback
+        };
+
+    private TextStyle CurrentKeyStyle(bool isLeft) => new()
+    {
+        FontFamily = (isLeft ? LeftKeyFontFamily : RightKeyFontFamily) ?? "Segoe UI",
+        FontSize = isLeft
+            ? (LeftKeyFontSize > 0 ? LeftKeyFontSize : 24.0)
+            : (RightKeyFontSize > 0 ? RightKeyFontSize : 24.0),
+        FontColor = isLeft ? LeftKeyTextColor : RightKeyTextColor
+    };
 
     /// <summary>
-    /// Writes left/right key text onto the selected block's response keys in the shared domain model.
+    /// Writes one side's key text and/or style onto the selected block only.
+    /// <list type="bullet">
+    ///   <item>Never touches the opposite side (avoids stale cross-writes when switching blocks).</item>
+    ///   <item>Practice blocks (1–2): update in place even when shared (Block 5 reuses Block 2 keys)
+    ///   so derived blocks follow, then rebuild combined keys that list this key as a component.</item>
+    ///   <item>Non-practice freeform blocks: copy-on-write when the Key is shared.</item>
+    /// </list>
     /// </summary>
-    private void PersistKeys()
+    private void PersistKeySide(bool isLeft, string? text = null, bool styleOnly = false)
     {
-        if (SelectedBlock is null) return;
+        if (SelectedBlock is null || _loadingKeys || !AreResponseKeysEditable) return;
 
-        // Left key
-        Key leftKey;
-        if (SelectedBlock.LeftResponseId != Guid.Empty)
+        var effectiveText = styleOnly
+            ? Key.FormatAuthoringDisplay(isLeft ? LeftKeyText : RightKeyText)
+            : Key.FormatAuthoringDisplay(text ?? (isLeft ? LeftKeyText : RightKeyText));
+        var style = CurrentKeyStyle(isLeft);
+        var existingId = isLeft ? SelectedBlock.LeftResponseId : SelectedBlock.RightResponseId;
+        var layoutSlot = isLeft ? LayoutItem.LeftKey : LayoutItem.RightKey;
+        var isPracticeSource = SelectedBlock.BlockNumber is 1 or 2;
+
+        Key key;
+        if (existingId != Guid.Empty)
         {
-            leftKey = _currentTest.GetKeyById(SelectedBlock.LeftResponseId) ?? new Key { Id = SelectedBlock.LeftResponseId, Style = new TextStyle() };
+            var existing = _currentTest.GetKeyById(existingId);
+            if (existing is null)
+            {
+                key = new Key
+                {
+                    Id = existingId,
+                    LayoutItem = layoutSlot,
+                    Style = CloneStyle(style)
+                };
+                ApplyKeyText(key, effectiveText);
+                ApplyKeyStyle(key, style);
+                _currentTest.AddKey(key);
+            }
+            else if (IsKeySharedWithOtherBlocks(existingId, SelectedBlock) && !isPracticeSource)
+            {
+                // Freeform / non-practice: copy-on-write so edits stay local.
+                key = CloneKey(existing, layoutSlot);
+                ApplyKeyText(key, effectiveText);
+                ApplyKeyStyle(key, style);
+                _currentTest.AddKey(key);
+                if (isLeft)
+                    SelectedBlock.LeftResponseId = key.Id;
+                else
+                    SelectedBlock.RightResponseId = key.Id;
+            }
+            else
+            {
+                // Sole owner, or practice source shared with Block 5 — update in place.
+                key = existing;
+                ApplyKeyText(key, effectiveText);
+                ApplyKeyStyle(key, style);
+            }
         }
         else
         {
-            leftKey = new Key { Id = Guid.NewGuid(), LayoutItem = LayoutItem.LeftKey, Style = new TextStyle() };
-            SelectedBlock.LeftResponseId = leftKey.Id;
+            key = new Key
+            {
+                Id = Guid.NewGuid(),
+                LayoutItem = layoutSlot,
+                Style = CloneStyle(style)
+            };
+            ApplyKeyText(key, effectiveText);
+            ApplyKeyStyle(key, style);
+            _currentTest.AddKey(key);
+            if (isLeft)
+                SelectedBlock.LeftResponseId = key.Id;
+            else
+                SelectedBlock.RightResponseId = key.Id;
         }
-        leftKey.Text = LeftKeyText?.Trim() ?? string.Empty;
-        if (_currentTest.GetKeyById(leftKey.Id) is null)
-            _currentTest.AddKey(leftKey);
 
-        // Right key
-        Key rightKey;
-        if (SelectedBlock.RightResponseId != Guid.Empty)
+        // Guard against a pathological same-Id left/right assignment.
+        if (SelectedBlock.LeftResponseId != Guid.Empty
+            && SelectedBlock.LeftResponseId == SelectedBlock.RightResponseId)
         {
-            rightKey = _currentTest.GetKeyById(SelectedBlock.RightResponseId) ?? new Key { Id = SelectedBlock.RightResponseId, Style = new TextStyle() };
+            var clone = CloneKey(key, isLeft ? LayoutItem.RightKey : LayoutItem.LeftKey);
+            ApplyKeyText(clone, isLeft ? RightKeyText : LeftKeyText);
+            ApplyKeyStyle(clone, CurrentKeyStyle(!isLeft));
+            _currentTest.AddKey(clone);
+            if (isLeft)
+                SelectedBlock.RightResponseId = clone.Id;
+            else
+                SelectedBlock.LeftResponseId = clone.Id;
         }
-        else
+
+        // Practice keys drive combined keys on blocks 3–4 and 6–7.
+        if (isPracticeSource)
+            PropagateDerivedKeysFromPractice();
+
+        WeakReferenceMessenger.Default.Send(IAT.Core.Messages.TestModifiedMessage.Instance);
+    }
+
+    /// <summary>
+    /// Rebuilds every combined key whose <see cref="Key.ComponentIds"/> reference practice keys.
+    /// Text is recomposed as <c>"A or C"</c>; style follows the first component (same rule as generate).
+    /// Block 5 shares practice key instances and updates automatically without this path.
+    /// </summary>
+    private void PropagateDerivedKeysFromPractice()
+    {
+        foreach (var key in _currentTest.Keys)
         {
-            rightKey = new Key { Id = Guid.NewGuid(), LayoutItem = LayoutItem.RightKey, Style = new TextStyle() };
-            SelectedBlock.RightResponseId = rightKey.Id;
+            if (!key.IsCombined || key.ComponentIds is not { Count: >= 2 })
+                continue;
+
+            var first = _currentTest.GetKeyById(key.ComponentIds[0]);
+            var second = _currentTest.GetKeyById(key.ComponentIds[1]);
+            if (first is null || second is null)
+                continue;
+
+            var t1 = Key.FormatAuthoringDisplay(first.Text);
+            var t2 = Key.FormatAuthoringDisplay(second.Text);
+            key.Text = string.IsNullOrEmpty(t1) && string.IsNullOrEmpty(t2)
+                ? string.Empty
+                : $"{t1} or {t2}".Trim();
+            key.Separator = " or ";
+            key.LayoutMode = KeyLayoutMode.VerticalWithOr;
+
+            // Style from the first component — matches CreateCombinedKey at generate time.
+            ApplyKeyStyle(key, StyleFromKey(first));
         }
-        rightKey.Text = RightKeyText?.Trim() ?? string.Empty;
-        if (_currentTest.GetKeyById(rightKey.Id) is null)
-            _currentTest.AddKey(rightKey);
+    }
+
+    private static TextStyle StyleFromKey(Key key) => new()
+    {
+        FontFamily = key.Style?.FontFamily ?? key.FontFamily ?? "Segoe UI",
+        FontSize = key.Style?.FontSize > 0 ? key.Style.FontSize
+            : key.FontSize > 0 ? key.FontSize : 24.0,
+        FontColor = key.Style?.FontColor ?? key.FontColor
+    };
+
+    private static TextStyle CloneStyle(TextStyle style) => new()
+    {
+        FontFamily = style.FontFamily ?? "Segoe UI",
+        FontSize = style.FontSize > 0 ? style.FontSize : 24.0,
+        FontColor = style.FontColor
+    };
+
+    private static void ApplyKeyStyle(Key key, TextStyle style)
+    {
+        key.Style = CloneStyle(style);
+        key.FontFamily = key.Style.FontFamily;
+        key.FontSize = key.Style.FontSize;
+        key.FontColor = key.Style.FontColor;
+    }
+
+    /// <summary>
+    /// True when more than one block points at this key id (left or right slot).
+    /// </summary>
+    private bool IsKeySharedWithOtherBlocks(Guid keyId, Block owner)
+    {
+        foreach (var block in _currentTest.BlocksCollection)
+        {
+            if (ReferenceEquals(block, owner))
+                continue;
+            if (block.LeftResponseId == keyId || block.RightResponseId == keyId)
+                return true;
+        }
+        return false;
+    }
+
+    private static Key CloneKey(Key source, LayoutItem layoutSlot) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            LayoutItem = layoutSlot,
+            IsCombined = source.IsCombined,
+            ComponentIds = source.ComponentIds is { Count: > 0 }
+                ? new List<Guid>(source.ComponentIds)
+                : new List<Guid>(),
+            Separator = source.Separator,
+            LayoutMode = source.LayoutMode,
+            Text = source.Text,
+            Style = source.Style is null
+                ? new TextStyle()
+                : new TextStyle
+                {
+                    FontFamily = source.Style.FontFamily,
+                    FontSize = source.Style.FontSize,
+                    FontColor = source.Style.FontColor
+                },
+            FontFamily = source.FontFamily,
+            FontSize = source.FontSize,
+            FontColor = source.FontColor
+        };
+
+    /// <summary>
+    /// Stores Trials-tab key text in authoring form and marks combined keys so slide
+    /// rendering can stack them into a three-row column.
+    /// </summary>
+    private static void ApplyKeyText(Key key, string? raw)
+    {
+        var text = Key.FormatAuthoringDisplay(raw);
+        key.Text = text;
+        if (text.Contains(" or ", StringComparison.OrdinalIgnoreCase))
+        {
+            key.IsCombined = true;
+            key.LayoutMode = KeyLayoutMode.VerticalWithOr;
+            key.Separator = " or ";
+        }
+        else if (!key.IsCombined || key.ComponentIds is not { Count: > 0 })
+        {
+            // Clear combined flag when the author removes the " or " so a plain label
+            // is not treated as a stacked key on slides. Leave ComponentIds-backed
+            // combined keys alone — they are structural, not free text.
+            key.IsCombined = false;
+            key.LayoutMode = KeyLayoutMode.VerticalStack;
+        }
     }
 
     /// <summary>
@@ -307,7 +687,7 @@ public partial class TrialsManagerViewModel : ObservableObject
     private void AssignLeft(Stimulus? stimulus)
     {
         if (stimulus is null) return;
-        AssignStimulusCore(stimulus, KeyedDirection.Left);
+        AssignStimulusCore(stimulus, KeyedDirection.left);
     }
 
     /// <summary>
@@ -318,7 +698,7 @@ public partial class TrialsManagerViewModel : ObservableObject
     private void AssignRight(Stimulus? stimulus)
     {
         if (stimulus is null) return;
-        AssignStimulusCore(stimulus, KeyedDirection.Right);
+        AssignStimulusCore(stimulus, KeyedDirection.right);
     }
 
     /// <summary>
@@ -353,10 +733,18 @@ public partial class TrialsManagerViewModel : ObservableObject
         SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).FirstOrDefault();
         if (SelectedBlock is null)
         {
-            Trials.Clear();
-            NumPresentations = 0;
-            LeftKeyText = string.Empty;
-            RightKeyText = string.Empty;
+            _loadingKeys = true;
+            try
+            {
+                Trials.Clear();
+                NumPresentations = 0;
+                LeftKeyText = string.Empty;
+                RightKeyText = string.Empty;
+            }
+            finally
+            {
+                _loadingKeys = false;
+            }
             return;
         }
 
@@ -396,7 +784,7 @@ public partial class TrialRowViewModel : ObservableObject
         Trial = trial;
         _test = test;
         _selectedStimulus = test.GetStimulusById(trial.StimulusId);
-        _directionName = trial.KeyedDirection == KeyedDirection.Right ? "Right" : "Left";
+        _directionName = trial.KeyedDirection == KeyedDirection.right ? "Right" : "Left";
     }
 
     partial void OnSelectedStimulusChanged(Stimulus? value)
@@ -409,7 +797,7 @@ public partial class TrialRowViewModel : ObservableObject
     partial void OnDirectionNameChanged(string value)
     {
         Trial.KeyedDirection = value.Equals("Right", StringComparison.OrdinalIgnoreCase)
-            ? KeyedDirection.Right
-            : KeyedDirection.Left;
+            ? KeyedDirection.right
+            : KeyedDirection.left;
     }
 }

@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WinForms-era layout system and `LayoutElement` (superseded by `LayoutItem` / layout calculator)
 - Old image-caching approach
 - `TestPackage` / `TestExportService` god objects
+- “Download All Results” button and its placeholder command from the Deploy tab bottom bar (per-test Retrieve is the supported path)
 
 ### Fixed
 
@@ -58,6 +59,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Layout editor sizing, repositioning, and save/load
 - Block/trial preview resizing with the window
 - Surveys: add-item commands not re-evaluating `CanExecute` after selection changes
+- Deploy tab: Retrieve / Clear / Delete set `IsBusy` for the duration of the network operation; all action buttons (Retrieve, Clear, Delete, Delete Selected, Refresh, Deploy) disable via CanExecute until the call completes, fails, or the service times out/cancels
+- Stimuli tab list is properly scrollable (ListBox fills remaining DockPanel height; vertical scrollbar enabled)
+- Delete Block button on the Blocks tab is wired to `DeleteBlockCommand` (respects the 7-block structure lock)
+- Text stimulus font family, size, and color are preserved across successive “Add Text Stimulus” actions (last committed style is remembered on Save). Capture is restricted to pure text editors so saving an image stimulus no longer overwrites the remembered text style with base-class defaults.
+- Removed the non-functional “Save” button from the Blocks tab sidebar (project-level New/Open/Save/Save As already cover persistence; block edits are live against the domain model).
+- Default text style aligned to domain `TextStyle` (Segoe UI / 24 / Black) in both the editor ViewModel and the remembered-style fields.
+- Stimulus Save no longer clears ListBox selection: `UpdateStimulus` mutates in place when the concrete type matches (avoids Remove+Add), and `Saved` is raised *before* any collection mutation so the manager handler cannot be detached mid-Save.
+- `Stimulus` inherits `ObservableObject`; `TextStimulus.Text` and `ImageStimulus.FileName` raise PropertyChanged so the Stimuli list updates in place after Save (no more frozen "New Text Stimulus" labels).
 
 ### Security
 

@@ -34,24 +34,6 @@ namespace IAT.Core.Extensions
         /// <returns>true if the block contains the specified trial; otherwise, false.</returns>
         public static bool Contains(this Block block, Trial trial) => block.TrialIds.Contains(trial.Id);
 
-        /// <summary>
-        /// Determines the effective keyed direction for the specified trial, based on the originating block and the
-        /// current block context.
-        /// </summary>
-        /// <param name="trial">The trial for which to determine the keyed direction. Must not be null.</param>
-        /// <param name="block">The current block context used to evaluate the keyed direction. Must not be null.</param>
-        /// <returns>A KeyedDirection value representing the direction to use for the trial in the context of the specified
-        /// block.</returns>
-        public static KeyedDirection GetKeyedDirection(this Trial trial, Block block)
-        {
-            if (trial.OriginatingBlock == 1)
-                return trial.KeyedDirection;
-            if ((trial.OriginatingBlock == 2) && (block.BlockNumber >= 2) && (block.BlockNumber <= 4))
-                return trial.KeyedDirection;
-            return trial.KeyedDirection.Opposite;
-        }
-
-
 
         /// <summary>
         /// Compares two version instances and determines their relative order based on release, major, minor, and
@@ -268,7 +250,7 @@ namespace IAT.Core.Extensions
         public static void AddFile(this ManifestDirectory md, ManifestFile mf)
         {
             mf.Path = md.Path + Path.PathSeparator + mf.Path;
-            md.Contents.Add(mf);
+            md.Files.Add(mf);
         }
 
         /// <summary>
@@ -295,7 +277,7 @@ namespace IAT.Core.Extensions
         public static void AddDirectory(this ManifestDirectory parent, ManifestDirectory child)
         {
             child.Path = parent.Path + Path.PathSeparator + child.Path;
-            parent.Contents.Add(child);
+            parent.Directories.Add(child);
         }
 
         /// <summary>
@@ -309,27 +291,15 @@ namespace IAT.Core.Extensions
         /// <returns>true if a file matching the specified filename was found and removed; otherwise, false.</returns>
         public static bool RemoveFile(this ManifestDirectory parent, string filename)
         {
-            for (int ctr = 0; ctr < parent.Contents.Count; ctr++)
+            try
             {
-                if (parent.Contents[ctr].FileEntityType == FileEntity.EFileEntityType.File)
-                {
-                    if (parent.Contents[ctr].Path == filename)
-                    {
-                        parent.Contents.RemoveAt(ctr);
-                        return true;
-                    }
-                }
-                else
-                {
-                    if (parent.Contents[ctr].Path == filename)
-                    {
-                        parent.Contents.RemoveAt(ctr);
-                        return true;
-                    }
-                    return ((ManifestDirectory)parent.Contents[ctr]).RemoveFile(filename);
-                }
+                parent.Files.Remove(parent.Files.Where(f => f.Name == filename).FirstOrDefault() ?? throw new InvalidOperationException($"File {filename} not present in manifest directory."));
+                return true;
             }
-            return false;
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -344,17 +314,11 @@ namespace IAT.Core.Extensions
         public static int GetNumEntities(this FileEntity fe)
         {
             int nEntities = 0;
-            if (fe.FileEntityType == EFileEntityType.Directory)
-            {
-                (fe as ManifestDirectory)?.Contents.ForEach(fe2 =>
-                {
-                    nEntities += fe2.GetNumEntities();
-                });
-                return nEntities;
-            } else 
+            if (fe.FileEntityType == FileEntityType.File)
                 return 1;
+            var dir = fe as ManifestDirectory ?? throw new InvalidOperationException($"File entity {fe.Name} is not a directory.");            dir.Directories.ForEach(d => nEntities += d.GetNumEntities());
+            return nEntities + dir.Files.Count;
         }
-
     }
 }
 

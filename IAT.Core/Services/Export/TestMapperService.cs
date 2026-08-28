@@ -59,10 +59,6 @@ namespace IAT.Core.Services.Export
         /// <returns>The generated IATConfigFile</returns>
         public IATConfigFile BuildConfigFile(IatTest test, ExportContext exportContext)
         {
-            PngBitmapEncoder encoder = new PngBitmapEncoder()
-            {
-                Interlace = PngInterlaceOption.On
-            };
             IFormattedText errorMark = new Domain.FormattedText()
             {
                 Id = Guid.NewGuid(),
@@ -77,9 +73,13 @@ namespace IAT.Core.Services.Export
             };
             var bmp = _imageGenerationService.RenderTextToBitmap(errorMark, exportContext.LayoutRects.ErrorMark);
             var memStream = new MemoryStream();
+            PngBitmapEncoder encoder = new PngBitmapEncoder()
+            {
+                Interlace = PngInterlaceOption.On
+            };
             encoder.Frames.Add(BitmapFrame.Create(bmp));
             encoder.Save(memStream);
-            _fileManifestBuilder.AddFile(exportContext.FileManifest, "ErrorMark.png", FileResourceType.errorMark, "image/png", memStream.ToArray());
+            _fileManifestBuilder.AddFile(exportContext.FileManifest, "ErrorMark.png", ResourceType.ErrorMark, "image/png", memStream.ToArray());
             exportContext.DisplayItems.Add(new DisplayItem()
             {
                 Filename = "ErrorMark.png",
@@ -102,10 +102,14 @@ namespace IAT.Core.Services.Export
                 dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
             renderBmp.Render(visual);
             memStream.Dispose(); memStream = new MemoryStream();
+            encoder = new PngBitmapEncoder()
+            {
+                Interlace = PngInterlaceOption.On
+            };
             encoder.Frames.Clear();
             encoder.Frames.Add(BitmapFrame.Create(renderBmp));
             encoder.Save(memStream);
-            _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutline.png", FileResourceType.keyOutline, "image/png", memStream.ToArray());
+            _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutline.png", ResourceType.KeyOutline, "image/png", memStream.ToArray());
             memStream.Dispose();
             exportContext.DisplayItems.Add(new DisplayItem()
             {

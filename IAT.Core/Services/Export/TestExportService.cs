@@ -62,7 +62,17 @@ namespace IAT.Core.Services.Export
         /// <returns>An export result containing the configuration file and manifest.</returns>
         public async Task<ExportResult> PrepareForServerUploadAsync(IatTest test)
         {
-            await _validator.ValidateAsync(test);   // FluentValidation recommended
+            // Migrate legacy blocks that only carried a free-form string so export can
+            // resolve BlockInstructionsId → FormattedText (and validation can reject blanks).
+            foreach (var block in test.AllBlocks)
+                test.EnsureBlockInstructions(block);
+
+            var validation = await _validator.ValidateAsync(test);
+            if (!validation.IsValid)
+            {
+                var message = string.Join(Environment.NewLine, validation.Errors.Select(e => e.ErrorMessage));
+                throw new InvalidOperationException(message);
+            }
 
             var exportContext = new ExportContext
             {

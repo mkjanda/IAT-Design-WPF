@@ -78,8 +78,29 @@ namespace IAT.ViewModels
         /// <summary>Label for the right response key in the preview.</summary>
         [ObservableProperty] private string rightKeyPreviewText = DummyRightKeyText;
 
+        /// <summary>Font family for the left key label in the live preview.</summary>
+        [ObservableProperty] private string leftKeyPreviewFontFamily = "Segoe UI";
+
+        /// <summary>Font size for the left key label in the live preview.</summary>
+        [ObservableProperty] private double leftKeyPreviewFontSize = 24.0;
+
+        /// <summary>Font family for the right key label in the live preview.</summary>
+        [ObservableProperty] private string rightKeyPreviewFontFamily = "Segoe UI";
+
+        /// <summary>Font size for the right key label in the live preview.</summary>
+        [ObservableProperty] private double rightKeyPreviewFontSize = 24.0;
+
         /// <summary>Block instructions text shown in the Block Instructions rectangle.</summary>
         [ObservableProperty] private string previewBlockInstructionsText = DummyBlockInstructionsText;
+
+        /// <summary>Font family for the block-instructions / instruction-body TextBlock in the live preview.</summary>
+        [ObservableProperty] private string previewBlockInstructionsFontFamily = "Segoe UI";
+
+        /// <summary>Font size for the block-instructions / instruction-body TextBlock in the live preview.</summary>
+        [ObservableProperty] private double previewBlockInstructionsFontSize = 24.0;
+
+        /// <summary>Foreground brush for the block-instructions / instruction-body TextBlock in the live preview.</summary>
+        [ObservableProperty] private Brush previewBlockInstructionsBrush = Brushes.Black;
 
         /// <summary>Foreground for the left key label (highlighted when trial is left-keyed).</summary>
         [ObservableProperty] private Brush leftKeyPreviewBrush = Brushes.Black;
@@ -588,7 +609,7 @@ namespace IAT.ViewModels
             if (trial is null)
             {
                 ClearStimulusPreview();
-                ApplyKeyHighlight(KeyedDirection.None);
+                ApplyKeyHighlight(KeyedDirection.none);
                 return;
             }
 
@@ -679,7 +700,7 @@ namespace IAT.ViewModels
             PreviewContinueText = string.Empty;
             PreviewBlockInstructionsText = string.Empty;
             IsResponseKeysVisible = false;
-            ApplyKeyHighlight(KeyedDirection.None);
+            ApplyKeyHighlight(KeyedDirection.none);
             HideStimulusPreview();
             // Keep ActiveInstructions on the block band so the empty stage is stable if the user
             // switches back to Blocks without a sequence re-selection.
@@ -695,7 +716,7 @@ namespace IAT.ViewModels
                 IsErrorMarkVisible = false;
                 IsContinueInstructionsVisible = false;
                 PreviewContinueText = string.Empty;
-                ApplyKeyHighlight(KeyedDirection.None);
+                ApplyKeyHighlight(KeyedDirection.none);
                 // Restore the body region to BlockInstructions for trial / block mode.
                 // Intentionally does NOT hide stimulus/keys — Blocks calls this when returning
                 // to trial mode and then ApplyTrialPreview / ApplyBlockKeys. Instructions tab
@@ -714,6 +735,9 @@ namespace IAT.ViewModels
             PreviewBlockInstructionsText = string.IsNullOrWhiteSpace(body)
                 ? "(empty instruction)"
                 : body;
+            // Instruction screens carry their own Style — mirror it so the shared body
+            // TextBlock does not stay stuck on the last block-instructions formatting.
+            ApplyBlockInstructionsStyle(screen.Style);
 
             // Continue prompt — always shown for instruction screens (Space is fixed).
             var continueText = screen.ContinueInstructions?.Text?.Trim();
@@ -723,7 +747,7 @@ namespace IAT.ViewModels
             IsContinueInstructionsVisible = true;
 
             IsErrorMarkVisible = false;
-            ApplyKeyHighlight(KeyedDirection.None);
+            ApplyKeyHighlight(KeyedDirection.none);
             // Text / Keyed / empty Mock: no stimulus slot. Mock with a stimulus re-enables below.
             HideStimulusPreview();
 
@@ -751,8 +775,7 @@ namespace IAT.ViewModels
                     ApplyInstructionKeys(mock.LeftResponseId, mock.RightResponseId);
                     IsErrorMarkVisible = mock.ShowErrorMark;
 
-                    if (mock.OutlineCorrectResponse && mock.KeyedDirection is not null
-                        && mock.KeyedDirection != KeyedDirection.None)
+                    if (mock.OutlineCorrectResponse && mock.KeyedDirection != KeyedDirection.none)
                     {
                         ApplyKeyHighlight(mock.KeyedDirection);
                     }
@@ -923,17 +946,19 @@ namespace IAT.ViewModels
             var left = leftId != Guid.Empty ? _test.GetKeyById(leftId) : null;
             var right = rightId != Guid.Empty ? _test.GetKeyById(rightId) : null;
 
-            var leftText = left?.Text?.Trim();
-            var rightText = right?.Text?.Trim();
+            var leftText = Key.FormatStackedDisplay(left?.Text);
+            var rightText = Key.FormatStackedDisplay(right?.Text);
             LeftKeyPreviewText = string.IsNullOrEmpty(leftText) ? DummyLeftKeyText : leftText;
             RightKeyPreviewText = string.IsNullOrEmpty(rightText) ? DummyRightKeyText : rightText;
+            ApplyKeyPreviewStyle(isLeft: true, left);
+            ApplyKeyPreviewStyle(isLeft: false, right);
         }
 
         /// <summary>
-        /// Updates left/right key labels from the block's response key definitions.
-        /// Prefer block-linked keys; fall back to any key registered with the matching LayoutItem.
-        /// When no block is selected (or a key has no text), shows the dummy placeholders so the
-        /// preview never looks empty.
+        /// Updates left/right key labels from the block's own response key ids only.
+        /// Does <b>not</b> fall back to other blocks' keys — a new block with empty labels
+        /// must show the dummy placeholders, not Block 1's text.
+        /// Combined keys stored as <c>"Good or Flower"</c> are stacked to three rows for the preview.
         /// </summary>
         public void ApplyBlockKeys(Block? block)
         {
@@ -941,6 +966,8 @@ namespace IAT.ViewModels
             {
                 LeftKeyPreviewText = DummyLeftKeyText;
                 RightKeyPreviewText = DummyRightKeyText;
+                ApplyKeyPreviewStyle(isLeft: true, null);
+                ApplyKeyPreviewStyle(isLeft: false, null);
                 return;
             }
 
@@ -951,22 +978,37 @@ namespace IAT.ViewModels
                 ? _test.GetKeyById(block.RightResponseId)
                 : null;
 
-            // Fallback: scan keys collection by layout role if the block has no linked IDs yet
-            if (left is null || right is null)
-            {
-                foreach (var key in _test.KeysCollection)
-                {
-                    if (left is null && key.LayoutItem == LayoutItem.LeftKey)
-                        left = key;
-                    if (right is null && key.LayoutItem == LayoutItem.RightKey)
-                        right = key;
-                }
-            }
-
-            var leftText = left?.Text?.Trim();
-            var rightText = right?.Text?.Trim();
+            var leftText = Key.FormatStackedDisplay(left?.Text);
+            var rightText = Key.FormatStackedDisplay(right?.Text);
             LeftKeyPreviewText = string.IsNullOrEmpty(leftText) ? DummyLeftKeyText : leftText;
             RightKeyPreviewText = string.IsNullOrEmpty(rightText) ? DummyRightKeyText : rightText;
+            ApplyKeyPreviewStyle(isLeft: true, left);
+            ApplyKeyPreviewStyle(isLeft: false, right);
+        }
+
+        /// <summary>
+        /// Mirrors a domain <see cref="Key"/>'s style onto the Blocks-tab live preview labels.
+        /// </summary>
+        private void ApplyKeyPreviewStyle(bool isLeft, Key? key)
+        {
+            var family = key?.Style?.FontFamily ?? key?.FontFamily ?? "Segoe UI";
+            var size = key?.Style?.FontSize > 0 ? key.Style.FontSize
+                : key is { FontSize: > 0 } ? key.FontSize : 24.0;
+            var color = key?.Style?.FontColor ?? key?.FontColor ?? Colors.Black;
+            var brush = new SolidColorBrush(color);
+
+            if (isLeft)
+            {
+                LeftKeyPreviewFontFamily = family;
+                LeftKeyPreviewFontSize = size;
+                LeftKeyPreviewBrush = brush;
+            }
+            else
+            {
+                RightKeyPreviewFontFamily = family;
+                RightKeyPreviewFontSize = size;
+                RightKeyPreviewBrush = brush;
+            }
         }
 
         /// <summary>
@@ -974,16 +1016,45 @@ namespace IAT.ViewModels
         /// and points the active body region at <c>BlockInstructionsRect</c>.
         /// Null/whitespace falls back to the dummy placeholder so the rectangle stays readable
         /// when no block is selected or instructions have not been entered yet.
+        /// When <paramref name="style"/> is supplied, the live preview TextBlock font family,
+        /// size, and color are updated so authoring changes appear immediately.
         /// </summary>
-        public void ApplyBlockInstructions(string? text)
+        public void ApplyBlockInstructions(string? text, TextStyle? style = null)
         {
             PreviewBlockInstructionsText = string.IsNullOrWhiteSpace(text)
                 ? DummyBlockInstructionsText
                 : text.Trim();
 
+            // Only touch style when the caller supplies one. Text-only / clear callers
+            // must not wipe the last known formatting (instruction-screen preview reuses
+            // the same TextBlock and will set style explicitly via ApplyBlockInstructionsStyle).
+            if (style is not null)
+                ApplyBlockInstructionsStyle(style);
+
             SetActiveInstructionsRect(new Rect(
                 BlockInstructionsX, BlockInstructionsY,
                 BlockInstructionsWidth, BlockInstructionsHeight));
+        }
+
+        /// <summary>
+        /// Applies font family / size / color to the shared instructions-body TextBlock in the
+        /// Blocks-tab live preview. Null style restores authoring defaults (Segoe UI / 24 / Black).
+        /// </summary>
+        public void ApplyBlockInstructionsStyle(TextStyle? style)
+        {
+            if (style is null)
+            {
+                PreviewBlockInstructionsFontFamily = "Segoe UI";
+                PreviewBlockInstructionsFontSize = 24.0;
+                PreviewBlockInstructionsBrush = Brushes.Black;
+                return;
+            }
+
+            PreviewBlockInstructionsFontFamily = string.IsNullOrWhiteSpace(style.FontFamily)
+                ? "Segoe UI"
+                : style.FontFamily;
+            PreviewBlockInstructionsFontSize = style.FontSize > 0 ? style.FontSize : 24.0;
+            PreviewBlockInstructionsBrush = new SolidColorBrush(style.FontColor);
         }
 
         /// <summary>
@@ -993,13 +1064,10 @@ namespace IAT.ViewModels
         /// </summary>
         public void ApplyKeyHighlight(KeyedDirection direction)
         {
-            IsLeftKeyOutlined = direction == KeyedDirection.Left;
-            IsRightKeyOutlined = direction == KeyedDirection.Right;
+            IsLeftKeyOutlined = direction == KeyedDirection.left;
+            IsRightKeyOutlined = direction == KeyedDirection.right;
 
-            // Text stays black + bold on both sides — the outline is the highlight signal,
-            // identical to InstructionManagerControl's keyed/mock preview.
-            LeftKeyPreviewBrush = Brushes.Black;
-            RightKeyPreviewBrush = Brushes.Black;
+            // Outline is the highlight signal. Keep author-chosen key colors; only force bold.
             LeftKeyPreviewFontWeight = FontWeights.Bold;
             RightKeyPreviewFontWeight = FontWeights.Bold;
         }

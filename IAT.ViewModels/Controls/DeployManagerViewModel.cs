@@ -5,6 +5,7 @@ using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Services;
+using IAT.Core.Services.Export;
 using IAT.Core.Services.Network;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -24,6 +25,7 @@ namespace IAT.ViewModels.Controls;
 public partial class DeployManagerViewModel : ObservableObject
 {
     private readonly ITestDeploymentService _deploymentService;
+    private readonly ITestExportService _exportService;
     private readonly IResultRetrievalService _resultService;
     private readonly IDeletionService _deletionService;
     private readonly IServerReportService _serverReportService;
@@ -43,7 +45,23 @@ public partial class DeployManagerViewModel : ObservableObject
     [ObservableProperty] private string administrationsRemaining = "—";
     [ObservableProperty] private bool isConnected;
     [ObservableProperty] private string lastSyncText = "never";
-    [ObservableProperty] private bool isRefreshing;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCommand))]
+    private bool isRefreshing;
+
+    /// <summary>
+    /// True while a Retrieve / Clear / Delete (or other long-running Deploy action) is in flight.
+    /// All action buttons are disabled via CanExecute until the operation completes, fails, or the
+    /// underlying service times out / cancels.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RetrieveResultsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ClearResultsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeleteTestCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeployCurrentTestCommand))]
+    private bool isBusy;
 
     // ── Deployed tests list ────────────────────────────────────────────────
     public ObservableCollection<DeployedTestItem> DeployedTests { get; } = new();
@@ -69,6 +87,12 @@ public partial class DeployManagerViewModel : ObservableObject
     /// </summary>
     [ObservableProperty] private bool hasStoredPassword;
 
+    /// <summary>
+    /// Deployment name for the current local test. Bound on the Deploy tab so authors can
+    /// set a server-facing name without renaming the package file. Syncs to <see cref="IatTest.Name"/>.
+    /// </summary>
+    [ObservableProperty] private string testName = string.Empty;
+
     // ── Results preview (right pane) ───────────────────────────────────────
     [ObservableProperty] private string selectedTestTitle = "No test selected";
     [ObservableProperty] private double meanDScore;
@@ -83,6 +107,7 @@ public partial class DeployManagerViewModel : ObservableObject
 
     public DeployManagerViewModel(
         ITestDeploymentService deploymentService,
+        ITestExportService exportService,
         IResultRetrievalService resultService,
         IDeletionService deletionService,
         IServerReportService serverReportService,
@@ -94,6 +119,7 @@ public partial class DeployManagerViewModel : ObservableObject
         IatTest currentTest)
     {
         _deploymentService = deploymentService;
+        _exportService = exportService;
         _resultService = resultService;
         _deletionService = deletionService;
         _serverReportService = serverReportService;
@@ -117,6 +143,10 @@ public partial class DeployManagerViewModel : ObservableObject
         try
         {
             _isActive = true;
+
+            // Pull the domain name so the Deploy-tab editor shows the current value
+            // (may have been set at Save As, Open, or a prior edit session).
+            TestName = _currentTest.Name ?? string.Empty;
 
             _webSocket.ConnectionStateChanged -= OnConnectionStateChanged;
             _webSocket.ConnectionStateChanged += OnConnectionStateChanged;
@@ -235,10 +265,10 @@ public partial class DeployManagerViewModel : ObservableObject
 
     // ── Commands ───────────────────────────────────────────────────────────
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRefresh))]
     private async Task RefreshAsync()
     {
-        if (IsRefreshing)
+        if (IsRefreshing || IsBusy)
             return;
 
         IsRefreshing = true;
@@ -388,7 +418,11 @@ public partial class DeployManagerViewModel : ObservableObject
         }
     }
 
-    private bool CanActOnSelected() => SelectedDeployedTest is not null;
+    private bool CanActOnSelected() => SelectedDeployedTest is not null && !IsBusy;
+
+    private bool CanRefresh() => !IsBusy && !IsRefreshing;
+
+    private bool CanDeploy() => !IsBusy;
 
     /// <summary>
     /// Resolves the IAT password for server operations.
@@ -432,6 +466,7 @@ public partial class DeployManagerViewModel : ObservableObject
 
         var previousStatus = target.Status;
         target.Status = "Retrieving…";
+        IsBusy = true;
         try
         {
             _webSocket.Start();
@@ -479,6 +514,10 @@ public partial class DeployManagerViewModel : ObservableObject
                     "Results");
             }
         }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]
@@ -508,6 +547,8 @@ public partial class DeployManagerViewModel : ObservableObject
         var previousStatus = target.Status;
         var previousCount = target.ResultCount;
         target.Status = "Clearing…";
+        IsBusy = true;
+        var succeeded = false;
         try
         {
             _webSocket.Start();
@@ -529,8 +570,7 @@ public partial class DeployManagerViewModel : ObservableObject
             if (ReferenceEquals(SelectedDeployedTest, target))
                 LoadPreviewFor(target);
 
-            // Refresh account quotas / list from the server when possible.
-            await RefreshAsync();
+            succeeded = true;
         }
         catch (Exception ex)
         {
@@ -543,6 +583,14 @@ public partial class DeployManagerViewModel : ObservableObject
                     "Clear Results");
             }
         }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        // Refresh after releasing the busy lock so CanExecute on Refresh is allowed.
+        if (succeeded && _isActive)
+            await RefreshAsync();
     }
 
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]
@@ -570,6 +618,8 @@ public partial class DeployManagerViewModel : ObservableObject
 
         var previousStatus = target.Status;
         target.Status = "Deleting…";
+        IsBusy = true;
+        var succeeded = false;
         try
         {
             _webSocket.Start();
@@ -592,7 +642,7 @@ public partial class DeployManagerViewModel : ObservableObject
             if (ReferenceEquals(SelectedDeployedTest, target) || SelectedDeployedTest?.Name == targetName)
                 SelectedDeployedTest = DeployedTests.FirstOrDefault();
 
-            await RefreshAsync();
+            succeeded = true;
         }
         catch (Exception ex)
         {
@@ -604,25 +654,134 @@ public partial class DeployManagerViewModel : ObservableObject
                     "Delete Deployed Test");
             }
         }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        // Refresh after releasing the busy lock so CanExecute on Refresh is allowed.
+        if (succeeded && _isActive)
+            await RefreshAsync();
     }
 
-    [RelayCommand]
+    /// <summary>
+    /// Writes the Deploy-tab name editor into <see cref="IatTest.Name"/>.
+    /// </summary>
+    private void CommitTestNameToDomain()
+    {
+        var trimmed = (TestName ?? string.Empty).Trim();
+        if (!string.Equals(_currentTest.Name, trimmed, StringComparison.Ordinal))
+            _currentTest.Name = trimmed;
+        if (!string.Equals(TestName, trimmed, StringComparison.Ordinal))
+            TestName = trimmed;
+    }
+
+    partial void OnTestNameChanged(string value)
+    {
+        if (_currentTest is null) return;
+        // Mirror editor → domain as the user types (trim only at commit / deploy time).
+        if (!string.Equals(_currentTest.Name, value ?? string.Empty, StringComparison.Ordinal))
+            _currentTest.Name = value ?? string.Empty;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanDeploy))]
     private async Task DeployCurrentTestAsync()
     {
+        // Commit the editor value into the domain first so export + server use the same name.
+        CommitTestNameToDomain();
+        var name = _currentTest.Name?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(name) || name.Equals("New IAT Test", StringComparison.OrdinalIgnoreCase))
+        {
+            await _dialogService.ShowNotificationAsync(
+                "Enter a unique test name in the Deploy tab before deploying. The package file name is not used as the server name.",
+                "Name Required");
+            return;
+        }
+
+        // Same password resolution path as Retrieve / Clear / Delete: header text box first, then AppData.
+        var password = ResolvePassword(name);
+        if (password is null)
+        {
+            await _dialogService.ShowNotificationAsync(
+                "Enter a password in the header field before deploying. This password protects the test on the server and is stored locally after a successful upload.",
+                "Password Required");
+            return;
+        }
+
+        var productKey = SafeReadField(Field.ProductKey);
+        if (string.IsNullOrWhiteSpace(productKey))
+        {
+            await _dialogService.ShowNotificationAsync(
+                "Activate the product (product key + verified email) before deploying a test.",
+                "Activation Required");
+            return;
+        }
+
         var ok = await _dialogService.ShowConfirmationAsync(
-            $"Deploy the current test “{_currentTest.Name}” to the server? Existing deployments with the same name will be versioned.",
+            $"Deploy the current test “{name}” to the server? Existing deployments with the same name will be versioned.",
             "Deploy Test");
         if (!ok) return;
-        await _dialogService.ShowNotificationAsync(
-            "Deployment started. You will be notified when the server acknowledges the package.", "Deploy");
-    }
 
-    [RelayCommand]
-    private async Task DownloadAllResultsAsync()
-    {
-        await Task.CompletedTask;
-        await _dialogService.ShowNotificationAsync(
-            "All results download started (placeholder).", "Download");
+        IsBusy = true;
+        try
+        {
+            // Keep the socket alive for the Deploy tab session (same policy as Retrieve/Clear/Delete).
+            _webSocket.Start();
+
+            // 1. Validate + package via the export pipeline (config file, file manifest, slide manifest).
+            var exportResult = await _exportService.PrepareForServerUploadAsync(_currentTest);
+
+            // 2. Hand the package to the network deployment service (WebSocket transaction).
+            var result = await _deploymentService.Deploy(name, password, exportResult, CancellationToken.None);
+
+            if (!_isActive) return;
+
+            // Prefer the terminal result on TransactionState when the service returns Unset mid-flow.
+            result ??= _transactionState.Result ?? TransactionResult.Failure;
+            if (result == TransactionResult.Unset)
+                result = _transactionState.Result ?? TransactionResult.Failure;
+
+            if (result.IsError || result == TransactionResult.Unset || !result.IsSuccess)
+            {
+                var message = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Deployment failed."
+                    : result.Message;
+                var title = string.IsNullOrWhiteSpace(result.Title) ? "Deploy" : result.Title;
+                await _dialogService.ShowNotificationAsync(message, title);
+                return;
+            }
+
+            // Persist password so later Retrieve / Clear / Delete can auto-fill for this IAT.
+            _localStorage.SetIATPassword(name, password);
+            if (string.Equals(SelectedDeployedTest?.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                SelectedIatPassword = password;
+                HasStoredPassword = true;
+            }
+
+            await _dialogService.ShowNotificationAsync(
+                $"“{name}” was deployed successfully.",
+                "Deploy");
+
+            if (_isActive)
+                await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            if (_isActive)
+            {
+                var root = ex is AggregateException agg
+                    ? agg.Flatten().InnerExceptions.FirstOrDefault() ?? ex
+                    : ex.InnerException ?? ex;
+                await _dialogService.ShowNotificationAsync(
+                    $"Deployment failed: {root.Message}",
+                    "Deploy");
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]

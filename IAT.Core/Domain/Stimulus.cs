@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using IAT.Core.Enumerations;
 using System.Text.Json.Serialization;
 
@@ -6,11 +7,13 @@ namespace IAT.Core.Domain;
 /// <summary>
 /// Represents a stimulus in an Implicit Association Test (IAT). Stimuli can be of different types, such as images or text, 
 /// and are used to elicit responses from participants during the test.
+/// Inherits <see cref="ObservableObject"/> so in-place property updates (e.g. Text after Save)
+/// refresh ListBox bindings without Remove+Add.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "StimulusType")]
 [JsonDerivedType(typeof(ImageStimulus), "Image")]
 [JsonDerivedType(typeof(TextStimulus), "Text")]
-public abstract partial class Stimulus
+public abstract partial class Stimulus : ObservableObject
 {
     /// <summary>
     /// Gets or sets the IAT test to which this stimulus belongs.
@@ -31,7 +34,7 @@ public abstract partial class Stimulus
     /// <summary>
     /// Gets or sets the direction keyed for the stimulus.
     /// </summary>
-    public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.None;
+    public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.none;
 
     /// <summary>
     /// Validates the stimulus.

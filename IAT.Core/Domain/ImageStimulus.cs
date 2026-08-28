@@ -25,12 +25,23 @@ public sealed partial class ImageStimulus : Stimulus
     /// </summary>
     public string AltText { get; set; } = string.Empty;
 
+    private string _fileName = string.Empty;
+
     /// <summary>
     /// Leaf file name of the image (e.g. "face.png"). Prefer storing only the name, not a full
     /// disk path — the package owns image bytes by <see cref="Stimulus.Id"/>. Full paths that
     /// slip in are still stripped by <see cref="Text"/> / <see cref="GetDisplayPreview"/>.
+    /// Raises PropertyChanged for both FileName and Text so the Stimuli list updates in place.
     /// </summary>
-    public string FileName { get; set; } = string.Empty;
+    public string FileName
+    {
+        get => _fileName;
+        set
+        {
+            if (SetProperty(ref _fileName, value))
+                OnPropertyChanged(nameof(Text));
+        }
+    }
 
     /// <summary>
     /// Display text for lists, trial/instruction previews, and search. Always the leaf file name
@@ -40,7 +51,7 @@ public sealed partial class ImageStimulus : Stimulus
     public override string Text
     {
         get => string.IsNullOrEmpty(FileName) ? string.Empty : Path.GetFileName(FileName);
-        set;
+        set { /* display-only; mutate FileName */ }
     }
 
     /// <summary>

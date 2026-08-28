@@ -54,55 +54,10 @@ namespace IAT.Core.Handlers
     public record TransactionFailCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
-    /// Represents a command to process a transaction request when the client is in a frozen state.
-    /// </summary>
-    /// <param name="transaction">The transaction request to be processed. Cannot be null.</param>
-    public record ClientFrozenCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
-    /// Represents a command to delete a client as part of a transaction request.
-    /// </summary>
-    /// <param name="transaction">The transaction request containing the details required to process the client deletion. Cannot be null.</param>
-    public record ClientDeletedCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
-    /// Represents a command to abort an existing transaction request.
-    /// </summary>
-    /// <param name="transaction">The transaction request to be aborted. Cannot be null.</param>
-    public record AbortTransactionCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
     /// Represents a request to handle a transaction for a client that does not exist.
     /// </summary>
     /// <param name="transaction">The transaction request to process for the non-existent client. Cannot be null.</param>
     public record NoSuchClientCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-
-    /// <summary>
-    /// The IATBeingDeployedCommand class represents a command that is triggered when an IAT (Implicit Association Test) is in the process of being deployed.
-    /// </summary>
-    /// <param name="transaction">The transaction request associated with the IAT being deployed. Cannot be null.</param>
-    public record IATBeingDeployedCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
-    /// Represents a command that is triggered when an IAT (Implicit Association Test) deployment fails due to the IAT not being found.
-    /// </summary>
-    /// <param name="transaction">The transaction request associated with the failed IAT deployment. Cannot be null.</param>
-    public record NoSuchIATDeploymentCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
-    /// Reresents a command to request the upload of an IAT (Implicit Association Test) as part of a transaction workflow.
-    /// </summary>
-    /// <param name="transaction">The transaction request associated with the IAT upload. Cannot be null.</param>
-    public record RequestIATUploadCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
-    /// Represents a command to process a transaction request after an encryption key has been received.
-    /// </summary>
-    /// <param name="transaction">The transaction request to be processed. Cannot be null.</param>
-    public record EncryptionKeyReceivedCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-
 
     /// <summary>
     /// Represents a command to handle the processing of a server report received as part of a transaction request.
@@ -114,19 +69,20 @@ namespace IAT.Core.Handlers
     /// Represents a command to request the manifest of files associated with a transaction, indicating that the file manifest is needed for further processing.
     /// </summary>
     /// <param name="transaction">The transaction request associated with the file manifest request. Cannot be null.</param>
-    public record RequestFileManifestCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+    public record RequestManifestCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
-    /// Represents a command to request the manifest of item slides associated with a transaction, indicating that the item slide manifest is needed for further processing.
+    /// Represents a command to request the upload of files associated with a transaction, indicating that the file upload is needed for further processing.
     /// </summary>
-    /// <param name="transaction">The transaction request associated with the item slide manifest request. Cannot be null.</param>
-    public record RequestItemSlideManifestCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+    /// <param name="transaction">The transaction request associated with the file upload request. Cannot be null.</param>
+    public record RequestUploadCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
 
     /// <summary>
-    /// Represents a command to request a file associated with a transaction, indicating that the file is needed for further processing.
+    /// Represents a command to request the upload of an IAT (Implicit Association Test) associated with a transaction, indicating that the IAT upload is needed for further processing.
     /// </summary>
-    /// <param name="transaction">The transaction request associated with the file request. Cannot be null.</param>
-    public record RequestFilesCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+    /// <param name="transaction">The transaction request associated with the IAT upload request. Cannot be null.</param>
+    public record RequestIATUploadCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
     /// Represents a command to request item slides associated with a transaction, indicating that the item slides are needed for further processing.
@@ -141,20 +97,16 @@ namespace IAT.Core.Handlers
     public record RequestConfigFileCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
-    /// Represents a command to indicate that a deployment associated with a transaction was successful.
+    /// Represents a command to request an encrypted RSA key for a transaction, indicating that the encrypted RSA key is needed for further processing.
     /// </summary>
-    /// <param name="transaction">The transaction request associated with the deployment success. Cannot be null.</param>
-    public record DeploymentSuccessCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
-
-    /// <summary>
-    /// Represents a command to indicate that a deployment associated with a transaction has failed.
-    /// </summary>
-    /// <param name="transaction">The transaction request associated with the deployment failure. Cannot be null.</param>
-    public record DeploymentFailCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+    /// <param name="transaction">The transaction request associated with the encrypted RSA key request. Cannot be null.</param>
+    public record RequestEncryptedRSAKey(TransactionRequest transaction) : IRequest<TransactionResult>;
 
     /// <summary>
     /// Represents a command to request an authentication token for a transaction, indicating that the authentication token is needed for further processing.
     /// </summary>
     /// <param name="transaction"></param>
     public record AuthTokenCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
+
+    public record RequestEncryptionKeyCommand(TransactionRequest transaction) : IRequest<TransactionResult>;
 }
