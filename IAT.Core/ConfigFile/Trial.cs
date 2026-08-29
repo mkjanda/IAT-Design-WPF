@@ -22,14 +22,14 @@ public class Trial : Event, IEqualityComparer<Trial>
     /// <summary>
     /// Gets or sets the unique identifier for the entity.
     /// </summary>
-    [XmlElement("Id", Form = XmlSchemaForm.Unqualified)]
+    [XmlIgnore]
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
     /// Returns the event type associated with this instance, which is used to identify the specific type of event being represented. 
     /// In this case, it returns EventType.Trial, indicating that this class represents a trial event in the IAT application.
     /// </summary>
-    [XmlElement("EventType", Form = XmlSchemaForm.Unqualified)]
+    [XmlIgnore]
     public override EventType EventType => EventType.Trial;
 
     /// <summary>
@@ -60,12 +60,6 @@ public class Trial : Event, IEqualityComparer<Trial>
     }
 
     /// <summary>
-    /// Gets or sets the direction associated with the key input.
-    /// </summary>
-    [XmlElement("KeyedDir", Form = XmlSchemaForm.Unqualified)]
-    public KeyedDirection KeyedDir { get; set; } = KeyedDirection.none;
-
-    /// <summary>
     /// Gets or sets the item number associated with this instance.
     /// </summary>
     [XmlElement("ItemNum", Form = XmlSchemaForm.Unqualified)]
@@ -82,6 +76,13 @@ public class Trial : Event, IEqualityComparer<Trial>
     /// </summary>
     [XmlElement("OriginatingBlock", Form = XmlSchemaForm.Unqualified)]
     public int OriginatingBlock { get; set; }
+
+    /// <summary>
+    /// Gets or sets the direction associated with the key input.
+    /// </summary>
+    [XmlElement("KeyedDir", Form = XmlSchemaForm.Unqualified)]
+    public KeyedDirection KeyedDir { get; set; } = KeyedDirection.None;
+
 
     /// <summary>
     /// Gets or sets the identifier of the stimulus display associated with this instance.

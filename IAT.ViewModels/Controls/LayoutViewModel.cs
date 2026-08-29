@@ -609,7 +609,7 @@ namespace IAT.ViewModels
             if (trial is null)
             {
                 ClearStimulusPreview();
-                ApplyKeyHighlight(KeyedDirection.none);
+                ApplyKeyHighlight(KeyedDirection.None);
                 return;
             }
 
@@ -700,7 +700,7 @@ namespace IAT.ViewModels
             PreviewContinueText = string.Empty;
             PreviewBlockInstructionsText = string.Empty;
             IsResponseKeysVisible = false;
-            ApplyKeyHighlight(KeyedDirection.none);
+            ApplyKeyHighlight(KeyedDirection.None);
             HideStimulusPreview();
             // Keep ActiveInstructions on the block band so the empty stage is stable if the user
             // switches back to Blocks without a sequence re-selection.
@@ -716,7 +716,7 @@ namespace IAT.ViewModels
                 IsErrorMarkVisible = false;
                 IsContinueInstructionsVisible = false;
                 PreviewContinueText = string.Empty;
-                ApplyKeyHighlight(KeyedDirection.none);
+                ApplyKeyHighlight(KeyedDirection.None);
                 // Restore the body region to BlockInstructions for trial / block mode.
                 // Intentionally does NOT hide stimulus/keys — Blocks calls this when returning
                 // to trial mode and then ApplyTrialPreview / ApplyBlockKeys. Instructions tab
@@ -747,7 +747,7 @@ namespace IAT.ViewModels
             IsContinueInstructionsVisible = true;
 
             IsErrorMarkVisible = false;
-            ApplyKeyHighlight(KeyedDirection.none);
+            ApplyKeyHighlight(KeyedDirection.None);
             // Text / Keyed / empty Mock: no stimulus slot. Mock with a stimulus re-enables below.
             HideStimulusPreview();
 
@@ -775,7 +775,7 @@ namespace IAT.ViewModels
                     ApplyInstructionKeys(mock.LeftResponseId, mock.RightResponseId);
                     IsErrorMarkVisible = mock.ShowErrorMark;
 
-                    if (mock.OutlineCorrectResponse && mock.KeyedDirection != KeyedDirection.none)
+                    if (mock.OutlineCorrectResponse && mock.KeyedDirection != KeyedDirection.None)
                     {
                         ApplyKeyHighlight(mock.KeyedDirection);
                     }
@@ -1064,8 +1064,8 @@ namespace IAT.ViewModels
         /// </summary>
         public void ApplyKeyHighlight(KeyedDirection direction)
         {
-            IsLeftKeyOutlined = direction == KeyedDirection.left;
-            IsRightKeyOutlined = direction == KeyedDirection.right;
+            IsLeftKeyOutlined = direction == KeyedDirection.Left;
+            IsRightKeyOutlined = direction == KeyedDirection.Right;
 
             // Outline is the highlight signal. Keep author-chosen key colors; only force bold.
             LeftKeyPreviewFontWeight = FontWeights.Bold;

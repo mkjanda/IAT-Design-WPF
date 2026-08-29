@@ -13,12 +13,12 @@ namespace IAT.Core.Enumerations;
 public enum KeyedDirection
 {
     [Description("Indicates the stimulus is keyed left")]
-    left,
+    Left,
 
     [Description("Indicates the stimulus is keyed right")]
-    right,
+    Right,
 
     [Description("Indicates the stimulus has not been keyed")]
-    none
+    None
 
 }

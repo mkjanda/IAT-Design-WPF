@@ -35,15 +35,11 @@ namespace IAT.Core.Handlers
                      $"deploymentId={_transactionState.DeploymentId}";
                 foreach (var f in _transactionState.FileManifest.Files)
                     memStream.Write(f.Content);
+                foreach (var f in _transactionState.SlideManifest.Files)
+                    memStream.Write(f.Content);
                 var requestBody = new ByteArrayContent(memStream.ToArray());
                 memStream.Dispose();
-                await httpClient.PostAsync(url, requestBody, CancellationToken.None);
-                await _webSocketService.SendMessage(new TransactionRequest()
-                {
-                    Type = TransactionType.DoIATDeploy,
-                    DeploymentId = _transactionState.DeploymentId,
-                    ProductKey = _transactionState.ProductKey
-                });
+                var response = await httpClient.PostAsync(url, requestBody, CancellationToken.None);
                 return TransactionResult.Unset;
             }
             else if (request.transaction.Type == TransactionType.RequestItemSlides)
@@ -54,7 +50,13 @@ namespace IAT.Core.Handlers
                     memStream.Write(f.Content);
                 var requestBody = new ByteArrayContent(memStream.ToArray());
                 memStream.Dispose();
-                await httpClient.PostAsync(url, requestBody, CancellationToken.None);
+                var response = await httpClient.PostAsync(url, requestBody, CancellationToken.None);
+                await _webSocketService.SendMessage(new TransactionRequest()
+                {
+                    Type = TransactionType.DoIATDeploy,
+                    DeploymentId = _transactionState.DeploymentId,
+                    ProductKey = _transactionState.ProductKey
+                });
                 return TransactionResult.Unset;
             }
             else

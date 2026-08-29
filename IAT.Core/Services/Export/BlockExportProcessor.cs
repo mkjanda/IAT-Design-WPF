@@ -132,8 +132,8 @@ namespace IAT.Core.Services.Export
                 RightResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.RightResponseId).Select(di => di.Id).FirstOrDefault(),
                 StimulusDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.StimulusId).Select(di => di.Id).FirstOrDefault(),
                 ErrorMarkIsDisplayed = screen.ShowErrorMark,
-                OutlineLeftResponse = (screen.KeyedDirection == KeyedDirection.left) && screen.OutlineCorrectResponse,
-                OutlineRightResponse = (screen.KeyedDirection == KeyedDirection.right) && screen.OutlineCorrectResponse
+                OutlineLeftResponse = (screen.KeyedDirection == KeyedDirection.Left) && screen.OutlineCorrectResponse,
+                OutlineRightResponse = (screen.KeyedDirection == KeyedDirection.Right) && screen.OutlineCorrectResponse
             });
         }
 

@@ -22,6 +22,8 @@ namespace IAT.Core.Handlers
         {
             _transactionState.DeploymentId = command.transaction.DeploymentId;
             _transactionState.ConfigFile.ProductKey = _transactionState.ProductKey;
+            _transactionState.ConfigFile.ClientID = _transactionState.ClientId;
+            _transactionState.ConfigFile.Name = _transactionState.ConfigFile.Name;
             await _webSocketService.SendMessage(_transactionState.ConfigFile);
             return TransactionResult.Unset;
         }

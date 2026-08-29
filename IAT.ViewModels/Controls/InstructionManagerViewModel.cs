@@ -398,8 +398,8 @@ public partial class InstructionManagerViewModel : ObservableObject
                     SelectedStimulus = _currentTest.GetStimulusById(mock.StimulusId);
                     ShowErrorMark = mock.ShowErrorMark;
                     OutlineCorrectResponse = mock.OutlineCorrectResponse;
-                    SelectedDirection = (mock.KeyedDirection is KeyedDirection.left) ? "Left"
-                        : (mock.KeyedDirection is KeyedDirection.right) ? "Right"
+                    SelectedDirection = (mock.KeyedDirection is KeyedDirection.Left) ? "Left"
+                        : (mock.KeyedDirection is KeyedDirection.Right) ? "Right"
                         : "None";
                 }
             }
@@ -680,13 +680,13 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is not MockItemInstructionScreen mock) return;
         try
         {
-            mock.KeyedDirection = (value is "Left") ? KeyedDirection.left
-                : (value is "Right") ? KeyedDirection.right
-                : KeyedDirection.none;
+            mock.KeyedDirection = (value is "Left") ? KeyedDirection.Left
+                : (value is "Right") ? KeyedDirection.Right
+                : KeyedDirection.None;
         }
         catch (ArgumentException)
         {
-            mock.KeyedDirection = KeyedDirection.none;
+            mock.KeyedDirection = KeyedDirection.None;
             SelectedDirection = "None";
             RefreshInstructionPreview();
             return;
@@ -753,7 +753,7 @@ public partial class InstructionManagerViewModel : ObservableObject
                 StimulusId = stimId,
                 ShowErrorMark = showErr,
                 OutlineCorrectResponse = outline,
-                KeyedDirection = KeyedDirection.none
+                KeyedDirection = KeyedDirection.None
             },
             _ => new TextInstructionScreen
             {
@@ -849,7 +849,7 @@ public partial class InstructionManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             Text = "New mock-item instructions",
             ContinueKey = " ",
-            KeyedDirection = KeyedDirection.none
+            KeyedDirection = KeyedDirection.None
         };
         screen.ContinueInstructions.Text = "Press the spacebar to continue";
         _currentTest.AddInstructionScreen(screen);

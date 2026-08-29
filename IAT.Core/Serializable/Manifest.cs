@@ -23,6 +23,8 @@ namespace IAT.Core.Serializable
     /// <remarks>This class serves as a base for file and directory representations, providing shared
     /// metadata. Derived types should implement additional behavior as needed. The class is intended for use in
     /// scenarios where file system entities need to be modeled or serialized.</remarks>
+    [XmlInclude(typeof(ManifestFile))]
+    [XmlInclude(typeof(ManifestDirectory))]
     public abstract class FileEntity
     {
 
@@ -61,6 +63,7 @@ namespace IAT.Core.Serializable
     /// configuration files, or images. The properties provide information necessary for identifying and processing the
     /// file within the context of the manifest. Inherits from FileEntity, which may provide additional file-related
     /// functionality.</remarks>
+    [XmlType("File")]
     public class ManifestFile : FileEntity
     {
         /// <summary>
@@ -97,14 +100,6 @@ namespace IAT.Core.Serializable
         public int ResourceId { get; set; } = -1;
 
         /// <summary>
-        /// Gets the collection of reference identifiers associated with this instance.
-        /// </summary>
-        /// <remarks>The collection is read-only from outside the class. Items can be added or removed
-        /// only within the class implementation.</remarks>
-        [XmlElement("ReferenceId", Form = XmlSchemaForm.Unqualified, Type = typeof(int))]
-        public List<int> ReferenceIds { get; set; } = new List<int>();
-
-        /// <summary>
         /// The byte array representing the content of the file. This property is ignored during XML serialization, as it may 
         /// contain large binary data that is not suitable for direct inclusion in XML. Instead, the content can be stored or 
         /// transmitted separately, with references to it included in the manifest as needed.
@@ -119,6 +114,7 @@ namespace IAT.Core.Serializable
     /// <remarks>Use this class to model hierarchical directory structures within a manifest. The directory
     /// can contain both files and subdirectories, accessible through the Contents collection or by index. Inherits from
     /// FileEntity, allowing directories to be treated uniformly with files in manifest operations.</remarks>
+    [XmlType("Directory")]
     public class ManifestDirectory : FileEntity
     {
         /// <summary>
@@ -163,7 +159,8 @@ namespace IAT.Core.Serializable
     /// Represents a manifest that contains metadata for XML serialization, including the client identifier and IAT
     /// element name.
     /// </summary>
-    public class Manifest : ManifestDirectory, IWebSocketMessage
+    [XmlRoot("Manifest")]
+    public class Manifest : IWebSocketMessage
     {
         /// <summary>
         /// Gets or sets the type of the manifest, indicating whether it is a file manifest or an item slide manifest.
@@ -174,14 +171,20 @@ namespace IAT.Core.Serializable
         /// <summary>
         /// Gets or sets the product key associated with the manifest, used for authentication or identification purposes.
         /// </summary>
-        [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
-        public String ProductKey { get; set; } = String.Empty;
+        [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified, Order = 1)]
+        public string ProductKey { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the name of the IAT element for XML serialization.
         /// </summary>
-        [XmlElement("IATName", Form = XmlSchemaForm.Unqualified)]
+        [XmlElement("IATName", Form = XmlSchemaForm.Unqualified, Order = 2)]
         public string IATName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The list of file entries in the manifest
+        /// </summary>
+        [XmlElement("File", Type=typeof(ManifestFile), Order = 3)]
+        public List<ManifestFile> Files = new();
 
     }
 }

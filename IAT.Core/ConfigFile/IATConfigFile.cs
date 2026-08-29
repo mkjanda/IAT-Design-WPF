@@ -153,6 +153,6 @@ public class IATConfigFile : IWebSocketMessage
     /// Gets or sets the collection of display items to be serialized or deserialized as part of the DisplayItemList XML
     /// element.
     /// </summary>
-    [XmlArrayItem("DisplayItem", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(DisplayItem))]
+    [XmlElement("DisplayItem", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(DisplayItem))]
     public List<DisplayItem> DisplayItems { get; set; } = new List<DisplayItem>();
 }

@@ -62,7 +62,6 @@ namespace IAT.Core.Services.Network
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
-            _webSocketService.TransactionCommands[TransactionType.TransactionSuccess] = (request) => new EMailVerifiedCommand(request);
         }
 
         /// <summary>

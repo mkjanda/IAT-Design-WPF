@@ -497,8 +497,8 @@ public partial class BlockEditViewModel : ObservableObject
         foreach (var srcTrial in source.Trials.OrderBy(t => t.TrialNumber))
         {
             var direction = srcTrial.KeyedDirection;
-            if (flipDirection && direction != KeyedDirection.none)
-                direction = (KeyedDirection.left == direction) ? KeyedDirection.right : KeyedDirection.left;
+            if (flipDirection && direction != KeyedDirection.None)
+                direction = (KeyedDirection.Left == direction) ? KeyedDirection.Right : KeyedDirection.Left;
 
             var trial = new Trial
             {

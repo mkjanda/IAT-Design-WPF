@@ -35,7 +35,7 @@ namespace IAT.Core.Domain
         /// Gets or sets the current keyed direction value.
         /// </summary>
         [ObservableProperty]
-        private KeyedDirection _keyedDirection = KeyedDirection.none;
+        private KeyedDirection _keyedDirection = KeyedDirection.None;
 
         /// <summary>
         /// Gets or sets the block number associated with this instance.
@@ -65,7 +65,7 @@ namespace IAT.Core.Domain
             if (StimulusId == Guid.Empty)
                 result.AddError("Trial must reference a valid stimulus");
 
-            if (KeyedDirection == KeyedDirection.none)
+            if (KeyedDirection == KeyedDirection.None)
                 result.AddError("Every trial must have a keyed direction");
 
             if (stimulus is null || stimulus.Validate().IsValid == false)

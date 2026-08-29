@@ -34,7 +34,7 @@ public abstract partial class Stimulus : ObservableObject
     /// <summary>
     /// Gets or sets the direction keyed for the stimulus.
     /// </summary>
-    public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.none;
+    public KeyedDirection KeyedDirection { get; set; } = KeyedDirection.None;
 
     /// <summary>
     /// Validates the stimulus.

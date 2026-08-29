@@ -27,7 +27,7 @@ public sealed class Layout {
     /// The border width is the width of the border around the test window. If the border width is 0, then there is no border
     /// </summary>
     [XmlElement("BorderWidth", Form = XmlSchemaForm.Unqualified)]
-    public int BorderWidth { get; set; } = 0;
+    public int BorderWidth { get; set; } = 10;
 
     /// <summary>
     /// The response wiidth represents the width of the response area. If the response width is 0, then there is no response area

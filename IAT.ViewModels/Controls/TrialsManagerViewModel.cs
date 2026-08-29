@@ -258,7 +258,7 @@ public partial class TrialsManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             BlockNumber = SelectedBlock.BlockNumber,
             TrialNumber = Trials.Count + 1,
-            KeyedDirection = KeyedDirection.left,
+            KeyedDirection = KeyedDirection.Left,
             StimulusId = AvailableStimuli.FirstOrDefault()?.Id ?? Guid.Empty
         };
 
@@ -324,7 +324,7 @@ public partial class TrialsManagerViewModel : ObservableObject
         for (int i = 0; i < NumPresentations; i++)
         {
             var stim = stimList[i % stimList.Count];
-            var direction = (i % 2 == 0) ? KeyedDirection.left : KeyedDirection.right;
+            var direction = (i % 2 == 0) ? KeyedDirection.Left : KeyedDirection.Right;
 
             var trial = new Trial
             {
@@ -687,7 +687,7 @@ public partial class TrialsManagerViewModel : ObservableObject
     private void AssignLeft(Stimulus? stimulus)
     {
         if (stimulus is null) return;
-        AssignStimulusCore(stimulus, KeyedDirection.left);
+        AssignStimulusCore(stimulus, KeyedDirection.Left);
     }
 
     /// <summary>
@@ -698,7 +698,7 @@ public partial class TrialsManagerViewModel : ObservableObject
     private void AssignRight(Stimulus? stimulus)
     {
         if (stimulus is null) return;
-        AssignStimulusCore(stimulus, KeyedDirection.right);
+        AssignStimulusCore(stimulus, KeyedDirection.Right);
     }
 
     /// <summary>
@@ -784,7 +784,7 @@ public partial class TrialRowViewModel : ObservableObject
         Trial = trial;
         _test = test;
         _selectedStimulus = test.GetStimulusById(trial.StimulusId);
-        _directionName = trial.KeyedDirection == KeyedDirection.right ? "Right" : "Left";
+        _directionName = trial.KeyedDirection == KeyedDirection.Right ? "Right" : "Left";
     }
 
     partial void OnSelectedStimulusChanged(Stimulus? value)
@@ -797,7 +797,7 @@ public partial class TrialRowViewModel : ObservableObject
     partial void OnDirectionNameChanged(string value)
     {
         Trial.KeyedDirection = value.Equals("Right", StringComparison.OrdinalIgnoreCase)
-            ? KeyedDirection.right
-            : KeyedDirection.left;
+            ? KeyedDirection.Right
+            : KeyedDirection.Left;
     }
 }

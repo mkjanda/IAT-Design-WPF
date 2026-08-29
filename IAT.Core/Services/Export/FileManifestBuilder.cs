@@ -56,7 +56,7 @@ namespace IAT.Core.Services.Export
         /// <param name="content">The binary content of the file. If null, a default single-byte array is used.</param>
         public void AddFile(Manifest manifest, string path, ResourceType resourceType, string mimeType, byte[]? content = null)
         {
-            manifest.AddFile(new ManifestFile() { Path = path, 
+            manifest.Files.Add(new ManifestFile() { Name = path, Path = path,
                 ResourceId = manifest.Files.Count + 1, 
                 ResourceType = resourceType, 
                 Size = content?.Length ?? 1, 

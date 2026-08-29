@@ -72,8 +72,9 @@ public class ItemSlideExportProcessor : IItemSlideExportProcessor
                 encoder.Frames.Clear();
                 encoder.Frames.Add(BitmapFrame.Create(bmp));
                 encoder.Save(memStream);
-                context.SlideManifest.AddFile(new Serializable.ManifestFile()
+                context.SlideManifest.Files.Add(new Serializable.ManifestFile()
                 {
+                    Name = filename, Path = filename,
                     ResourceType = ResourceType.ItemSlide,
                     MimeType = "image/jpeg",
                     Size = (int)memStream.Length,
