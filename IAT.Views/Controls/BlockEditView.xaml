@@ -86,19 +86,20 @@
                                 BorderThickness="0"
                                 Background="Transparent"
                                 ClipToBounds="True">
-                            <!-- Top-aligned so tall regions (Keyed / clamped Mock) never float the
-                                 body text through the middle of the stage / stimulus area.
-                                 Font family / size / color bind to LayoutViewModel so Instruction
-                                 Style edits on the right pane update the live preview immediately. -->
-                            <TextBlock Text="{Binding PreviewBlockInstructionsText}"
-                                       FontFamily="{Binding PreviewBlockInstructionsFontFamily}"
-                                       FontSize="{Binding PreviewBlockInstructionsFontSize}"
-                                       Foreground="{Binding PreviewBlockInstructionsBrush}"
-                                       HorizontalAlignment="Stretch"
-                                       VerticalAlignment="Top"
-                                       TextAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       Margin="8,4"/>
+                            <!-- Top-aligned. DownOnly Viewbox keeps the authored font when it
+                                 fits and scales the whole paragraph when it does not, so a
+                                 large Instruction Style cannot clip or paint through the stage. -->
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
+                                     HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                                     Margin="8,4">
+                                <TextBlock Text="{Binding PreviewBlockInstructionsText}"
+                                           FontFamily="{Binding PreviewBlockInstructionsFontFamily}"
+                                           FontSize="{Binding PreviewBlockInstructionsFontSize}"
+                                           Foreground="{Binding PreviewBlockInstructionsBrush}"
+                                           MaxWidth="{Binding ActiveInstructionsWidth}"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                            </Viewbox>
                         </Border>
 
                         <!-- Stimulus Area: trial / Mock Item only — collapsed for Text & Keyed instructions -->
@@ -111,17 +112,18 @@
                                 Background="Transparent"
                                 Visibility="{Binding IsStimulusAreaVisible, Converter={StaticResource BoolToVis}}">
                             <Grid>
-                                <TextBlock Text="{Binding PreviewStimulusText}"
-                                           FontFamily="{Binding PreviewStimulusFontFamily}"
-                                           FontSize="{Binding PreviewStimulusFontSize}"
-                                           Foreground="{Binding PreviewStimulusBrush}"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap"
-                                           TextAlignment="Center"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Margin="8"
-                                           Visibility="{Binding IsPreviewTextVisible, Converter={StaticResource BoolToVis}}"/>
+                                <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
+                                         Margin="8"
+                                         Visibility="{Binding IsPreviewTextVisible, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding PreviewStimulusText}"
+                                               FontFamily="{Binding PreviewStimulusFontFamily}"
+                                               FontSize="{Binding PreviewStimulusFontSize}"
+                                               Foreground="{Binding PreviewStimulusBrush}"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               MaxWidth="{Binding StimulusWidth}"/>
+                                </Viewbox>
 
                                 <Image Source="{Binding PreviewStimulusImage}"
                                        Stretch="Uniform"
@@ -153,13 +155,15 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <TextBlock Text="{Binding LeftKeyPreviewText}"
-                                       FontFamily="{Binding LeftKeyPreviewFontFamily}"
-                                       FontSize="{Binding LeftKeyPreviewFontSize}"
-                                       Foreground="{Binding LeftKeyPreviewBrush}"
-                                       FontWeight="{Binding LeftKeyPreviewFontWeight}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                            <Viewbox Stretch="Uniform" Margin="2">
+                                <TextBlock Text="{Binding LeftKeyPreviewText}"
+                                           FontFamily="{Binding LeftKeyPreviewFontFamily}"
+                                           FontSize="{Binding LeftKeyPreviewFontSize}"
+                                           Foreground="{Binding LeftKeyPreviewBrush}"
+                                           FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                            </Viewbox>
                         </Border>
 
                         <!-- Right Key: Keyed / Mock / trial only — hidden for Text instruction screens -->
@@ -183,13 +187,15 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <TextBlock Text="{Binding RightKeyPreviewText}"
-                                       FontFamily="{Binding RightKeyPreviewFontFamily}"
-                                       FontSize="{Binding RightKeyPreviewFontSize}"
-                                       Foreground="{Binding RightKeyPreviewBrush}"
-                                       FontWeight="{Binding RightKeyPreviewFontWeight}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                            <Viewbox Stretch="Uniform" Margin="2">
+                                <TextBlock Text="{Binding RightKeyPreviewText}"
+                                           FontFamily="{Binding RightKeyPreviewFontFamily}"
+                                           FontSize="{Binding RightKeyPreviewFontSize}"
+                                           Foreground="{Binding RightKeyPreviewBrush}"
+                                           FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                            </Viewbox>
                         </Border>
 
                         <!-- Error Mark (shown for Mock Item instructions with ShowErrorMark).
@@ -219,11 +225,14 @@
                                 Background="Transparent"
                                 ClipToBounds="True"
                                 Visibility="{Binding IsContinueInstructionsVisible, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding PreviewContinueText}"
-                                       FontSize="13" Foreground="#444"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       TextWrapping="Wrap" TextAlignment="Center"
-                                       Margin="8,0"/>
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Margin="8,0">
+                                <TextBlock Text="{Binding PreviewContinueText}"
+                                           FontSize="13" Foreground="#444"
+                                           TextWrapping="Wrap" TextAlignment="Center"
+                                           MaxWidth="{Binding ContinueInstructionsWidth}"/>
+                            </Viewbox>
                         </Border>
                     </Canvas>
                 </Grid>

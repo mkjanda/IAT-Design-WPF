@@ -63,24 +63,22 @@ public class ItemSlideExportProcessor : IItemSlideExportProcessor
             foreach (var trial in block.TrialIds.Select(tId => context.Test.AllTrials.First(t => t.Id == tId)))
             {
                 var bmp = _imageGenerationService.RenderSlide(context.Test, block.Id, trial.Id, context.LayoutRects);
-                var filename = $"slide_{block.Id}_{trial.Id}.png";
-                var memStream = new MemoryStream();
-                JpegBitmapEncoder encoder = new JpegBitmapEncoder()
-                {
-                    QualityLevel = 90
-                };
-                encoder.Frames.Clear();
+                var filename = $"slide_{block.Id}_{trial.Id}.jpg";
+                using var memStream = new MemoryStream();
+                var encoder = new JpegBitmapEncoder { QualityLevel = 90 };
                 encoder.Frames.Add(BitmapFrame.Create(bmp));
                 encoder.Save(memStream);
-                context.SlideManifest.Files.Add(new Serializable.ManifestFile()
+                var bytes = memStream.ToArray();
+                context.SlideManifest.Files.Add(new ManifestFile
                 {
-                    Name = filename, Path = filename,
+                    Name = filename,
+                    Path = filename,
+                    ResourceId = context.SlideManifest.Files.Count + 1,
                     ResourceType = ResourceType.ItemSlide,
                     MimeType = "image/jpeg",
-                    Size = (int)memStream.Length,
-                    Content = memStream.ToArray()
+                    Size = bytes.Length,
+                    Content = bytes
                 });
-                memStream.Dispose();
             }
         }
     }

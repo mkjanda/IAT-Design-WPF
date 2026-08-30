@@ -9,6 +9,7 @@ using IAT.Core.Models;
 using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
 using System.Windows.Media;
+using sun.security.jgss;
 
 
 namespace IAT.Core.Services.Export
@@ -79,7 +80,7 @@ namespace IAT.Core.Services.Export
             };
             encoder.Frames.Add(BitmapFrame.Create(bmp));
             encoder.Save(memStream);
-            _fileManifestBuilder.AddFile(exportContext.FileManifest, "ErrorMark.png", ResourceType.ErrorMark, "image/png", memStream.ToArray());
+            _fileManifestBuilder.AddFile(exportContext.FileManifest, "ErrorMark.png", 1000, ResourceType.ErrorMark, "image/png", memStream.ToArray());
             exportContext.DisplayItems.Add(new DisplayItem()
             {
                 Filename = "ErrorMark.png",
@@ -109,11 +110,12 @@ namespace IAT.Core.Services.Export
             encoder.Frames.Clear();
             encoder.Frames.Add(BitmapFrame.Create(renderBmp));
             encoder.Save(memStream);
-            _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutline.png", ResourceType.KeyOutline, "image/png", memStream.ToArray());
+            _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutlineLeft.png", 1001, ResourceType.KeyOutline, "image/png", memStream.ToArray());
+            _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutlineRight.png", 1002, ResourceType.KeyOutline, "image/png", memStream.ToArray());
             memStream.Dispose();
             exportContext.DisplayItems.Add(new DisplayItem()
             {
-                Filename = "KeyOutline.png",
+                Filename = "KeyOutlineLeft.png",
                 Id = 1001,
                 Guid = Guid.Empty,
                 X = (int)exportContext.LayoutRects.LeftKey.X,
@@ -123,7 +125,7 @@ namespace IAT.Core.Services.Export
             });
             exportContext.DisplayItems.Add(new DisplayItem()
             {
-                Filename = "KeyOutline.png",
+                Filename = "KeyOutlineRight.png",
                 Id = 1002,
                 Guid = Guid.Empty,
                 X = (int)exportContext.LayoutRects.RightKey.X,
@@ -143,6 +145,8 @@ namespace IAT.Core.Services.Export
                 NumIATItems = test.AllTrials.Count,
                 RedirectOnComplete = "https://iatsoftware.net"
             };
+            config.Layout.InteriorHeight = (int)exportContext.LayoutRects.Interior.Height;
+            config.Layout.InteriorWidth = (int)exportContext.LayoutRects.Interior.Width;
             return config;
         }
     }

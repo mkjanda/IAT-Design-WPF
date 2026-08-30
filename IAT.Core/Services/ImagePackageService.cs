@@ -215,9 +215,11 @@ public class ImagePackageService : IImagePackageService
         }
         else
         {
-            double scaleX = (double)targetWidth / bitmap.PixelWidth;
-            double scaleY = (double)targetHeight / bitmap.PixelHeight;
-            ScaleTransform scaleTransform = new ScaleTransform(scaleX, scaleY);
+            // Uniform contain-fit — independent scaleX/scaleY squashes the image.
+            var scale = Math.Min(
+                (double)targetWidth / bitmap.PixelWidth,
+                (double)targetHeight / bitmap.PixelHeight);
+            var scaleTransform = new ScaleTransform(scale, scale);
             resizedBitmap = new TransformedBitmap(bitmap, scaleTransform);
             resizedBitmap.Freeze();
         }

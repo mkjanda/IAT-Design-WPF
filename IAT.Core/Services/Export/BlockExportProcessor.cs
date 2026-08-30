@@ -193,6 +193,7 @@ namespace IAT.Core.Services.Export
                 InstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == block.BlockInstructionsId).Select(di => di.Id).FirstOrDefault(),
                 NumItems = block.TrialIds.Count,
                 BlockNumber = exportContext.Events.Where(evt => evt.EventType == EventType.BeginIATBlock).Count() + 1,
+                NumPresentations = block.NumPresentations
             });
 
             foreach (var trialId in block.TrialIds)

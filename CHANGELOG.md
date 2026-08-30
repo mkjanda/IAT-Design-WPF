@@ -35,7 +35,7 @@ present in that drop. Items that exist only in later delta zips (and are
 - Per-side response-key font family, size, and color on the Trials tab. After a standard 7-block structure exists, editors for blocks 3–7 are disabled; practice edits update shared keys in place and `PropagateDerivedKeysFromPractice` rebuilds derived key text and style (style follows the first component, same as `CreateCombinedKey`)
 - Deploy **Current Test**: `DeployManagerViewModel` runs `ITestExportService.PrepareForServerUploadAsync` then `ITestDeploymentService.Deploy`. Password comes from the header field / AppData; `IsBusy` locks the tab; `SetIATPassword` runs on success
 - Export DI completions: `IItemSlideExportProcessor` and `ITestMapperService` registered. `BlockExportProcessor` takes `IImageGenerationService`
-- `FileEntityType` and `ResourceType` live in `IAT.Core.Enumerations` (`ResourceType` token is `ErrorMark`, not `ErrorMarker`)
+- `FileEntityType` and `ResourceType` live in `IAT.Core.Enumerations`. Wire tokens use `[XmlEnum]` and match the Java XSD exactly (`ErrorMark`, `Javascript`, …)
 
 ### Changed
 
@@ -90,6 +90,12 @@ present in that drop. Items that exist only in later delta zips (and are
 - Export resolves left/right response keys with `GetKeyById` (`Key` implements `IFormattedText`). Block instructions still use `GetFormattedTextById`. Looking keys up in the formatted-text cache dropped response keys from the package
 - `BlockValidator` rejects blank or placeholder `"Block Instructions"` and requires non-empty left/right key ids
 - `TextExportProcessor` adds the encoder frame before PNG encode (export was writing empty images)
+- `TextExportProcessor` no longer disposes the memory stream before `ToArray()` (that wrote empty PNG payloads into the manifest)
+- GManifest child order: `Manifest` is flattened (no longer a `ManifestDirectory`) so XmlSerializer emits `ProductKey`, then `IATName`, then `File*`. `ReferenceId` is not on GFile and is not serialized
+- `IFileManifestBuilder.AddFile` takes an explicit `resourceId` so ErrorMark (1000) and key outlines (1001/1002) match `DisplayItem.Id` / config IDs instead of `Files.Count + 1`
+- Left and right key outlines are separate files (`KeyOutlineLeft.png` / `KeyOutlineRight.png`) with ResourceIds 1001 and 1002
+- `BeginIATBlock.NumPresentations` is populated from `Block.NumPresentations` on export
+- `Manifest` registered in `XmlDeserializationService`
 - Blocks-tab live preview: instruction `TextBlock` binds `FontFamily` / `FontSize` / `Foreground` to `LayoutViewModel`; Instruction Style pushes through `PushBlockInstructionsToPreview` → `ApplyBlockInstructions(text, style)`. Instruction-screen preview applies `screen.Style` to the shared body `TextBlock`
 
 ### Security
@@ -104,12 +110,11 @@ present in that drop. Items that exist only in later delta zips (and are
 
 ### Known gaps (not in zip 29)
 
-These exist as later deltas or analysis notes. Do not treat them as shipped in this drop.
+These exist as later deltas or analysis notes. Do not treat them as shipped in zip 29 itself. The GManifest serializer/XSD mismatches below are fixed in the 2026-08-30 source tree (`IAT-Design-WPF-Manifest-GManifest-Order-ResourceId.zip`).
 
-- `ManifestType` still uses `[Description]`. GManifest expects `[XmlEnum]` tokens `FileManifest` / `ItemSlideManifest`
-- `XmlSerializer` still emits `Files` before `ProductKey` / `IATName` because those members are inherited from `ManifestDirectory`. The Java XSD wants ProductKey/IATName first
-- Wire format still dispatches `TransactionRequest` through `TransactionCommands`. Document-root `Message` subclasses (envelope dropped on the wire) are not in this zip
-- Sample `Untitled-1.xml` still fails GManifest for the two serializer/XSD mismatches above
+- ~~`ManifestType` still uses `[Description]`. GManifest expects `[XmlEnum]` tokens `FileManifest` / `ItemSlideManifest`~~ **Fixed 2026-08-30**
+- ~~`XmlSerializer` still emits `Files` before `ProductKey` / `IATName` because those members are inherited from `ManifestDirectory`~~ **Fixed 2026-08-30** (flattened `Manifest`)
+- Sample `Untitled-1.xml` was captured against the pre-flatten serializer; regenerate it from current `Manifest` before re-validating GManifest. Validate the `Manifest` document as itself — do not wrap it in `GEnvelope` / `Envelope`. That wrapper is unused on the wire.
 
 ## How this file was built
 

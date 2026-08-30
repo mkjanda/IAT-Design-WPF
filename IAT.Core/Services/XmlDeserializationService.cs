@@ -28,7 +28,8 @@ namespace IAT.Core.Services
             { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
             { "SurveyResults", typeof(SurveyResponse) }, { typeof(ServerReport).Name, typeof(ServerReport )},
             { typeof(IatTest).Name, typeof(IatTest)  }, { typeof(EncryptedRSAKey).Name, typeof(EncryptedRSAKey) },
-            { typeof(TransactionRequest).Name, typeof(TransactionRequest) }
+            { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
+            { typeof(Manifest).Name, typeof(Manifest) }
         };
 
         /// <summary>

@@ -80,10 +80,6 @@ namespace IAT.Core.Services.Export
             {
                 Interlace = PngInterlaceOption.On
             };
-            JpegBitmapEncoder jpegEncoder = new JpegBitmapEncoder()
-            {
-                QualityLevel = 90
-            };
             string filename = string.Empty;
             using var memStream = new MemoryStream();
             if (!exportContext.IdDictionary.ContainsKey(stimulus.Id))
@@ -96,45 +92,33 @@ namespace IAT.Core.Services.Export
                     pngEncoder.Frames.Add(BitmapFrame.Create(bmp));
                     pngEncoder.Save(memStream);
                     filename = $"stimulus{exportContext.IdDictionary[stimulus.Id]}.png";
-                    _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, ResourceType.Image, "image/png", memStream.ToArray());
+                    _fileManifestBuilder.AddFile(
+                        exportContext.FileManifest,
+                        filename,
+                        exportContext.IdDictionary[stimulus.Id],
+                        ResourceType.Image,
+                        "image/png",
+                        memStream.ToArray());
                 }
                 else if (stimulus is ImageStimulus imageStimulus)
                 {
-                    using var stimulusByteStream = new MemoryStream(_projectPackageService.GetImageBytes(imageStimulus.Id));
-                    var stimulusBitmap = new BitmapImage();
-                    stimulusBitmap.BeginInit();
-                    stimulusBitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    stimulusBitmap.StreamSource = stimulusByteStream;
-                    stimulusBitmap.EndInit();
-                    stimulusBitmap.Freeze();
-                    double bmpAR = stimulusBitmap.PixelWidth / (double)stimulusBitmap.PixelHeight;
-                    double rectAR = exportContext.LayoutRects.Stimulus.Width / exportContext.LayoutRects.Stimulus.Height;
-                    int width = 0; int height = 0;
-                    if (rectAR > bmpAR)
-                    {
-                        height = (int)exportContext.LayoutRects.Stimulus.Height;
-                        width = (int)(height * bmpAR);
-                    }
-                    else
-                    {
-                        width = (int)exportContext.LayoutRects.Stimulus.Width;
-                        height = (int)(width / bmpAR);
-                    }
-                    var resizedStimulus = _imageGenerationService.GetResizedBitmap(stimulusBitmap, width, height);
+                    // Ship the original pixels. The player (GraphicObjects.drawImage) already
+                    // contain-fits into DisplayItem W/H. Re-encoding onto a stimulus-sized JPEG
+                    // canvas turns the unused band black (JPEG has no alpha) and looks like a crop.
+                    var original = _projectPackageService.GetImageBytes(imageStimulus.Id);
                     string imageType = _projectPackageService.GetImageType(imageStimulus.Id);
-                    string mimeType = $"image/{imageType}";
+                    if (string.IsNullOrWhiteSpace(imageType))
+                        imageType = "png";
+                    if (imageType.Equals("jpeg", StringComparison.OrdinalIgnoreCase))
+                        imageType = "jpg";
                     filename = $"stimulus{exportContext.IdDictionary[stimulus.Id]}.{imageType}";
-                    if (imageType == "png")
-                    {
-                        pngEncoder.Frames.Add(BitmapFrame.Create(resizedStimulus));
-                        pngEncoder.Save(memStream);
-                    }
-                    else if (imageType == "jpg" || imageType == "jpeg")
-                    {
-                        jpegEncoder.Frames.Add(BitmapFrame.Create(resizedStimulus));
-                        jpegEncoder.Save(memStream);
-                    }
-                    _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, ResourceType.Image, mimeType, memStream.ToArray());
+                    _fileManifestBuilder.AddFile(
+                        exportContext.FileManifest,
+                        filename,
+                        exportContext.IdDictionary[stimulus.Id],
+                        ResourceType.Image,
+                        $"image/{imageType}",
+                        original);
                 }
                 exportContext.DisplayItems.Add(new DisplayItem()
                 {

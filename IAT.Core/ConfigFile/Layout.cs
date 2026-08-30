@@ -45,13 +45,13 @@ public sealed class Layout {
     /// Gets or sets the color used to draw the border.
     /// </summary>
     [XmlIgnore]
-    public Color BorderColor { get; set; } = Colors.White;
+    public Color BorderColor { get; set; } = Colors.Black;
 
     /// <summary>
     /// Gets or sets the background color for the control.
     /// </summary>
     [XmlIgnore]
-    public Color BackColor { get; set; } = Colors.Black;
+    public Color BackColor { get; set; } = Colors.White;
 
     /// <summary>
     /// Gets or sets the color used to draw the outline.
@@ -63,7 +63,7 @@ public sealed class Layout {
     /// Gets or sets the background color of the page.
     /// </summary>
     [XmlIgnore]
-    public Color PageBackColor { get; set; } = Colors.Black;
+    public Color PageBackColor { get; set; } = Colors.White;
 
     /// <summary>
     /// Gets or sets the red component of the border color as a two-digit hexadecimal string.

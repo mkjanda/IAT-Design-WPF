@@ -74,11 +74,16 @@ namespace IAT.Core.Services.Export
                 var textBmp = _imageGenerationService.RenderTextToBitmap(text, textRect);
                 encoder.Frames.Clear();
                 encoder.Frames.Add(BitmapFrame.Create(textBmp));
-                var memStream = new MemoryStream();
+                using var memStream = new MemoryStream();
                 encoder.Save(memStream);
-                memStream.Dispose();
                 filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
-                _fileManifestBuilder.AddFile(exportContext.FileManifest, filename, ResourceType.Image, "image/png", memStream.ToArray());
+                _fileManifestBuilder.AddFile(
+                    exportContext.FileManifest,
+                    filename,
+                    exportContext.IdDictionary[text.Id],
+                    ResourceType.Image,
+                    "image/png",
+                    memStream.ToArray());
             }
             filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
             exportContext.DisplayItems.Add(new DisplayItem()

@@ -55,16 +55,10 @@ public interface IImageGenerationService
     BitmapSource RenderSlide(IatTest test, Guid blockId, Guid trialId, LayoutRects rects);
 
     /// <summary>
-    /// Returns a new bitmap that is a resized version of the specified source bitmap, using the given target width and
-    /// height.
+    /// Returns a new bitmap of <paramref name="targetWidth"/> × <paramref name="targetHeight"/> with
+    /// <paramref name="bmpSource"/> scaled uniformly to fit inside that canvas (contain / letterbox).
+    /// Aspect ratio is preserved. Empty margins stay transparent — never cropped, never squashed.
     /// </summary>
-    /// <remarks>The returned bitmap is independent of the original source. If the target dimensions do not
-    /// match the source aspect ratio, the image may appear stretched or compressed.</remarks>
-    /// <param name="bmpSource">The source bitmap to resize. Cannot be null.</param>
-    /// <param name="targetWidth">The desired width, in pixels, of the resulting bitmap. Must be greater than zero.</param>
-    /// <param name="targetHeight">The desired height, in pixels, of the resulting bitmap. Must be greater than zero.</param>
-    /// <returns>A new BitmapSource instance representing the resized bitmap. The aspect ratio may not be preserved if the target
-    /// dimensions differ from the source.</returns>
     BitmapSource GetResizedBitmap(BitmapSource bmpSource, int targetWidth, int targetHeight);
 
 }
@@ -101,23 +95,46 @@ public class ImageGenerationService : IImageGenerationService
     /// <param name="formattedText">The formatted text to render onto the bitmap. Must not be null.</param>
     /// <param name="boundingRect">The bounding rectangle that defines the size and position for rendering the text. Must not be null.</param>
     /// <returns>A RenderTargetBitmap containing the rendered text, sized and positioned according to the bounding rectangle.</returns>
+    /// <summary>
+    /// Rasterizes <paramref name="formattedText"/> at 96 DPI including glyph overhangs, then
+    /// contain-fits that picture into <paramref name="boundingRect"/>. Glyphs cannot land
+    /// outside the file — the 553-byte "Fl" key PNGs were DrawText with a negative origin.
+    /// </summary>
     private RenderTargetBitmap RenderFormattedTextToBitmap(System.Windows.Media.FormattedText formattedText, Rect boundingRect)
     {
         if (formattedText == null) throw new ArgumentNullException(nameof(formattedText));
 
-        // Create the target bitmap (size based on measured text)
-        var width = boundingRect.Width;
-        var height = boundingRect.Height;
-        var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
-        var bmp = new RenderTargetBitmap((int)width, (int)height, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
-        var visual = new DrawingVisual();
-        using (var dc = visual.RenderOpen())
-        { 
-            dc.DrawText(formattedText, new Point((int)((width - formattedText.Width) / 2), (int)((height - formattedText.Height) / 2)));  // offset for crisp edges
+        const double dpi = 96.0;
+        var destW = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, boundingRect.Width)));
+        var destH = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, boundingRect.Height)));
+
+        var padL = Math.Max(0.0, -formattedText.OverhangLeading);
+        var padR = Math.Max(0.0, -formattedText.OverhangTrailing);
+        var padT = Math.Max(0.0, formattedText.OverhangAfter < 0 ? -formattedText.OverhangAfter : 0.0);
+        var glyphW = Math.Max(1, (int)Math.Ceiling(formattedText.Width + padL + padR + 2.0));
+        var glyphH = Math.Max(1, (int)Math.Ceiling(Math.Max(formattedText.Height, formattedText.Extent) + padT + 2.0));
+
+        var glyphBmp = new RenderTargetBitmap(glyphW, glyphH, dpi, dpi, PixelFormats.Pbgra32);
+        var glyphVisual = new DrawingVisual();
+        using (var dc = glyphVisual.RenderOpen())
+        {
+            dc.DrawText(formattedText, new Point(padL + 1.0, padT + 1.0));
         }
-        bmp.Render(visual);
-        bmp.Freeze();
-        return bmp;
+        glyphBmp.Render(glyphVisual);
+        glyphBmp.Freeze();
+
+        var dest = new RenderTargetBitmap(destW, destH, dpi, dpi, PixelFormats.Pbgra32);
+        var destVisual = new DrawingVisual();
+        using (var dc = destVisual.RenderOpen())
+        {
+            var fitted = FitContain(
+                new Size(glyphBmp.PixelWidth, glyphBmp.PixelHeight),
+                new Rect(0, 0, destW, destH));
+            dc.DrawImage(glyphBmp, fitted);
+        }
+        dest.Render(destVisual);
+        dest.Freeze();
+        return dest;
     }
 
     /*
@@ -159,16 +176,56 @@ public class ImageGenerationService : IImageGenerationService
     /// layout.</returns>
     public BitmapSource RenderTextToBitmap(IFormattedText text, Rect boundingRect)
     {
-        var foreground = new SolidColorBrush(text.Style.FontColor);
-        var typeface = new Typeface(new FontFamily(text.Style.FontFamily), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-        var formattedText = new System.Windows.Media.FormattedText(
-            text.Text,
-            CultureInfo.CurrentCulture,
-            FlowDirection.LeftToRight,
-            typeface,
-            text.Style.FontSize * 96.0 / 72.0,   // convert from points to DIPs   
-            foreground,
-            VisualTreeHelper.GetDpi(new Window()).PixelsPerDip);  // critical for crisp rendering
+        ArgumentNullException.ThrowIfNull(text);
+        var style = text.Style ?? new TextStyle();
+        var foreground = new SolidColorBrush(style.FontColor);
+        var typeface = new Typeface(
+            new FontFamily(string.IsNullOrWhiteSpace(style.FontFamily) ? "Segoe UI" : style.FontFamily),
+            FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+
+        // Keys store "Good or Flower" on one line; slides and preview stack on "or".
+        var display = text is Domain.Key key
+            ? Domain.Key.FormatStackedDisplay(key.Text)
+            : text.Text ?? string.Empty;
+
+        // Match the 96-DPI bitmap. Do not use the window PixelsPerDip — that
+        // is what clipped "…if the image i" on a scaled display.
+        const double pixelsPerDip = 1.0;
+        var wrapW = Math.Max(1.0, boundingRect.Width);
+        // FontSize in this app is WPF DIPs (same as TextBlock.FontSize), not points.
+        var preferred = style.FontSize > 0 ? style.FontSize : 24.0;
+
+        System.Windows.Media.FormattedText Make(double size)
+        {
+            var ft = new System.Windows.Media.FormattedText(
+                string.IsNullOrEmpty(display) ? " " : display,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                Math.Max(6.0, size),
+                foreground,
+                pixelsPerDip)
+            {
+                MaxTextWidth = wrapW,
+                TextAlignment = TextAlignment.Left,
+                Trimming = TextTrimming.None
+            };
+            return ft;
+        }
+
+        // Preferred size first. Contain-fit of the glyph bitmap is what
+        // guarantees the file is not clipped; this only avoids a huge
+        // intermediate bitmap when the authored font is enormous.
+        var em = Math.Max(6.0, preferred);
+        var formattedText = Make(em);
+        var destH = Math.Max(1.0, boundingRect.Height);
+        var guard = 0;
+        while (formattedText.Height > destH * 3 && em > 6.0 && guard++ < 12)
+        {
+            em *= 0.7;
+            formattedText = Make(em);
+        }
+
         return RenderFormattedTextToBitmap(formattedText, boundingRect);
     }
 
@@ -250,15 +307,17 @@ public class ImageGenerationService : IImageGenerationService
     {
         var block = test.GetBlockById(blockId) ?? new Block();
         var trial = test.GetTrialById(trialId) ?? new Trial();
-        var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
-        double dpiX = dpi.PixelsPerInchX;
-        double dpiY = dpi.PixelsPerInchY;
-        var bmp = new RenderTargetBitmap((int)rects.Interior.Width, (int)rects.Interior.Height, dpiX, dpiY, PixelFormats.Pbgra32);
+        const double dpiX = 96.0;
+        const double dpiY = 96.0;
+        var bmp = new RenderTargetBitmap(
+            Math.Max(1, (int)Math.Ceiling(rects.Interior.Width)),
+            Math.Max(1, (int)Math.Ceiling(rects.Interior.Height)),
+            dpiX, dpiY, PixelFormats.Pbgra32);
 
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
         {
-            dc.DrawRectangle(Brushes.Black, null, rects.Interior);
+            dc.DrawRectangle(Brushes.White, null, rects.Interior);
             if (block.LeftResponseId != Guid.Empty && block.RightResponseId != Guid.Empty)
             {
                 dc.DrawImage(RenderTextToBitmap(_keyService.GetResolvedKey(test, block.LeftResponseId), rects.LeftKey), rects.LeftKey);
@@ -274,7 +333,11 @@ public class ImageGenerationService : IImageGenerationService
                 {
                     var imageBytes = _packageService.GetImageBytes(imageStimulus.Id);
                     var bitmapImage = BitmapFromBytes(imageBytes);
-                    dc.DrawImage(bitmapImage, rects.Stimulus);
+                    // DrawImage(src, destRect) stretches. Fit first or the slide crops/squishes.
+                    var fitted = ImageGenerationService.FitContain(
+                        new Size(bitmapImage.PixelWidth, bitmapImage.PixelHeight),
+                        rects.Stimulus);
+                    dc.DrawImage(bitmapImage, fitted);
                 }
                 else if (stimulus is TextStimulus textStimulus)
                 {
@@ -288,24 +351,56 @@ public class ImageGenerationService : IImageGenerationService
     }
 
     /// <summary>
-    /// Asynchronously loads an image from the specified package and returns a bitmap resized to the given dimensions.
+    /// Destination rectangle that scales <paramref name="sourcePixels"/> uniformly to fit inside
+    /// <paramref name="dest"/> and centers it. Same rule as WPF <c>Stretch="Uniform"</c>.
     /// </summary>
-    /// <remarks>The returned BitmapSource is frozen for thread safety. If the original image dimensions match
-    /// the requested size, the image is returned without resizing.</remarks>
-    /// <param name="bmpSource">The source bitmap to resize. Cannot be null.</param>
-    /// <param name="targetWidth">The desired width, in pixels, of the resulting bitmap. Must be a positive integer.</param>
-    /// <param name="targetHeight">The desired height, in pixels, of the resulting bitmap. Must be a positive integer.</param>
-    /// <returns>A BitmapSource containing the image resized to the specified width and height.</returns>
-    /// <exception cref="ArgumentException">Thrown if stimulus is not of type ImageStimulus.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the PackageUri property is not set on the ImageStimulus.</exception>
+    public static Rect FitContain(Size sourcePixels, Rect dest)
+    {
+        if (sourcePixels.Width <= 0 || sourcePixels.Height <= 0 || dest.Width <= 0 || dest.Height <= 0)
+            return dest;
+
+        var srcAr = sourcePixels.Width / sourcePixels.Height;
+        var dstAr = dest.Width / dest.Height;
+        double width, height;
+        if (srcAr > dstAr)
+        {
+            width = dest.Width;
+            height = width / srcAr;
+        }
+        else
+        {
+            height = dest.Height;
+            width = height * srcAr;
+        }
+
+        return new Rect(
+            dest.X + (dest.Width - width) / 2.0,
+            dest.Y + (dest.Height - height) / 2.0,
+            width,
+            height);
+    }
+
+    /// <summary>
+    /// Paints <paramref name="bmpSource"/> into a <paramref name="targetWidth"/> × <paramref name="targetHeight"/>
+    /// canvas using contain-fit. Transparent margins fill the unused sides. Does not crop and does not squash.
+    /// </summary>
     public BitmapSource GetResizedBitmap(BitmapSource bmpSource, int targetWidth, int targetHeight)
     {
-        var dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow ?? new Window());
-        RenderTargetBitmap bmpDest = new RenderTargetBitmap(targetWidth, targetHeight, dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        ArgumentNullException.ThrowIfNull(bmpSource);
+        if (targetWidth <= 0) throw new ArgumentOutOfRangeException(nameof(targetWidth));
+        if (targetHeight <= 0) throw new ArgumentOutOfRangeException(nameof(targetHeight));
+
+        var bmpDest = new RenderTargetBitmap(targetWidth, targetHeight, 96.0, 96.0, PixelFormats.Pbgra32);
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
         {
-            dc.DrawImage(bmpSource, new Rect(0, 0, targetWidth, targetHeight));
+            // White, not transparent: JPEG callers composite alpha to black and that
+            // letterbox reads as a crop.
+            dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, targetWidth, targetHeight));
+            var fitted = FitContain(
+                new Size(bmpSource.PixelWidth, bmpSource.PixelHeight),
+                new Rect(0, 0, targetWidth, targetHeight));
+            dc.DrawImage(bmpSource, fitted);
         }
         bmpDest.Render(visual);
         bmpDest.Freeze();
