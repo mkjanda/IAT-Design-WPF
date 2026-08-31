@@ -64,3 +64,10 @@ All changes must include appropriate tests and follow the existing coding standa
 ## License
 
 MIT License. See `LICENSE` for details.
+
+---
+
+**Author:** Michael K. Janda  
+**Portfolio:** [michaeljanda.me](https://michaeljanda.me)  
+**Case study:** [IAT Design WPF rewrite](https://michaeljanda.me/work/iat-design)  
+**Product:** [iatsoftware.net](https://iatsoftware.net)
