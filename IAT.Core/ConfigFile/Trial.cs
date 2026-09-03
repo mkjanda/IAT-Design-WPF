@@ -1,5 +1,5 @@
 ﻿using IAT.Core.Enumerations;
-using java.awt;using System;
+using System;
 using System.Collections;
 using System.Windows.Documents;
 using System.Xml;

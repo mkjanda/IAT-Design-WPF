@@ -109,15 +109,29 @@ namespace IAT.Core.Domain
 
         /// <summary>
         /// Default style for the separator row ("or") on a combined key.
-        /// Color is always black; family and size stay on the product defaults
-        /// so a 48pt pink term cannot paint the conjunction.
+        /// Color is always black so a colored term cannot paint the conjunction.
+        /// Size is a fallback only — <see cref="SeparatorFontSize"/> is what
+        /// <see cref="ResolveDisplayLines"/> actually paints, so FitContain
+        /// cannot restore an "or" that was authored at the same em as the labels.
         /// </summary>
         public static TextStyle DefaultSeparatorStyle() => new()
         {
             FontFamily = "Segoe UI",
-            FontSize = 24.0,
+            FontSize = 12.0,
             FontColor = Colors.Black
         };
+
+        /// <summary>
+        /// Conjunction size relative to the smaller adjacent term.
+        /// 0.55 keeps "or" secondary after the key PNG is contain-fit into the
+        /// layout rect (the whole stack scales together).
+        /// </summary>
+        public static double SeparatorFontSize(double termSize)
+        {
+            if (termSize <= 0)
+                return 12.0;
+            return Math.Max(10.0, termSize * 0.55);
+        }
 
         /// <summary>
         /// Rows the preview and slide renderer should paint for this key.
@@ -136,14 +150,15 @@ namespace IAT.Core.Domain
                 var second = test.GetKeyById(key.ComponentIds[1]);
                 if (first is not null && second is not null)
                 {
-                    var t1 = FormatAuthoringDisplay(first.Text);
-                    var t2 = FormatAuthoringDisplay(second.Text);
+                    var line1 = LineFrom(FormatAuthoringDisplay(first.Text), first);
+                    var line2 = LineFrom(FormatAuthoringDisplay(second.Text), second);
                     var or = DefaultSeparatorStyle();
+                    var orSize = SeparatorFontSize(Math.Min(line1.FontSize, line2.FontSize > 0 ? line2.FontSize : line1.FontSize));
                     return new[]
                     {
-                        LineFrom(t1, first),
-                        new KeyDisplayLine("or", or.FontFamily, or.FontSize, or.FontColor),
-                        LineFrom(string.IsNullOrEmpty(t2) ? string.Empty : t2, second)
+                        line1,
+                        new KeyDisplayLine("or", or.FontFamily, orSize, or.FontColor),
+                        line2
                     };
                 }
             }
@@ -155,12 +170,15 @@ namespace IAT.Core.Domain
             var rows = stacked.Split('\n', StringSplitOptions.None);
             if (rows.Length >= 3 && rows[1].Trim().Equals("or", StringComparison.OrdinalIgnoreCase))
             {
+                var line1 = LineFrom(rows[0], key);
+                var line2 = LineFrom(rows[2], key);
                 var or = DefaultSeparatorStyle();
+                var orSize = SeparatorFontSize(Math.Min(line1.FontSize, line2.FontSize > 0 ? line2.FontSize : line1.FontSize));
                 return new[]
                 {
-                    LineFrom(rows[0], key),
-                    new KeyDisplayLine("or", or.FontFamily, or.FontSize, or.FontColor),
-                    LineFrom(rows[2], key)
+                    line1,
+                    new KeyDisplayLine("or", or.FontFamily, orSize, or.FontColor),
+                    line2
                 };
             }
 

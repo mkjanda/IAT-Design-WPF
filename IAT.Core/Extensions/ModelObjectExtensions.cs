@@ -3,15 +3,12 @@ using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
 using javax.activation;
-using sun.awt.image;
-using sun.tools.tree;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static IAT.Core.Serializable.FileEntity;
-using static javax.xml.ws.soap.AddressingFeature;
 
 namespace IAT.Core.Extensions
 {

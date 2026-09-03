@@ -24,7 +24,7 @@ public sealed class DisplayItem
     /// <summary>
     /// Gets or sets the unique identifier for the object.
     /// </summary>
-    [XmlIgnore]
+    [XmlElement("Guid", Form = XmlSchemaForm.Unqualified)]
     public Guid Guid { get; set; } = Guid.Empty;
 
     /// <summary>

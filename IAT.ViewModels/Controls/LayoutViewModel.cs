@@ -119,6 +119,7 @@ namespace IAT.ViewModels
         [ObservableProperty] private double leftKeyLine1FontSize = 24.0;
         [ObservableProperty] private Brush leftKeyLine1Brush = Brushes.Black;
         [ObservableProperty] private string leftKeyOrText = string.Empty;
+        [ObservableProperty] private double leftKeyOrFontSize = 12.0;
         [ObservableProperty] private bool isLeftKeyStacked;
         [ObservableProperty] private string leftKeyLine2Text = string.Empty;
         [ObservableProperty] private string leftKeyLine2FontFamily = "Segoe UI";
@@ -130,6 +131,7 @@ namespace IAT.ViewModels
         [ObservableProperty] private double rightKeyLine1FontSize = 24.0;
         [ObservableProperty] private Brush rightKeyLine1Brush = Brushes.Black;
         [ObservableProperty] private string rightKeyOrText = string.Empty;
+        [ObservableProperty] private double rightKeyOrFontSize = 12.0;
         [ObservableProperty] private bool isRightKeyStacked;
         [ObservableProperty] private string rightKeyLine2Text = string.Empty;
         [ObservableProperty] private string rightKeyLine2FontFamily = "Segoe UI";
@@ -1048,6 +1050,7 @@ namespace IAT.ViewModels
                     LeftKeyLine1FontSize = top.FontSize;
                     LeftKeyLine1Brush = topBrush;
                     LeftKeyOrText = "or";
+                    LeftKeyOrFontSize = lines[1].FontSize > 0 ? lines[1].FontSize : 12.0;
                     IsLeftKeyStacked = true;
                     LeftKeyLine2Text = bottom.Text;
                     LeftKeyLine2FontFamily = bottom.FontFamily;
@@ -1061,6 +1064,7 @@ namespace IAT.ViewModels
                     RightKeyLine1FontSize = top.FontSize;
                     RightKeyLine1Brush = topBrush;
                     RightKeyOrText = "or";
+                    RightKeyOrFontSize = lines[1].FontSize > 0 ? lines[1].FontSize : 12.0;
                     IsRightKeyStacked = true;
                     RightKeyLine2Text = bottom.Text;
                     RightKeyLine2FontFamily = bottom.FontFamily;

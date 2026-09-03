@@ -62,19 +62,20 @@ namespace IAT.Core.Services.Export
         /// <param name="text">The formatted text to export as an image. Cannot be null.</param>
         /// <param name="textRect">The rectangle specifying the location and size of the text within the display. Cannot be null.</param>
         /// <param name="exportContext">The context that provides configuration and data for export operations. Cannot be null.</param>
-        public void ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext, ResourceType rType = ResourceType.Image)
+        public void ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext)
         {
             var encoder = new PngBitmapEncoder()
             {
                 Interlace = PngInterlaceOption.On
             };
             string filename = string.Empty;
-            if (!exportContext.IdDictionary.ContainsKey(text.Id) || rType == ResourceType.ResponseKey)
+            if (!exportContext.IdDictionary.ContainsKey(text.Id))
             {
                 exportContext.IdDictionary[text.Id] = exportContext.IdDictionary.Count + 1;
-                // Combined keys must go through RenderKeyToBitmap so each component
-                // keeps its live style and the stack is measured from real ink, not
-                // from Center-aligned FormattedText that paints off the canvas.
+                // One PNG per key. Combined keys must go through RenderKeyToBitmap
+                // so ResolveDisplayLines can paint a smaller "or" than the two
+                // terms. RenderTextToBitmap uses a single FontSize for the whole
+                // stack and is what shipped the oversized conjunction.
                 var textBmp = text is Domain.Key key
                     ? _imageGenerationService.RenderKeyToBitmap(exportContext.Test, key.Id, textRect)
                     : _imageGenerationService.RenderTextToBitmap(text, textRect);
@@ -87,7 +88,7 @@ namespace IAT.Core.Services.Export
                     exportContext.FileManifest,
                     filename,
                     exportContext.IdDictionary[text.Id],
-                    rType,
+                    ResourceType.Image,
                     "image/png",
                     memStream.ToArray());
             }

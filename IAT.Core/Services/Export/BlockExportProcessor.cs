@@ -180,12 +180,12 @@ namespace IAT.Core.Services.Export
                 exportContext.Test.GetKeyById(block.LeftResponseId)
                     ?? throw new ArgumentNullException(nameof(block.LeftResponseId),
                         $"Left response key not found: {block.LeftResponseId}"),
-                exportContext.LayoutRects.LeftKey, exportContext, ResourceType.ResponseKey);
+                exportContext.LayoutRects.LeftKey, exportContext);
             _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(block.RightResponseId)
                     ?? throw new ArgumentNullException(nameof(block.RightResponseId),
                         $"Right response key not found: {block.RightResponseId}"),
-                exportContext.LayoutRects.RightKey, exportContext, ResourceType.ResponseKey);
+                exportContext.LayoutRects.RightKey, exportContext);
             exportContext.AddEvent(new BeginIATBlock()
             {
                 LeftResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == block.LeftResponseId).Select(di => di.Id).FirstOrDefault(),
@@ -206,7 +206,7 @@ namespace IAT.Core.Services.Export
                     KeyedDir = trial.KeyedDirection,
                     ItemNum = block.TrialIds.IndexOf(trial.Id),
                     BlockNum = block.BlockNumber,
-                    OriginatingBlock = trial.OriginatingBlock,
+                    OriginatingBlock = (trial.OriginatingBlock == 0) ? block.BlockNumber : trial.OriginatingBlock
                 });
             }
             exportContext.Events.Add(new ConfigFile.EndIATBlock());

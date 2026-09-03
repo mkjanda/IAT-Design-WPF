@@ -165,7 +165,7 @@
                                                TextAlignment="Center"/>
                                     <TextBlock Text="{Binding LeftKeyOrText}"
                                                FontFamily="Segoe UI"
-                                               FontSize="24"
+                                               FontSize="{Binding LeftKeyOrFontSize}"
                                                Foreground="Black"
                                                FontWeight="Normal"
                                                TextAlignment="Center"
@@ -212,7 +212,7 @@
                                                TextAlignment="Center"/>
                                     <TextBlock Text="{Binding RightKeyOrText}"
                                                FontFamily="Segoe UI"
-                                               FontSize="24"
+                                               FontSize="{Binding RightKeyOrFontSize}"
                                                Foreground="Black"
                                                FontWeight="Normal"
                                                TextAlignment="Center"

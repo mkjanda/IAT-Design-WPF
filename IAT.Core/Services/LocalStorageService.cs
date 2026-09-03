@@ -8,9 +8,7 @@ using System.Xml.Linq;
 using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
 using System.Collections;
-using com.sun.org.apache.bcel.@internal.generic;
 using System.ComponentModel.DataAnnotations;
-using sun.awt.image;
 
 namespace IAT.Core.Services
 {
