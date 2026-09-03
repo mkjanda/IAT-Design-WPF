@@ -155,14 +155,29 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <Viewbox Stretch="Uniform" Margin="2">
-                                <TextBlock Text="{Binding LeftKeyPreviewText}"
-                                           FontFamily="{Binding LeftKeyPreviewFontFamily}"
-                                           FontSize="{Binding LeftKeyPreviewFontSize}"
-                                           Foreground="{Binding LeftKeyPreviewBrush}"
-                                           FontWeight="{Binding LeftKeyPreviewFontWeight}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding LeftKeyLine1Text}"
+                                               FontFamily="{Binding LeftKeyLine1FontFamily}"
+                                               FontSize="{Binding LeftKeyLine1FontSize}"
+                                               Foreground="{Binding LeftKeyLine1Brush}"
+                                               FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                               TextAlignment="Center"/>
+                                    <TextBlock Text="{Binding LeftKeyOrText}"
+                                               FontFamily="Segoe UI"
+                                               FontSize="24"
+                                               Foreground="Black"
+                                               FontWeight="Normal"
+                                               TextAlignment="Center"
+                                               Visibility="{Binding IsLeftKeyStacked, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Text="{Binding LeftKeyLine2Text}"
+                                               FontFamily="{Binding LeftKeyLine2FontFamily}"
+                                               FontSize="{Binding LeftKeyLine2FontSize}"
+                                               Foreground="{Binding LeftKeyLine2Brush}"
+                                               FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                               TextAlignment="Center"
+                                               Visibility="{Binding IsLeftKeyStacked, Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
                             </Viewbox>
                         </Border>
 
@@ -187,14 +202,29 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <Viewbox Stretch="Uniform" Margin="2">
-                                <TextBlock Text="{Binding RightKeyPreviewText}"
-                                           FontFamily="{Binding RightKeyPreviewFontFamily}"
-                                           FontSize="{Binding RightKeyPreviewFontSize}"
-                                           Foreground="{Binding RightKeyPreviewBrush}"
-                                           FontWeight="{Binding RightKeyPreviewFontWeight}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           TextWrapping="Wrap" TextAlignment="Center"/>
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RightKeyLine1Text}"
+                                               FontFamily="{Binding RightKeyLine1FontFamily}"
+                                               FontSize="{Binding RightKeyLine1FontSize}"
+                                               Foreground="{Binding RightKeyLine1Brush}"
+                                               FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                               TextAlignment="Center"/>
+                                    <TextBlock Text="{Binding RightKeyOrText}"
+                                               FontFamily="Segoe UI"
+                                               FontSize="24"
+                                               Foreground="Black"
+                                               FontWeight="Normal"
+                                               TextAlignment="Center"
+                                               Visibility="{Binding IsRightKeyStacked, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Text="{Binding RightKeyLine2Text}"
+                                               FontFamily="{Binding RightKeyLine2FontFamily}"
+                                               FontSize="{Binding RightKeyLine2FontSize}"
+                                               Foreground="{Binding RightKeyLine2Brush}"
+                                               FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                               TextAlignment="Center"
+                                               Visibility="{Binding IsRightKeyStacked, Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
                             </Viewbox>
                         </Border>
 
@@ -209,7 +239,7 @@
                                 Background="Transparent"
                                 ClipToBounds="True"
                                 Visibility="{Binding IsErrorMarkVisible, Converter={StaticResource BoolToVis}}">
-                            <Viewbox Stretch="Uniform" Margin="2">
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
                                 <TextBlock Text="X" Foreground="Red" FontSize="48"
                                            FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>

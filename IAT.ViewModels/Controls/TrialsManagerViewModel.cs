@@ -564,7 +564,8 @@ public partial class TrialsManagerViewModel : ObservableObject
 
     /// <summary>
     /// Rebuilds every combined key whose <see cref="Key.ComponentIds"/> reference practice keys.
-    /// Text is recomposed as <c>"A or C"</c>; style follows the first component (same rule as generate).
+    /// Text is recomposed as <c>"A or C"</c>. Component styles stay on the practice keys;
+    /// preview and slides resolve them live. The "or" row is default black.
     /// Block 5 shares practice key instances and updates automatically without this path.
     /// </summary>
     private void PropagateDerivedKeysFromPractice()
@@ -586,9 +587,6 @@ public partial class TrialsManagerViewModel : ObservableObject
                 : $"{t1} or {t2}".Trim();
             key.Separator = " or ";
             key.LayoutMode = KeyLayoutMode.VerticalWithOr;
-
-            // Style from the first component — matches CreateCombinedKey at generate time.
-            ApplyKeyStyle(key, StyleFromKey(first));
         }
     }
 

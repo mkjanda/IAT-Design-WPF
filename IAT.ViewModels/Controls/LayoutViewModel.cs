@@ -114,6 +114,28 @@ namespace IAT.ViewModels
         /// <summary>Font weight for the right key label.</summary>
         [ObservableProperty] private FontWeight rightKeyPreviewFontWeight = FontWeights.Bold;
 
+        [ObservableProperty] private string leftKeyLine1Text = DummyLeftKeyText;
+        [ObservableProperty] private string leftKeyLine1FontFamily = "Segoe UI";
+        [ObservableProperty] private double leftKeyLine1FontSize = 24.0;
+        [ObservableProperty] private Brush leftKeyLine1Brush = Brushes.Black;
+        [ObservableProperty] private string leftKeyOrText = string.Empty;
+        [ObservableProperty] private bool isLeftKeyStacked;
+        [ObservableProperty] private string leftKeyLine2Text = string.Empty;
+        [ObservableProperty] private string leftKeyLine2FontFamily = "Segoe UI";
+        [ObservableProperty] private double leftKeyLine2FontSize = 24.0;
+        [ObservableProperty] private Brush leftKeyLine2Brush = Brushes.Black;
+
+        [ObservableProperty] private string rightKeyLine1Text = DummyRightKeyText;
+        [ObservableProperty] private string rightKeyLine1FontFamily = "Segoe UI";
+        [ObservableProperty] private double rightKeyLine1FontSize = 24.0;
+        [ObservableProperty] private Brush rightKeyLine1Brush = Brushes.Black;
+        [ObservableProperty] private string rightKeyOrText = string.Empty;
+        [ObservableProperty] private bool isRightKeyStacked;
+        [ObservableProperty] private string rightKeyLine2Text = string.Empty;
+        [ObservableProperty] private string rightKeyLine2FontFamily = "Segoe UI";
+        [ObservableProperty] private double rightKeyLine2FontSize = 24.0;
+        [ObservableProperty] private Brush rightKeyLine2Brush = Brushes.Black;
+
         /// <summary>
         /// True when the left key should show the blue outline used by the Instructions-tab
         /// preview (Mock Item + Outline Correct Response + Left, or a left-keyed trial).
@@ -950,8 +972,8 @@ namespace IAT.ViewModels
             var rightText = Key.FormatStackedDisplay(right?.Text);
             LeftKeyPreviewText = string.IsNullOrEmpty(leftText) ? DummyLeftKeyText : leftText;
             RightKeyPreviewText = string.IsNullOrEmpty(rightText) ? DummyRightKeyText : rightText;
-            ApplyKeyPreviewStyle(isLeft: true, left);
-            ApplyKeyPreviewStyle(isLeft: false, right);
+            ApplyKeyPreviewLines(isLeft: true, left);
+            ApplyKeyPreviewLines(isLeft: false, right);
         }
 
         /// <summary>
@@ -966,8 +988,8 @@ namespace IAT.ViewModels
             {
                 LeftKeyPreviewText = DummyLeftKeyText;
                 RightKeyPreviewText = DummyRightKeyText;
-                ApplyKeyPreviewStyle(isLeft: true, null);
-                ApplyKeyPreviewStyle(isLeft: false, null);
+                ApplyKeyPreviewLines(isLeft: true, null);
+                ApplyKeyPreviewLines(isLeft: false, null);
                 return;
             }
 
@@ -982,32 +1004,97 @@ namespace IAT.ViewModels
             var rightText = Key.FormatStackedDisplay(right?.Text);
             LeftKeyPreviewText = string.IsNullOrEmpty(leftText) ? DummyLeftKeyText : leftText;
             RightKeyPreviewText = string.IsNullOrEmpty(rightText) ? DummyRightKeyText : rightText;
-            ApplyKeyPreviewStyle(isLeft: true, left);
-            ApplyKeyPreviewStyle(isLeft: false, right);
+            ApplyKeyPreviewLines(isLeft: true, left);
+            ApplyKeyPreviewLines(isLeft: false, right);
         }
 
         /// <summary>
-        /// Mirrors a domain <see cref="Key"/>'s style onto the Blocks-tab live preview labels.
+        /// Paints the live key label from component styles when the key is combined.
+        /// The conjunction row is always default black. Plain keys stay a single row.
         /// </summary>
-        private void ApplyKeyPreviewStyle(bool isLeft, Key? key)
+        private void ApplyKeyPreviewLines(bool isLeft, Key? key)
         {
-            var family = key?.Style?.FontFamily ?? key?.FontFamily ?? "Segoe UI";
-            var size = key?.Style?.FontSize > 0 ? key.Style.FontSize
-                : key is { FontSize: > 0 } ? key.FontSize : 24.0;
-            var color = key?.Style?.FontColor ?? key?.FontColor ?? Colors.Black;
-            var brush = new SolidColorBrush(color);
+            var dummy = isLeft ? DummyLeftKeyText : DummyRightKeyText;
+            var lines = Key.ResolveDisplayLines(key, _test);
+            if (lines.Count == 0)
+            {
+                ApplySingleKeyPreviewLine(isLeft, dummy, "Segoe UI", 24.0, Brushes.Black);
+                return;
+            }
 
+            var top = lines[0];
+            var topBrush = new SolidColorBrush(top.FontColor);
             if (isLeft)
             {
-                LeftKeyPreviewFontFamily = family;
-                LeftKeyPreviewFontSize = size;
-                LeftKeyPreviewBrush = brush;
+                LeftKeyPreviewFontFamily = top.FontFamily;
+                LeftKeyPreviewFontSize = top.FontSize;
+                LeftKeyPreviewBrush = topBrush;
             }
             else
             {
-                RightKeyPreviewFontFamily = family;
-                RightKeyPreviewFontSize = size;
-                RightKeyPreviewBrush = brush;
+                RightKeyPreviewFontFamily = top.FontFamily;
+                RightKeyPreviewFontSize = top.FontSize;
+                RightKeyPreviewBrush = topBrush;
+            }
+
+            if (lines.Count >= 3)
+            {
+                var bottom = lines[2];
+                var bottomBrush = new SolidColorBrush(bottom.FontColor);
+                if (isLeft)
+                {
+                    LeftKeyLine1Text = top.Text;
+                    LeftKeyLine1FontFamily = top.FontFamily;
+                    LeftKeyLine1FontSize = top.FontSize;
+                    LeftKeyLine1Brush = topBrush;
+                    LeftKeyOrText = "or";
+                    IsLeftKeyStacked = true;
+                    LeftKeyLine2Text = bottom.Text;
+                    LeftKeyLine2FontFamily = bottom.FontFamily;
+                    LeftKeyLine2FontSize = bottom.FontSize;
+                    LeftKeyLine2Brush = bottomBrush;
+                }
+                else
+                {
+                    RightKeyLine1Text = top.Text;
+                    RightKeyLine1FontFamily = top.FontFamily;
+                    RightKeyLine1FontSize = top.FontSize;
+                    RightKeyLine1Brush = topBrush;
+                    RightKeyOrText = "or";
+                    IsRightKeyStacked = true;
+                    RightKeyLine2Text = bottom.Text;
+                    RightKeyLine2FontFamily = bottom.FontFamily;
+                    RightKeyLine2FontSize = bottom.FontSize;
+                    RightKeyLine2Brush = bottomBrush;
+                }
+                return;
+            }
+
+            ApplySingleKeyPreviewLine(isLeft, string.IsNullOrEmpty(top.Text) ? dummy : top.Text,
+                top.FontFamily, top.FontSize, topBrush);
+        }
+
+        private void ApplySingleKeyPreviewLine(bool isLeft, string text, string family, double size, Brush brush)
+        {
+            if (isLeft)
+            {
+                LeftKeyLine1Text = text;
+                LeftKeyLine1FontFamily = family;
+                LeftKeyLine1FontSize = size;
+                LeftKeyLine1Brush = brush;
+                LeftKeyOrText = string.Empty;
+                IsLeftKeyStacked = false;
+                LeftKeyLine2Text = string.Empty;
+            }
+            else
+            {
+                RightKeyLine1Text = text;
+                RightKeyLine1FontFamily = family;
+                RightKeyLine1FontSize = size;
+                RightKeyLine1Brush = brush;
+                RightKeyOrText = string.Empty;
+                IsRightKeyStacked = false;
+                RightKeyLine2Text = string.Empty;
             }
         }
 

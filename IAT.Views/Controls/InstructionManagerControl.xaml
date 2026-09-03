@@ -106,6 +106,57 @@
                              GotFocus="InstructionTextBox_GotFocus"
                              LostFocus="InstructionTextBox_LostFocus"/>
 
+                    <TextBlock Text="Instruction Style" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,4"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="72"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding AvailableFontFamilies}"
+                                  SelectedItem="{Binding InstructionFontFamily}"
+                                  Style="{StaticResource DarkComboBox}"
+                                  Height="28"
+                                  ToolTip="Font family for this instruction screen"/>
+                        <ComboBox Grid.Column="2"
+                                  ItemsSource="{Binding AvailableFontSizes}"
+                                  SelectedItem="{Binding InstructionFontSize}"
+                                  Style="{StaticResource DarkComboBox}"
+                                  Height="28"
+                                  ToolTip="Font size for this instruction screen"/>
+                    </Grid>
+                    <WrapPanel Margin="0,2,0,12">
+                        <Button Width="22" Height="22" Margin="1" Background="#000000" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Black"
+                                ToolTip="Black"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#FFFFFF" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="White"
+                                ToolTip="White"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#CD212A" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Flame Scarlet"
+                                ToolTip="Flame Scarlet"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#00A1B4" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Bluebird"
+                                ToolTip="Bluebird"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#009473" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Emerald"
+                                ToolTip="Emerald"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#5F4B8B" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Ultra Violet"
+                                ToolTip="Ultra Violet"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#FF3EA5" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Knockout Pink"
+                                ToolTip="Knockout Pink"/>
+                        <Button Width="22" Height="22" Margin="1" Background="#EA6759" BorderBrush="#555"
+                                Command="{Binding ApplyInstructionPaletteCommand}" CommandParameter="Ember Glow"
+                                ToolTip="Ember Glow"/>
+                        <Border Width="22" Height="22" Margin="4,1,1,1"
+                                BorderBrush="#888" BorderThickness="1"
+                                Background="{Binding InstructionPreviewBrush}"
+                                ToolTip="Current instruction color"/>
+                    </WrapPanel>
+
                     <!-- Continue prompt (key is fixed to Space — standard for IATs) -->
                     <TextBlock Text="Continue Instructions" Style="{StaticResource DarkLabel}"/>
                     <TextBox Text="{Binding ContinueInstructionsText, UpdateSourceTrigger=PropertyChanged}"
@@ -352,13 +403,29 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <Viewbox Stretch="Uniform" Margin="2">
-                                        <TextBlock Text="{Binding LeftKeyPreviewText}"
-                                                   Foreground="{Binding LeftKeyPreviewBrush}"
-                                                   FontWeight="{Binding LeftKeyPreviewFontWeight}"
-                                                   FontSize="18"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   TextWrapping="Wrap" TextAlignment="Center"/>
+                                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding LeftKeyLine1Text}"
+                                                       FontFamily="{Binding LeftKeyLine1FontFamily}"
+                                                       FontSize="{Binding LeftKeyLine1FontSize}"
+                                                       Foreground="{Binding LeftKeyLine1Brush}"
+                                                       FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                                       TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding LeftKeyOrText}"
+                                                       FontFamily="Segoe UI"
+                                                       FontSize="24"
+                                                       Foreground="Black"
+                                                       FontWeight="Normal"
+                                                       TextAlignment="Center"
+                                                       Visibility="{Binding IsLeftKeyStacked, Converter={StaticResource BoolToVisibility}}"/>
+                                            <TextBlock Text="{Binding LeftKeyLine2Text}"
+                                                       FontFamily="{Binding LeftKeyLine2FontFamily}"
+                                                       FontSize="{Binding LeftKeyLine2FontSize}"
+                                                       Foreground="{Binding LeftKeyLine2Brush}"
+                                                       FontWeight="{Binding LeftKeyPreviewFontWeight}"
+                                                       TextAlignment="Center"
+                                                       Visibility="{Binding IsLeftKeyStacked, Converter={StaticResource BoolToVisibility}}"/>
+                                        </StackPanel>
                                     </Viewbox>
                                 </Border>
 
@@ -383,13 +450,29 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <Viewbox Stretch="Uniform" Margin="2">
-                                        <TextBlock Text="{Binding RightKeyPreviewText}"
-                                                   Foreground="{Binding RightKeyPreviewBrush}"
-                                                   FontWeight="{Binding RightKeyPreviewFontWeight}"
-                                                   FontSize="18"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   TextWrapping="Wrap" TextAlignment="Center"/>
+                                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding RightKeyLine1Text}"
+                                                       FontFamily="{Binding RightKeyLine1FontFamily}"
+                                                       FontSize="{Binding RightKeyLine1FontSize}"
+                                                       Foreground="{Binding RightKeyLine1Brush}"
+                                                       FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                                       TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding RightKeyOrText}"
+                                                       FontFamily="Segoe UI"
+                                                       FontSize="24"
+                                                       Foreground="Black"
+                                                       FontWeight="Normal"
+                                                       TextAlignment="Center"
+                                                       Visibility="{Binding IsRightKeyStacked, Converter={StaticResource BoolToVisibility}}"/>
+                                            <TextBlock Text="{Binding RightKeyLine2Text}"
+                                                       FontFamily="{Binding RightKeyLine2FontFamily}"
+                                                       FontSize="{Binding RightKeyLine2FontSize}"
+                                                       Foreground="{Binding RightKeyLine2Brush}"
+                                                       FontWeight="{Binding RightKeyPreviewFontWeight}"
+                                                       TextAlignment="Center"
+                                                       Visibility="{Binding IsRightKeyStacked, Converter={StaticResource BoolToVisibility}}"/>
+                                        </StackPanel>
                                     </Viewbox>
                                 </Border>
 
@@ -403,7 +486,7 @@
                                         Background="Transparent"
                                         ClipToBounds="True"
                                         Visibility="{Binding IsErrorMarkVisible, Converter={StaticResource BoolToVisibility}}">
-                                    <Viewbox Stretch="Uniform" Margin="2">
+                                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
                                         <TextBlock Text="X" Foreground="Red" FontSize="48"
                                                    FontWeight="Bold"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>

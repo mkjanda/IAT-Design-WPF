@@ -25,6 +25,10 @@ namespace IAT.Core.Enumerations
         ErrorMark,
 
         [XmlEnum("KeyOutline")]
-        KeyOutline
+        KeyOutline,
+
+        [XmlEnum("ResponseKey")]
+        ResponseKey
+
     }
 }

@@ -123,6 +123,15 @@ public partial class BlockEditViewModel : ObservableObject
         // Keep Generate / Add command CanExecute in sync with the live block list.
         Blocks.CollectionChanged += OnBlocksCollectionChanged;
 
+        // Practice-key style edits live on the Trials tab. Re-paint the Blocks preview
+        // so combined keys pick up component styles without a re-select.
+        WeakReferenceMessenger.Default.Register<TestModifiedMessage>(this, (_, _) =>
+        {
+            if (LayoutViewModel is null)
+                return;
+            LayoutViewModel.ApplyBlockKeys(SelectedBlock);
+        });
+
         // Select first block if any exist
         if (Blocks.Count > 0)
             SelectedBlock = Blocks.OrderBy(b => b.BlockNumber).First();
@@ -474,15 +483,19 @@ public partial class BlockEditViewModel : ObservableObject
             Text = string.IsNullOrEmpty(t1) && string.IsNullOrEmpty(t2)
                 ? string.Empty
                 : $"{t1} or {t2}".Trim(),
+            // Fallback only. Preview and slides paint each component's live style;
+            // the "or" row is Key.DefaultSeparatorStyle (black).
             Style = new TextStyle
             {
-                FontFamily = first.FontFamily ?? "Segoe UI",
-                FontSize = first.FontSize > 0 ? first.FontSize : 24.0,
-                FontColor = first.FontColor
+                FontFamily = first.Style?.FontFamily ?? first.FontFamily ?? "Segoe UI",
+                FontSize = first.Style?.FontSize > 0 ? first.Style.FontSize
+                    : first.FontSize > 0 ? first.FontSize : 24.0,
+                FontColor = first.Style?.FontColor ?? first.FontColor
             },
-            FontFamily = first.FontFamily ?? "Segoe UI",
-            FontSize = first.FontSize > 0 ? first.FontSize : 24.0,
-            FontColor = first.FontColor
+            FontFamily = first.Style?.FontFamily ?? first.FontFamily ?? "Segoe UI",
+            FontSize = first.Style?.FontSize > 0 ? first.Style.FontSize
+                : first.FontSize > 0 ? first.FontSize : 24.0,
+            FontColor = first.Style?.FontColor ?? first.FontColor
         };
     }
 

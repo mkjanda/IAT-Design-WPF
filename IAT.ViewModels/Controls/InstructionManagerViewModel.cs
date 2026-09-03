@@ -85,6 +85,32 @@ public partial class InstructionManagerViewModel : ObservableObject
     [ObservableProperty]
     private string continueInstructionsText = "Press the spacebar to continue";
 
+    [ObservableProperty]
+    private string instructionFontFamily = "Segoe UI";
+
+    [ObservableProperty]
+    private double instructionFontSize = 24.0;
+
+    [ObservableProperty]
+    private Color instructionTextColor = Colors.Black;
+
+    /// <summary>Swatch for the current instruction-screen body color.</summary>
+    public SolidColorBrush InstructionPreviewBrush => new(InstructionTextColor);
+
+    public ObservableCollection<string> AvailableFontFamilies { get; } = new()
+    {
+        "Segoe UI", "Arial", "Calibri", "Verdana", "Trebuchet MS", "Tahoma",
+        "Georgia", "Times New Roman", "Cambria", "Garamond", "Palatino Linotype",
+        "Consolas", "Courier New", "Segoe Script", "Impact"
+    };
+
+    public ObservableCollection<double> AvailableFontSizes { get; } =
+        new() { 12, 16, 18, 20, 24, 28, 32, 36, 48, 54, 66, 72 };
+
+    private string _lastInstructionFontFamily = "Segoe UI";
+    private double _lastInstructionFontSize = 24.0;
+    private Color _lastInstructionTextColor = Colors.Black;
+
     // ── Keyed / Mock Item ──────────────────────────────────────────────────
 
     [ObservableProperty]
@@ -355,6 +381,10 @@ public partial class InstructionManagerViewModel : ObservableObject
                 InstructionText = string.Empty;
                 ContinueKey = " ";
                 ContinueInstructionsText = "Press the spacebar to continue";
+                InstructionFontFamily = _lastInstructionFontFamily;
+                InstructionFontSize = _lastInstructionFontSize;
+                InstructionTextColor = _lastInstructionTextColor;
+                OnPropertyChanged(nameof(InstructionPreviewBrush));
                 SelectedLeftKey = null;
                 SelectedRightKey = null;
                 SelectedStimulus = null;
@@ -373,6 +403,11 @@ public partial class InstructionManagerViewModel : ObservableObject
                 };
 
                 InstructionText = value.Text ?? string.Empty;
+                EnsureScreenStyle(value);
+                InstructionFontFamily = value.Style.FontFamily ?? "Segoe UI";
+                InstructionFontSize = value.Style.FontSize > 0 ? value.Style.FontSize : 24.0;
+                InstructionTextColor = value.Style.FontColor;
+                OnPropertyChanged(nameof(InstructionPreviewBrush));
                 // Continue key is fixed to Space for all instruction screens.
                 ContinueKey = " ";
                 value.ContinueKey = " ";
@@ -464,6 +499,76 @@ public partial class InstructionManagerViewModel : ObservableObject
         NotifyPreview();
         RefreshInstructionPreview();
         MarkDirty();
+    }
+
+    partial void OnInstructionFontFamilyChanged(string value)
+    {
+        PersistInstructionStyle();
+    }
+
+    partial void OnInstructionFontSizeChanged(double value)
+    {
+        PersistInstructionStyle();
+    }
+
+    partial void OnInstructionTextColorChanged(Color value)
+    {
+        OnPropertyChanged(nameof(InstructionPreviewBrush));
+        PersistInstructionStyle();
+    }
+
+    private void EnsureScreenStyle(InstructionScreen screen)
+    {
+        screen.Style ??= new TextStyle
+        {
+            FontFamily = _lastInstructionFontFamily,
+            FontSize = _lastInstructionFontSize,
+            FontColor = _lastInstructionTextColor
+        };
+        if (string.IsNullOrWhiteSpace(screen.Style.FontFamily))
+            screen.Style.FontFamily = "Segoe UI";
+        if (screen.Style.FontSize <= 0)
+            screen.Style.FontSize = 24.0;
+    }
+
+    private TextStyle CurrentInstructionStyle => new()
+    {
+        FontFamily = InstructionFontFamily ?? "Segoe UI",
+        FontSize = InstructionFontSize > 0 ? InstructionFontSize : 24.0,
+        FontColor = InstructionTextColor
+    };
+
+    private void PersistInstructionStyle()
+    {
+        if (_suppressPropertyPush || SelectedScreen is null)
+            return;
+
+        SelectedScreen.Style = CurrentInstructionStyle;
+        _lastInstructionFontFamily = SelectedScreen.Style.FontFamily;
+        _lastInstructionFontSize = SelectedScreen.Style.FontSize;
+        _lastInstructionTextColor = SelectedScreen.Style.FontColor;
+        RefreshInstructionPreview();
+        MarkDirty();
+    }
+
+    [RelayCommand]
+    private void ApplyInstructionPalette(string paletteType)
+    {
+        if (SelectedScreen is null)
+            return;
+
+        InstructionTextColor = paletteType.ToLowerInvariant() switch
+        {
+            "black" => Colors.Black,
+            "white" => Colors.White,
+            "flame scarlet" => Color.FromRgb(205, 33, 42),
+            "bluebird" => Color.FromRgb(0, 161, 180),
+            "emerald" => Color.FromRgb(0, 148, 115),
+            "ultra violet" => Color.FromRgb(95, 75, 139),
+            "knockout pink" => Color.FromRgb(255, 62, 165),
+            "ember glow" => Color.FromRgb(234, 103, 89),
+            _ => Colors.Black
+        };
     }
 
     partial void OnContinueKeyChanged(string value)
@@ -818,7 +923,8 @@ public partial class InstructionManagerViewModel : ObservableObject
         {
             Id = Guid.NewGuid(),
             Text = "New text instructions",
-            ContinueKey = " "
+            ContinueKey = " ",
+            Style = CurrentInstructionStyle
         };
         screen.ContinueInstructions.Text = "Press the spacebar to continue";
         _currentTest.AddInstructionScreen(screen);
@@ -833,7 +939,8 @@ public partial class InstructionManagerViewModel : ObservableObject
         {
             Id = Guid.NewGuid(),
             Text = "New keyed instructions",
-            ContinueKey = " "
+            ContinueKey = " ",
+            Style = CurrentInstructionStyle
         };
         screen.ContinueInstructions.Text = "Press the spacebar to continue";
         _currentTest.AddInstructionScreen(screen);
@@ -849,7 +956,8 @@ public partial class InstructionManagerViewModel : ObservableObject
             Id = Guid.NewGuid(),
             Text = "New mock-item instructions",
             ContinueKey = " ",
-            KeyedDirection = KeyedDirection.None
+            KeyedDirection = KeyedDirection.None,
+            Style = CurrentInstructionStyle
         };
         screen.ContinueInstructions.Text = "Press the spacebar to continue";
         _currentTest.AddInstructionScreen(screen);

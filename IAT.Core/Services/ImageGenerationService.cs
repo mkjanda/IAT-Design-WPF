@@ -61,6 +61,12 @@ public interface IImageGenerationService
     /// </summary>
     BitmapSource GetResizedBitmap(BitmapSource bmpSource, int targetWidth, int targetHeight);
 
+    /// <summary>
+    /// Renders a response key (including stacked combined keys) into
+    /// <paramref name="boundingRect"/>. Each combined-key component keeps its own style.
+    /// </summary>
+    BitmapSource RenderKeyToBitmap(IatTest test, Guid keyId, Rect boundingRect);
+
 }
 
 /// <summary>
@@ -88,38 +94,64 @@ public class ImageGenerationService : IImageGenerationService
     }
 
     /// <summary>
-    /// Renders the specified formatted text onto a bitmap using the layout information provided.
+    /// True ink rectangle of <paramref name="formattedText"/> relative to a
+    /// <c>DrawText(..., (0,0))</c> origin. WPF <see cref="System.Windows.Media.FormattedText.Width"/>
+    /// is a layout box — <c>TextAlignment.Center</c> without <c>MaxTextWidth</c> paints
+    /// glyphs at negative X, and unbreakable words can ink past the layout width.
+    /// Using that box as the bitmap size is what cropped "Flower" to "wer".
     /// </summary>
-    /// <remarks>The resulting bitmap uses a pixel format of Pbgra32 and a DPI of 96. The text is centered
-    /// within the bounds defined by the layout item.</remarks>
-    /// <param name="formattedText">The formatted text to render onto the bitmap. Must not be null.</param>
-    /// <param name="boundingRect">The bounding rectangle that defines the size and position for rendering the text. Must not be null.</param>
-    /// <returns>A RenderTargetBitmap containing the rendered text, sized and positioned according to the bounding rectangle.</returns>
+    private static Rect MeasureInk(System.Windows.Media.FormattedText formattedText)
+    {
+        try
+        {
+            var geometry = formattedText.BuildGeometry(new Point(0, 0));
+            if (geometry is not null)
+            {
+                var bounds = geometry.Bounds;
+                if (!bounds.IsEmpty && bounds.Width > 0 && bounds.Height > 0)
+                    return bounds;
+            }
+        }
+        catch (Exception)
+        {
+            // Empty / control-only strings can throw. Fall through to metrics.
+        }
+
+        var layoutW = Math.Max(formattedText.WidthIncludingTrailingWhitespace, formattedText.Width);
+        if (layoutW <= 0)
+            layoutW = 1.0;
+        var layoutH = Math.Max(formattedText.Height, formattedText.Extent);
+        if (layoutH <= 0)
+            layoutH = Math.Max(1.0, formattedText.Baseline);
+
+        var left = Math.Min(0.0, formattedText.OverhangLeading);
+        var right = layoutW - Math.Min(0.0, formattedText.OverhangTrailing);
+        var bottom = layoutH + Math.Max(0.0, formattedText.OverhangAfter);
+        return new Rect(left, 0.0, Math.Max(1.0, right - left), Math.Max(1.0, bottom));
+    }
+
     /// <summary>
-    /// Rasterizes <paramref name="formattedText"/> at 96 DPI including glyph overhangs, then
-    /// contain-fits that picture into <paramref name="boundingRect"/>. Glyphs cannot land
-    /// outside the file — the 553-byte "Fl" key PNGs were DrawText with a negative origin.
+    /// Rasterize the string at authored size into an ink-tight bitmap (no clip),
+    /// then <see cref="FitContain"/> that picture into <paramref name="boundingRect"/>.
     /// </summary>
     private RenderTargetBitmap RenderFormattedTextToBitmap(System.Windows.Media.FormattedText formattedText, Rect boundingRect)
     {
         if (formattedText == null) throw new ArgumentNullException(nameof(formattedText));
 
         const double dpi = 96.0;
+        const double pad = 2.0;
         var destW = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, boundingRect.Width)));
         var destH = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, boundingRect.Height)));
 
-        var padL = Math.Max(0.0, -formattedText.OverhangLeading);
-        var padR = Math.Max(0.0, -formattedText.OverhangTrailing);
-        var padT = Math.Max(0.0, formattedText.OverhangAfter < 0 ? -formattedText.OverhangAfter : 0.0);
-        var glyphW = Math.Max(1, (int)Math.Ceiling(formattedText.Width + padL + padR + 2.0));
-        var glyphH = Math.Max(1, (int)Math.Ceiling(Math.Max(formattedText.Height, formattedText.Extent) + padT + 2.0));
+        var ink = MeasureInk(formattedText);
+        var origin = new Point(pad - ink.X, pad - ink.Y);
+        var glyphW = Math.Max(1, (int)Math.Ceiling(ink.Width + pad * 2.0));
+        var glyphH = Math.Max(1, (int)Math.Ceiling(ink.Height + pad * 2.0));
 
         var glyphBmp = new RenderTargetBitmap(glyphW, glyphH, dpi, dpi, PixelFormats.Pbgra32);
         var glyphVisual = new DrawingVisual();
         using (var dc = glyphVisual.RenderOpen())
-        {
-            dc.DrawText(formattedText, new Point(padL + 1.0, padT + 1.0));
-        }
+            dc.DrawText(formattedText, origin);
         glyphBmp.Render(glyphVisual);
         glyphBmp.Freeze();
 
@@ -127,10 +159,99 @@ public class ImageGenerationService : IImageGenerationService
         var destVisual = new DrawingVisual();
         using (var dc = destVisual.RenderOpen())
         {
-            var fitted = FitContain(
-                new Size(glyphBmp.PixelWidth, glyphBmp.PixelHeight),
-                new Rect(0, 0, destW, destH));
-            dc.DrawImage(glyphBmp, fitted);
+            dc.DrawImage(
+                glyphBmp,
+                FitContainDownOnly(
+                    new Size(glyphBmp.PixelWidth, glyphBmp.PixelHeight),
+                    new Rect(0, 0, destW, destH)));
+        }
+        dest.Render(destVisual);
+        dest.Freeze();
+        return dest;
+    }
+
+    /// <summary>
+    /// Combined keys paint each component's live style; the "or" row is default black.
+    /// Each line is left-aligned on its own FormattedText so Center-without-MaxTextWidth
+    /// cannot shift glyphs to negative X. Manual X centers the line in the stack.
+    /// </summary>
+    public BitmapSource RenderKeyToBitmap(IatTest test, Guid keyId, Rect boundingRect)
+    {
+        var key = test.GetKeyById(keyId);
+        var lines = Domain.Key.ResolveDisplayLines(key, test);
+        if (lines.Count == 0)
+            return RenderTextToBitmap(_keyService.GetResolvedKey(test, keyId), boundingRect);
+        if (lines.Count == 1)
+        {
+            var only = lines[0];
+            return RenderTextToBitmap(new Domain.Key
+            {
+                Id = keyId,
+                Text = only.Text,
+                Style = new TextStyle
+                {
+                    FontFamily = only.FontFamily,
+                    FontSize = only.FontSize,
+                    FontColor = only.FontColor
+                }
+            }, boundingRect);
+        }
+
+        var formatted = new List<System.Windows.Media.FormattedText>(lines.Count);
+        foreach (var line in lines)
+        {
+            var typeface = new Typeface(
+                new FontFamily(string.IsNullOrWhiteSpace(line.FontFamily) ? "Segoe UI" : line.FontFamily),
+                FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+            formatted.Add(new System.Windows.Media.FormattedText(
+                string.IsNullOrEmpty(line.Text) ? " " : line.Text,
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                line.FontSize > 0 ? line.FontSize : 24.0,
+                new SolidColorBrush(line.FontColor),
+                1.0)
+            {
+                TextAlignment = TextAlignment.Left,
+                Trimming = TextTrimming.None
+            });
+        }
+
+        const double gap = 2.0;
+        const double pad = 2.0;
+        var inks = formatted.Select(MeasureInk).ToList();
+        var stackW = inks.Max(b => b.Width);
+        var stackH = inks.Sum(b => b.Height) + gap * (formatted.Count - 1);
+        var glyphW = Math.Max(1, (int)Math.Ceiling(stackW + pad * 2.0));
+        var glyphH = Math.Max(1, (int)Math.Ceiling(stackH + pad * 2.0));
+        var glyphBmp = new RenderTargetBitmap(glyphW, glyphH, 96.0, 96.0, PixelFormats.Pbgra32);
+        var glyphVisual = new DrawingVisual();
+        using (var dc = glyphVisual.RenderOpen())
+        {
+            var y = pad;
+            for (var i = 0; i < formatted.Count; i++)
+            {
+                var ft = formatted[i];
+                var ink = inks[i];
+                var x = pad + (stackW - ink.Width) / 2.0 - ink.X;
+                dc.DrawText(ft, new Point(x, y - ink.Y));
+                y += ink.Height + gap;
+            }
+        }
+        glyphBmp.Render(glyphVisual);
+        glyphBmp.Freeze();
+
+        var destW = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, boundingRect.Width)));
+        var destH = Math.Max(1, (int)Math.Ceiling(Math.Max(1.0, boundingRect.Height)));
+        var dest = new RenderTargetBitmap(destW, destH, 96.0, 96.0, PixelFormats.Pbgra32);
+        var destVisual = new DrawingVisual();
+        using (var dc = destVisual.RenderOpen())
+        {
+            dc.DrawImage(
+                glyphBmp,
+                FitContainDownOnly(
+                    new Size(glyphBmp.PixelWidth, glyphBmp.PixelHeight),
+                    new Rect(0, 0, destW, destH)));
         }
         dest.Render(destVisual);
         dest.Freeze();
@@ -188,42 +309,35 @@ public class ImageGenerationService : IImageGenerationService
             ? Domain.Key.FormatStackedDisplay(key.Text)
             : text.Text ?? string.Empty;
 
-        // Match the 96-DPI bitmap. Do not use the window PixelsPerDip — that
-        // is what clipped "…if the image i" on a scaled display.
-        const double pixelsPerDip = 1.0;
-        var wrapW = Math.Max(1.0, boundingRect.Width);
-        // FontSize in this app is WPF DIPs (same as TextBlock.FontSize), not points.
-        var preferred = style.FontSize > 0 ? style.FontSize : 24.0;
-
-        System.Windows.Media.FormattedText Make(double size)
+        // Raster left-aligned first so Center-without-MaxTextWidth cannot paint at
+        // negative X (that is what cropped "Flower" → "wer" on the deployed PNG).
+        // Instructions wrap at the layout width. After measuring, pin MaxTextWidth
+        // to the layout box and switch to Center so wrapped lines stay centered;
+        // MeasureInk then expands the bitmap for any unbreakable word that inks past
+        // that box, and FitContain scales the whole picture into the dest rect.
+        var formattedText = new System.Windows.Media.FormattedText(
+            string.IsNullOrEmpty(display) ? " " : display,
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            style.FontSize > 0 ? style.FontSize : 24.0,
+            foreground,
+            1.0)
         {
-            var ft = new System.Windows.Media.FormattedText(
-                string.IsNullOrEmpty(display) ? " " : display,
-                CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                typeface,
-                Math.Max(6.0, size),
-                foreground,
-                pixelsPerDip)
-            {
-                MaxTextWidth = wrapW,
-                TextAlignment = TextAlignment.Left,
-                Trimming = TextTrimming.None
-            };
-            return ft;
+            TextAlignment = TextAlignment.Left,
+            Trimming = TextTrimming.None
+        };
+
+        if (text is Domain.Key)
+        {
+            var stackWidth = Math.Max(1.0, formattedText.WidthIncludingTrailingWhitespace);
+            formattedText.MaxTextWidth = stackWidth;
+            formattedText.TextAlignment = TextAlignment.Center;
         }
-
-        // Preferred size first. Contain-fit of the glyph bitmap is what
-        // guarantees the file is not clipped; this only avoids a huge
-        // intermediate bitmap when the authored font is enormous.
-        var em = Math.Max(6.0, preferred);
-        var formattedText = Make(em);
-        var destH = Math.Max(1.0, boundingRect.Height);
-        var guard = 0;
-        while (formattedText.Height > destH * 3 && em > 6.0 && guard++ < 12)
+        else
         {
-            em *= 0.7;
-            formattedText = Make(em);
+            formattedText.MaxTextWidth = Math.Max(1.0, boundingRect.Width);
+            formattedText.TextAlignment = TextAlignment.Center;
         }
 
         return RenderFormattedTextToBitmap(formattedText, boundingRect);
@@ -320,8 +434,8 @@ public class ImageGenerationService : IImageGenerationService
             dc.DrawRectangle(Brushes.White, null, rects.Interior);
             if (block.LeftResponseId != Guid.Empty && block.RightResponseId != Guid.Empty)
             {
-                dc.DrawImage(RenderTextToBitmap(_keyService.GetResolvedKey(test, block.LeftResponseId), rects.LeftKey), rects.LeftKey);
-                dc.DrawImage(RenderTextToBitmap(_keyService.GetResolvedKey(test, block.RightResponseId), rects.RightKey), rects.RightKey);
+                dc.DrawImage(RenderKeyToBitmap(test, block.LeftResponseId, rects.LeftKey), rects.LeftKey);
+                dc.DrawImage(RenderKeyToBitmap(test, block.RightResponseId, rects.RightKey), rects.RightKey);
             }
             dc.DrawImage(RenderTextToBitmap(test.GetFormattedTextById(block.BlockInstructionsId) ?? 
                 throw new ArgumentException("Block does not contain a valid instruction"), rects.BlockInstructions), 
@@ -334,7 +448,7 @@ public class ImageGenerationService : IImageGenerationService
                     var imageBytes = _packageService.GetImageBytes(imageStimulus.Id);
                     var bitmapImage = BitmapFromBytes(imageBytes);
                     // DrawImage(src, destRect) stretches. Fit first or the slide crops/squishes.
-                    var fitted = ImageGenerationService.FitContain(
+                    var fitted = ImageGenerationService.FitContainDownOnly(
                         new Size(bitmapImage.PixelWidth, bitmapImage.PixelHeight),
                         rects.Stimulus);
                     dc.DrawImage(bitmapImage, fitted);
@@ -353,25 +467,30 @@ public class ImageGenerationService : IImageGenerationService
     /// <summary>
     /// Destination rectangle that scales <paramref name="sourcePixels"/> uniformly to fit inside
     /// <paramref name="dest"/> and centers it. Same rule as WPF <c>Stretch="Uniform"</c>.
+    /// Upscales when the source is smaller than <paramref name="dest"/>.
     /// </summary>
     public static Rect FitContain(Size sourcePixels, Rect dest)
+        => FitContain(sourcePixels, dest, allowUpscale: true);
+
+    /// <summary>
+    /// Same as <see cref="FitContain"/> but never scales up. Authored-size content that
+    /// already fits the layout rect stays that size and is centered. Overflow shrinks.
+    /// Same rule as WPF <c>Stretch="Uniform" StretchDirection="DownOnly"</c>.
+    /// </summary>
+    public static Rect FitContainDownOnly(Size sourcePixels, Rect dest)
+        => FitContain(sourcePixels, dest, allowUpscale: false);
+
+    private static Rect FitContain(Size sourcePixels, Rect dest, bool allowUpscale)
     {
         if (sourcePixels.Width <= 0 || sourcePixels.Height <= 0 || dest.Width <= 0 || dest.Height <= 0)
             return dest;
 
-        var srcAr = sourcePixels.Width / sourcePixels.Height;
-        var dstAr = dest.Width / dest.Height;
-        double width, height;
-        if (srcAr > dstAr)
-        {
-            width = dest.Width;
-            height = width / srcAr;
-        }
-        else
-        {
-            height = dest.Height;
-            width = height * srcAr;
-        }
+        var scale = Math.Min(dest.Width / sourcePixels.Width, dest.Height / sourcePixels.Height);
+        if (!allowUpscale && scale > 1.0)
+            scale = 1.0;
+
+        var width = sourcePixels.Width * scale;
+        var height = sourcePixels.Height * scale;
 
         return new Rect(
             dest.X + (dest.Width - width) / 2.0,

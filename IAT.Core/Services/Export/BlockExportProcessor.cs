@@ -180,12 +180,12 @@ namespace IAT.Core.Services.Export
                 exportContext.Test.GetKeyById(block.LeftResponseId)
                     ?? throw new ArgumentNullException(nameof(block.LeftResponseId),
                         $"Left response key not found: {block.LeftResponseId}"),
-                exportContext.LayoutRects.LeftKey, exportContext);
+                exportContext.LayoutRects.LeftKey, exportContext, ResourceType.ResponseKey);
             _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(block.RightResponseId)
                     ?? throw new ArgumentNullException(nameof(block.RightResponseId),
                         $"Right response key not found: {block.RightResponseId}"),
-                exportContext.LayoutRects.RightKey, exportContext);
+                exportContext.LayoutRects.RightKey, exportContext, ResourceType.ResponseKey);
             exportContext.AddEvent(new BeginIATBlock()
             {
                 LeftResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == block.LeftResponseId).Select(di => di.Id).FirstOrDefault(),

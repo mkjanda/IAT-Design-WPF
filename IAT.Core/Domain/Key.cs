@@ -108,6 +108,75 @@ namespace IAT.Core.Domain
         }
 
         /// <summary>
+        /// Default style for the separator row ("or") on a combined key.
+        /// Color is always black; family and size stay on the product defaults
+        /// so a 48pt pink term cannot paint the conjunction.
+        /// </summary>
+        public static TextStyle DefaultSeparatorStyle() => new()
+        {
+            FontFamily = "Segoe UI",
+            FontSize = 24.0,
+            FontColor = Colors.Black
+        };
+
+        /// <summary>
+        /// Rows the preview and slide renderer should paint for this key.
+        /// Combined keys with two <see cref="ComponentIds"/> resolve each
+        /// component's live style; the "or" row is <see cref="DefaultSeparatorStyle"/>.
+        /// Plain keys return a single row from this key's own style.
+        /// </summary>
+        public static IReadOnlyList<KeyDisplayLine> ResolveDisplayLines(Key? key, IatTest? test)
+        {
+            if (key is null)
+                return Array.Empty<KeyDisplayLine>();
+
+            if (key.IsCombined && test is not null && key.ComponentIds is { Count: >= 2 })
+            {
+                var first = test.GetKeyById(key.ComponentIds[0]);
+                var second = test.GetKeyById(key.ComponentIds[1]);
+                if (first is not null && second is not null)
+                {
+                    var t1 = FormatAuthoringDisplay(first.Text);
+                    var t2 = FormatAuthoringDisplay(second.Text);
+                    var or = DefaultSeparatorStyle();
+                    return new[]
+                    {
+                        LineFrom(t1, first),
+                        new KeyDisplayLine("or", or.FontFamily, or.FontSize, or.FontColor),
+                        LineFrom(string.IsNullOrEmpty(t2) ? string.Empty : t2, second)
+                    };
+                }
+            }
+
+            var stacked = FormatStackedDisplay(key.Text);
+            if (string.IsNullOrWhiteSpace(stacked))
+                return Array.Empty<KeyDisplayLine>();
+
+            var rows = stacked.Split('\n', StringSplitOptions.None);
+            if (rows.Length >= 3 && rows[1].Trim().Equals("or", StringComparison.OrdinalIgnoreCase))
+            {
+                var or = DefaultSeparatorStyle();
+                return new[]
+                {
+                    LineFrom(rows[0], key),
+                    new KeyDisplayLine("or", or.FontFamily, or.FontSize, or.FontColor),
+                    LineFrom(rows[2], key)
+                };
+            }
+
+            return new[] { LineFrom(stacked, key) };
+        }
+
+        private static KeyDisplayLine LineFrom(string text, Key source)
+        {
+            var family = source.Style?.FontFamily ?? source.FontFamily ?? "Segoe UI";
+            var size = source.Style?.FontSize > 0 ? source.Style.FontSize
+                : source.FontSize > 0 ? source.FontSize : 24.0;
+            var color = source.Style?.FontColor ?? source.FontColor;
+            return new KeyDisplayLine(text, family, size, color);
+        }
+
+        /// <summary>
         /// Single-line authoring form used on the Trials tab (e.g. <c>"Good or Flower"</c>).
         /// Collapses an already-stacked multiline value back to one line.
         /// </summary>
@@ -126,6 +195,11 @@ namespace IAT.Core.Domain
             return string.Join(" ", lines);
         }
     }
+
+    /// <summary>
+    /// One painted row of a response key (term, "or", or a plain label).
+    /// </summary>
+    public readonly record struct KeyDisplayLine(string Text, string FontFamily, double FontSize, Color FontColor);
 
     /// <summary>
     /// Specifies the layout mode for arranging keys in a user interface.

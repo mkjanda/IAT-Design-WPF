@@ -56,9 +56,9 @@ namespace IAT.Core.Domain
         /// </summary>
         public TextStyle Style { get; set; } = new TextStyle()
         {
-            FontFamily = "Arial",
-            FontSize = 48.0,
-            FontColor = Colors.White
+            FontFamily = "Segoe UI",
+            FontSize = 24.0,
+            FontColor = Colors.Black
         };
 
         /// <summary>
@@ -76,9 +76,9 @@ namespace IAT.Core.Domain
             Text = "Press the spacebar to continue",
             Style = new TextStyle()
             {
-                FontFamily = "Arial",
-                FontSize = 48.0,
-                FontColor = Colors.White
+                FontFamily = "Segoe UI",
+                FontSize = 24.0,
+                FontColor = Colors.Black
             },
             LayoutItem = LayoutItem.ContinueInstructions
         };

@@ -53,7 +53,10 @@
         <!-- Tabs + error banner -->
         <Grid Grid.Row="1">
             <TabControl Background="#252526" BorderThickness="0"
-                        SelectedIndex="0" VerticalAlignment="Stretch"
+                        SelectedIndex="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         Style="{StaticResource ModernTabControlStyle}">
                 <TabItem Header="Blocks" FontSize="18" Width="70" Foreground="#F7C46C">
                     <controls:BlockEditView Name="BlockEditView" DataContext="{Binding BlockEditor}" />
