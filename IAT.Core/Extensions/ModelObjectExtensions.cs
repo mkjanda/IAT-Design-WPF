@@ -2,7 +2,6 @@
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
 using IAT.Core.Serializable;
-using javax.activation;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;

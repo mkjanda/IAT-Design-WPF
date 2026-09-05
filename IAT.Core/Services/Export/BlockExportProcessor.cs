@@ -179,7 +179,7 @@ namespace IAT.Core.Services.Export
             exportContext.AddDisplayItem(instructions);
             exportContext.AddDisplayItem(leftResponse);
             exportContext.AddDisplayItem(rightResponse);
-            exportContext.AddEvent(new BeginIATBlock()
+            var blockEvent = new BeginIATBlock()
             {
                 LeftResponseId = leftResponse.Guid,
                 RightResponseId = rightResponse.Guid,
@@ -188,7 +188,11 @@ namespace IAT.Core.Services.Export
                 NumInstructionScreens = block.InstructionsIds.Count,
                 BlockNumber = exportContext.Events.Where(evt => evt.EventType == EventType.BeginIATBlock).Count() + 1,
                 NumPresentations = block.NumPresentations
-            });
+            };
+            if (blockEvent.BlockNumber == 3) blockEvent.AlternatedWith = 6;
+            if (blockEvent.BlockNumber == 4) blockEvent.AlternatedWith = 7;
+            if (blockEvent.BlockNumber == 6) blockEvent.AlternatedWith = 3;
+            if (blockEvent.BlockNumber == 7) blockEvent.AlternatedWith = 4;
             foreach (var instructionsId in block.InstructionsIds)
             {
                 switch (exportContext.Test.GetInstructionScreenById(instructionsId))
