@@ -25,7 +25,7 @@ namespace IAT.Core.Services.Export
         /// <param name="text">The formatted text to export. Cannot be null.</param>
         /// <param name="textRect">The rectangle that defines the layout area for the exported text.</param>
         /// <param name="exportContext">The context that provides configuration and data for export operations. Cannot be null.</param>
-        public void ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext);
+        public DisplayItem ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ namespace IAT.Core.Services.Export
         /// <param name="text">The formatted text to export as an image. Cannot be null.</param>
         /// <param name="textRect">The rectangle specifying the location and size of the text within the display. Cannot be null.</param>
         /// <param name="exportContext">The context that provides configuration and data for export operations. Cannot be null.</param>
-        public void ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext)
+        public DisplayItem ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext)
         {
             var encoder = new PngBitmapEncoder()
             {
@@ -92,17 +92,15 @@ namespace IAT.Core.Services.Export
                     "image/png",
                     memStream.ToArray());
             }
-            filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
-            exportContext.DisplayItems.Add(new DisplayItem()
+            return new DisplayItem()
             {
                 Id = exportContext.IdDictionary[text.Id],
-                Guid = text.Id,
-                Filename = filename,
+                Guid = Guid.NewGuid(),
                 X = (int)textRect.X,
                 Y = (int)textRect.Y,
                 Width = (int)textRect.Width,
                 Height = (int)textRect.Height
-            });
+            };
         }
     }
 }

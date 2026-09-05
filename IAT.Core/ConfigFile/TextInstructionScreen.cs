@@ -32,15 +32,49 @@ public class TextInstructionScreen : Event
     public int ContinueASCIIKeyCode { get; set; } = 32;
 
     /// <summary>
+    /// The XML export form of the id
+    /// </summary>
+    [XmlElement("ContinueInstructions", Form = XmlSchemaForm.Unqualified)]
+    public string ContinueInstructions
+    {
+        get
+        {
+            return ContinueInstructionsId.ToString("N");
+        }
+        set
+        {
+            ContinueInstructionsId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }   
+
+    /// <summary>
     /// Gets or sets the identifier used to display continue instructions.
     /// </summary>
-    [XmlElement("ContinueInstructionsDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int ContinueInstructionsDisplayID { get; set; } = -1;
+    [XmlIgnore]
+    public Guid ContinueInstructionsId { get; set; } = Guid.Empty;
+
+    /// <summary>
+    /// Gets the XML export form of the id
+    /// </summary>
+    [XmlElement("Instructions", Form = XmlSchemaForm.Unqualified)]
+    public string Instructions
+    {
+        get
+        {
+            return InstructionsId.ToString("N");
+        }
+        set
+        {
+            InstructionsId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
     /// Gets or sets the identifier used to display instructions.
     /// </summary>
-    [XmlElement("InstructionsDisplayID", Form = XmlSchemaForm.Unqualified)] 
-    public int InstructionsDisplayID { get; set; } = -1;
+    [XmlIgnore] 
+    public Guid InstructionsId { get; set; } = Guid.Empty;
 
 }

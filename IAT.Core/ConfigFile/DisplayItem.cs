@@ -22,16 +22,28 @@ public sealed class DisplayItem
     public int Id { get; set; } = -1;
 
     /// <summary>
-    /// Gets or sets the unique identifier for the object.
+    /// Gets or sets the XML export form of the unique identifier for the object. This property is used for serialization purposes, allowing the unique identifier to be represented as a string in XML format. The getter returns the GUID as a string in "N" format (32 digits), while the setter parses the string back into a GUID, defaulting to Guid.Empty if the value is null or empty.
     /// </summary>
     [XmlElement("Guid", Form = XmlSchemaForm.Unqualified)]
-    public Guid Guid { get; set; } = Guid.Empty;
+    public string GuidString
+    {
+        get
+        {
+            return Guid.ToString("N");
+        }
+        set
+        {
+            Guid = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
-    /// Gets or sets the name of the file associated with this instance.
+    /// Gets or sets the unique identifier for the object.
     /// </summary>
-    [XmlElement("Filename", Form = XmlSchemaForm.Unqualified)]
-    public string Filename { get; set; } = string.Empty;
+    [XmlIgnore]
+    public Guid Guid { get; set; } = Guid.Empty;
+
 
     /// <summary>
     /// Gets or sets the value of X.

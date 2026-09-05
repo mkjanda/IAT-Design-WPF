@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using IAT.Core.ConfigFile;
@@ -13,9 +13,9 @@ namespace IAT.Core.Services.Export
     public sealed class ExportContext
     {
         /// <summary>
-        /// A list for adding events to the export context. This collection is used to store events that will be 
-        /// included in the exported test package, such as instructions screens, trial events, and other relevant 
-        /// actions that occur during the test. The events added to this list will be processed and included in the 
+        /// A list for adding events to the export context. This collection is used to store events that will be
+        /// included in the exported test package, such as instructions screens, trial events, and other relevant
+        /// actions that occur during the test. The events added to this list will be processed and included in the
         /// final export output, allowing for a structured representation of the test's flow and content.
         /// </summary>
         public List<Event> Events { get; } = new List<Event>();
@@ -58,10 +58,30 @@ namespace IAT.Core.Services.Export
         public void AddEvent(Event evt) => Events.Add(evt);
 
         /// <summary>
-        /// Adds a display item to the collection.
+        /// Adds a display-item placement.
         /// </summary>
+        /// <remarks>
+        /// <see cref="DisplayItem.Id"/> is the shared resource id (the PNG / <c>img{n}</c>).
+        /// <see cref="DisplayItem.Guid"/> is the placement id events bind to.
+        /// Combined keys and transposed practice keys reuse a resource across blocks
+        /// (block 3 left == block 4 left; block 2 right == block 5 left). Each
+        /// placement still needs its own Guid so IATScript can declare
+        /// <c>var DI{guid}</c> and GlobalAbbreviations can rename the
+        /// <c>IATBeginBlock</c> arguments. Deduping on <see cref="DisplayItem.Id"/>
+        /// drops those later placements and leaves raw <c>DI{guid}</c> in the
+        /// generated script.
+        /// </remarks>
         /// <param name="item">The display item to add.</param>
-        public void AddDisplayItem(DisplayItem item) => DisplayItems.Add(item);
+        public void AddDisplayItem(DisplayItem item)
+        {
+            if (item.Guid == Guid.Empty)
+                item.Guid = Guid.NewGuid();
+
+            if (DisplayItems.Any(di => di.Guid == item.Guid))
+                return;
+
+            DisplayItems.Add(item);
+        }
 
     }
 }

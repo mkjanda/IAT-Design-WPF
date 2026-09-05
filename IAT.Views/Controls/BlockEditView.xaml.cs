@@ -25,11 +25,16 @@ namespace IAT.Views.Controls
             InitializeComponent();
             Loaded += (_, _) =>
             {
+                if (DataContext is BlockEditViewModel vm)
+                    vm.IsStageActive = IsVisible;
                 RefreshPreviewContent();
                 TryFitToHost();
             };
             IsVisibleChanged += (_, e) =>
             {
+                if (DataContext is BlockEditViewModel vm)
+                    vm.IsStageActive = e.NewValue is true;
+
                 if (e.NewValue is true)
                 {
                     RefreshPreviewContent();
@@ -40,6 +45,8 @@ namespace IAT.Views.Controls
             };
             DataContextChanged += (_, _) =>
             {
+                if (DataContext is BlockEditViewModel vm)
+                    vm.IsStageActive = IsVisible;
                 RefreshPreviewContent();
                 TryFitToHost();
             };
@@ -98,6 +105,8 @@ namespace IAT.Views.Controls
         /// </summary>
         private void RefreshPreviewContent()
         {
+            if (!IsVisible)
+                return;
             if (DataContext is BlockEditViewModel vm)
                 vm.RefreshLayoutPreview();
         }

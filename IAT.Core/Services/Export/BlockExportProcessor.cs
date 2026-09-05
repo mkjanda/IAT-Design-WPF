@@ -64,13 +64,15 @@ namespace IAT.Core.Services.Export
         /// <param name="exportContext">The export context containing layout rectangles, display items, and events collection.</param>
         private void ProcessTextInstructionScreen(Domain.TextInstructionScreen screen, ExportContext exportContext)
         {
-            _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.TextInstructions, exportContext);
-            _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
+            var diInstructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.TextInstructions, exportContext);
+            var diContinueInstructions = _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
+            exportContext.AddDisplayItem(diInstructions);
+            exportContext.AddDisplayItem(diContinueInstructions);
 
             exportContext.Events.Add(new ConfigFile.TextInstructionScreen()
             {
-                InstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.Id).Select(di => di.Id).FirstOrDefault(),
-                ContinueInstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.ContinueInstructions.Id).Select(di => di.Id).FirstOrDefault()
+                InstructionsId = diInstructions.Guid,
+                ContinueInstructionsId = diContinueInstructions.Guid
             });
         }
 
@@ -82,24 +84,28 @@ namespace IAT.Core.Services.Export
         /// <param name="exportContext">The export context containing layout rectangles, display items, and events collection.</param>
         private void ProcessKeyedInstructionsScreen(Domain.KeyedInstructionScreen screen, ExportContext exportContext)
         {
-            _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.KeyedInstructions, exportContext);
-            _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
-            // Response keys live in the key cache, not FormattedTexts.
-            _textExportProcessor.ProcessText(
+            var instructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.KeyedInstructions, exportContext);
+            var continueInstructions = _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
+            exportContext.AddDisplayItem(instructions);
+            exportContext.AddDisplayItem(continueInstructions);
+
+            var leftKey = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(screen.LeftResponseId)
                     ?? throw new ArgumentException($"Left response key not found: {screen.LeftResponseId}"),
                 exportContext.LayoutRects.LeftKey, exportContext);
-            _textExportProcessor.ProcessText(
+            var rightKey = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(screen.RightResponseId)
                     ?? throw new ArgumentException($"Right response key not found: {screen.RightResponseId}"),
                 exportContext.LayoutRects.RightKey, exportContext);
-                
+            exportContext.AddDisplayItem(leftKey);
+            exportContext.AddDisplayItem(rightKey);
+
             exportContext.Events.Add(new ConfigFile.KeyedInstructionScreen()
             {
-                InstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.Id).Select(di => di.Id).FirstOrDefault(),
-                ContinueInstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.ContinueInstructions.Id).Select(di => di.Id).FirstOrDefault(),
-                LeftResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.LeftResponseId).Select(di => di.Id).FirstOrDefault(),
-                RightResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.RightResponseId).Select(di => di.Id).FirstOrDefault()
+                InstructionsId = instructions.Guid,
+                ContinueInstructionsId = continueInstructions.Guid,
+                LeftResponseId = leftKey.Guid,
+                RightResponseId = rightKey.Guid
             });
         }
 
@@ -113,24 +119,29 @@ namespace IAT.Core.Services.Export
         /// <exception cref="ArgumentNullException">Thrown when the stimulus for the specified ID cannot be found.</exception>
         private void ProcessMockItemInstructionScreen(Domain.MockItemInstructionScreen screen, ExportContext exportContext)
         {
-            _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.MockItemInstructions, exportContext);
-            _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
-            _textExportProcessor.ProcessText(
+            var instructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.MockItemInstructions, exportContext);
+            var continueInstructions = _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
+            var leftKey = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(screen.LeftResponseId)
                     ?? throw new ArgumentException($"Left response key not found: {screen.LeftResponseId}"),
                 exportContext.LayoutRects.LeftKey, exportContext);
-            _textExportProcessor.ProcessText(
+            var rightKey = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(screen.RightResponseId)
                     ?? throw new ArgumentException($"Right response key not found: {screen.RightResponseId}"),
                 exportContext.LayoutRects.RightKey, exportContext);
-            _stimulusExportProcessor.ProcessStimulus(exportContext.Test.GetStimulusById(screen.StimulusId) ?? throw new ArgumentNullException(), exportContext);
+            var stimulus = _stimulusExportProcessor.ProcessStimulus(exportContext.Test.GetStimulusById(screen.StimulusId) ?? throw new ArgumentNullException(), exportContext);
+            exportContext.AddDisplayItem(instructions);
+            exportContext.AddDisplayItem(continueInstructions);
+            exportContext.AddDisplayItem(leftKey);
+            exportContext.AddDisplayItem(rightKey);
+            exportContext.AddDisplayItem(stimulus);
             exportContext.Events.Add(new ConfigFile.MockItemInstructionScreen()
             {
-                InstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.Id).Select(di => di.Id).FirstOrDefault(),
-                ContinueInstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.ContinueInstructions.Id).Select(di => di.Id).FirstOrDefault(),
-                LeftResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.LeftResponseId).Select(di => di.Id).FirstOrDefault(),
-                RightResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.RightResponseId).Select(di => di.Id).FirstOrDefault(),
-                StimulusDisplayID = exportContext.DisplayItems.Where(di => di.Guid == screen.StimulusId).Select(di => di.Id).FirstOrDefault(),
+                InstructionsId = instructions.Guid,
+                ContinueInstructionsId = continueInstructions.Guid,
+                LeftResponseId = leftKey.Guid,
+                RightResponseId = rightKey.Guid,
+                StimulusId = stimulus.Guid,
                 ErrorMarkIsDisplayed = screen.ShowErrorMark,
                 OutlineLeftResponse = (screen.KeyedDirection == KeyedDirection.Left) && screen.OutlineCorrectResponse,
                 OutlineRightResponse = (screen.KeyedDirection == KeyedDirection.Right) && screen.OutlineCorrectResponse
@@ -146,63 +157,62 @@ namespace IAT.Core.Services.Export
         /// <exception cref="ArgumentNullException">Thrown when a required formatted text or trial cannot be found by identifier.</exception>
         public void ProcessBlock(Block block, ExportContext exportContext)
         {
-            if (block.InstructionsIds.Count > 0)
-            {
-                exportContext.AddEvent(new BeginInstructionBlock()
-                {
-                    NumInstructionScreens = block.InstructionsIds.Count
-                });
-                foreach (var instructionsIs in block.InstructionsIds)
-                {
-                    switch (exportContext.Test.GetInstructionScreenById(instructionsIs))
-                    {
-                        case Domain.TextInstructionScreen textInstructionScreen:
-                            ProcessTextInstructionScreen(textInstructionScreen, exportContext);
-                            break;
-                        case Domain.KeyedInstructionScreen keyedInstructionScreen:
-                            ProcessKeyedInstructionsScreen(keyedInstructionScreen, exportContext);
-                            break;
-                        case Domain.MockItemInstructionScreen mockItemInstructionScreen:
-                            ProcessMockItemInstructionScreen(mockItemInstructionScreen, exportContext);
-                            break;
-                    }
-                }
-            }
 
 
-            _textExportProcessor.ProcessText(
+
+            var instructions = _textExportProcessor.ProcessText(
                 exportContext.Test.GetFormattedTextById(block.BlockInstructionsId)
                     ?? throw new ArgumentNullException(nameof(block.BlockInstructionsId),
                         $"Block instructions FormattedText not found: {block.BlockInstructionsId}"),
                 exportContext.LayoutRects.BlockInstructions, exportContext);
             // Left/RightResponseId reference Key instances (IFormattedText) in the key cache.
-            _textExportProcessor.ProcessText(
+            var leftResponse = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(block.LeftResponseId)
                     ?? throw new ArgumentNullException(nameof(block.LeftResponseId),
                         $"Left response key not found: {block.LeftResponseId}"),
                 exportContext.LayoutRects.LeftKey, exportContext);
-            _textExportProcessor.ProcessText(
+            var rightResponse = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(block.RightResponseId)
                     ?? throw new ArgumentNullException(nameof(block.RightResponseId),
                         $"Right response key not found: {block.RightResponseId}"),
                 exportContext.LayoutRects.RightKey, exportContext);
+            exportContext.AddDisplayItem(instructions);
+            exportContext.AddDisplayItem(leftResponse);
+            exportContext.AddDisplayItem(rightResponse);
             exportContext.AddEvent(new BeginIATBlock()
             {
-                LeftResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == block.LeftResponseId).Select(di => di.Id).FirstOrDefault(),
-                RightResponseDisplayID = exportContext.DisplayItems.Where(di => di.Guid == block.RightResponseId).Select(di => di.Id).FirstOrDefault(),
-                InstructionsDisplayID = exportContext.DisplayItems.Where(di => di.Guid == block.BlockInstructionsId).Select(di => di.Id).FirstOrDefault(),
+                LeftResponseId = leftResponse.Guid,
+                RightResponseId = rightResponse.Guid,
+                InstructionsId = instructions.Guid,
                 NumItems = block.TrialIds.Count,
+                NumInstructionScreens = block.InstructionsIds.Count,
                 BlockNumber = exportContext.Events.Where(evt => evt.EventType == EventType.BeginIATBlock).Count() + 1,
                 NumPresentations = block.NumPresentations
             });
+            foreach (var instructionsId in block.InstructionsIds)
+            {
+                switch (exportContext.Test.GetInstructionScreenById(instructionsId))
+                {
+                    case Domain.TextInstructionScreen textInstructionScreen:
+                        ProcessTextInstructionScreen(textInstructionScreen, exportContext);
+                        break;
+                    case Domain.KeyedInstructionScreen keyedInstructionScreen:
+                        ProcessKeyedInstructionsScreen(keyedInstructionScreen, exportContext);
+                        break;
+                    case Domain.MockItemInstructionScreen mockItemInstructionScreen:
+                        ProcessMockItemInstructionScreen(mockItemInstructionScreen, exportContext);
+                        break;
+                }
+            }
 
             foreach (var trialId in block.TrialIds)
             {
                 var trial = exportContext.Test.GetTrialById(trialId) ?? throw new ArgumentNullException();
-                _stimulusExportProcessor.ProcessStimulus(exportContext.Test.GetStimulusById(trial.StimulusId) ?? throw new ArgumentNullException(), exportContext);
+                var stimulus = _stimulusExportProcessor.ProcessStimulus(exportContext.Test.GetStimulusById(trial.StimulusId) ?? throw new ArgumentNullException(), exportContext);
+                exportContext.AddDisplayItem(stimulus);
                 exportContext.AddEvent(new ConfigFile.Trial()
                 {
-                    StimulusDisplayID = exportContext.DisplayItems.Where(di => di.Guid == trial.StimulusId).Select(di => di.Id).FirstOrDefault(),
+                    StimulusId = stimulus.Guid,
                     KeyedDir = trial.KeyedDirection,
                     ItemNum = block.TrialIds.IndexOf(trial.Id),
                     BlockNum = block.BlockNumber,

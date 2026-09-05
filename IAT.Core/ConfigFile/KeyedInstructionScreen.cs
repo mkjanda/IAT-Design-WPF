@@ -21,28 +21,96 @@ public sealed class KeyedInstructionScreen : Event
     public int ContinueASCIIKeyCode { get; set; } = 32;
 
     /// <summary>
+    /// Gets the XML export form of the continue instructions identifier.
+    /// </summary>
+    [XmlElement("ContinueInstructions", Form = XmlSchemaForm.Unqualified)]
+    public string ContinueInstructions
+    {
+        get
+        {
+            return ContinueInstructionsId.ToString("N");
+        }
+        set
+        {
+            ContinueInstructionsId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
+
+    /// <summary>
     /// Gets or sets the display identifier for the continue instructions.
     /// </summary>
-    [XmlElement("ContinueInstructionsDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int ContinueInstructionsDisplayID { get; set; } = -1;
+    [XmlIgnore]
+    public Guid ContinueInstructionsId { get; set; } = Guid.Empty;
+
+    /// <summary>
+    /// Gets the XML export form of the left response identifier.
+    /// </summary>
+    [XmlElement("LeftResponse", Form = XmlSchemaForm.Unqualified)]
+    public string LeftResponse
+    {
+        get
+        {
+            return LeftResponseId.ToString("N");
+        }
+        set
+        {
+            LeftResponseId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
     /// Gets or sets the display identifier for the left response.
     /// </summary>
-    [XmlElement("LeftResponseDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int LeftResponseDisplayID { get; set; } = -1;
+    [XmlIgnore]
+    public Guid LeftResponseId { get; set; } = Guid.Empty;
+
+    /// <summary>
+    /// Gets the XML export form of the right response identifier.
+    /// </summary>
+    [XmlElement("RightResponse", Form = XmlSchemaForm.Unqualified)]
+    public string RightResponse
+    {
+        get
+        {
+            return RightResponseId.ToString("N");
+        }
+        set
+        {
+            RightResponseId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
     /// Gets or sets the identifier for the right response display.
     /// </summary>
-    [XmlElement("RightResponseDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int RightResponseDisplayID { get; set; } = -1;
+    [XmlIgnore]
+    public Guid RightResponseId { get; set; } = Guid.Empty;
+
+    /// <summary>
+    /// Gets the XML export form of the instructions identifier.
+    /// </summary>
+    [XmlElement("Instructions", Form = XmlSchemaForm.Unqualified)]
+    public string Instructions
+    {
+        get
+        {
+            return InstructionsId.ToString("N");
+        }
+        set
+        {
+            InstructionsId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
     /// Gets or sets the identifier for the instructions display associated with this instance.
     /// </summary>
-    [XmlElement("InstructionsDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int InstructionsDisplayID { get; set; } = -1;
+    [XmlIgnore]
+    public Guid InstructionsId { get; set; } = Guid.Empty;
 
     /// <summary>
     /// The type of event this class represents,

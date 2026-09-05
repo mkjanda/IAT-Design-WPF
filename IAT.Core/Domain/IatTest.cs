@@ -453,7 +453,7 @@ public partial class IatTest : ObservableObject
     /// Validates the entire test configuration, including all trials, stimuli, and instruction screens.
     /// </summary>
     /// <remarks>This method performs a comprehensive validation by checking that every trial is
-    /// valid, each stimulus is used in at least one trial and is itself valid, and that at least one instruction
+    /// valid, each stimulus is used in a trial or mock-item screen and is itself valid, and that at least one instruction
     /// screen is present and valid. Validation stops at the first failure encountered and returns the corresponding
     /// error.</remarks>
     /// <returns>A ValidationResult indicating whether the test configuration is valid. Returns ValidationResult.Success if
@@ -468,9 +468,9 @@ public partial class IatTest : ObservableObject
             result.Combine(trial.Validate(stimulus));
         }
 
-        // 2. Stimulus reuse across blocks with different keying is allowed — but every stimulus must appear in at least one trial
-        if (Stimuli.Any(s => !Trials.Any(t => t.StimulusId == s.Id)))
-            result.AddError("Every stimulus must be used in at least one trial");
+        // 2. Every stimulus must appear on a trial or a mock-item screen. Orphans only.
+        if (Stimuli.Any(s => !IsStimulusReferenced(s.Id)))
+            result.AddError("Every stimulus must be used in at least one trial or mock-item screen");
         foreach (var stimulus in Stimuli)
             result.Combine(stimulus.Validate());
 
@@ -491,6 +491,20 @@ public partial class IatTest : ObservableObject
     /// <param name="id">The unique identifier of the entity.</param>
     /// <returns>The entity if found; otherwise, null.</returns>
     public Stimulus? GetStimulusById(Guid id) => _stimulusCache.TryGetValue(id, out var stimulus) ? stimulus : null;
+
+    /// <summary>
+    /// True when <paramref name="stimulusId"/> is referenced by a trial or by a
+    /// <see cref="MockItemInstructionScreen"/>. A mock-item stimulus is used; it is not an orphan.
+    /// </summary>
+    public bool IsStimulusReferenced(Guid stimulusId)
+    {
+        if (stimulusId == Guid.Empty)
+            return false;
+        if (Trials.Any(t => t.StimulusId == stimulusId))
+            return true;
+        return InstructionScreens.OfType<MockItemInstructionScreen>()
+            .Any(screen => screen.StimulusId == stimulusId);
+    }
 
     /// <summary>
     /// Returns the trial with the specified ID, or null if not found. This is useful for validation and other 

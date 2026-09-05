@@ -249,11 +249,32 @@ public class IatTestValidationTests
         var test = BuildMinimalSevenBlockTest();
         var unused = new TextStimulus { Id = Guid.NewGuid(), Text = "Unused" };
         test.AddStimulus(unused);
-        // No trial references unused
+        // No trial or mock-item screen references unused
 
         var result = test.ValidateEntireTest();
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.Contains("Every stimulus must be used", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ValidateEntireTest_Succeeds_WhenStimulusUsedOnlyOnMockItem()
+    {
+        var test = BuildMinimalSevenBlockTest();
+        var mockOnly = new TextStimulus { Id = Guid.NewGuid(), Text = "Practice rose" };
+        test.AddStimulus(mockOnly);
+        test.AddInstructionScreen(new MockItemInstructionScreen
+        {
+            Id = Guid.NewGuid(),
+            Text = "This is a practice item.",
+            StimulusId = mockOnly.Id,
+            LeftResponseId = Guid.NewGuid(),
+            RightResponseId = Guid.NewGuid(),
+            KeyedDirection = KeyedDirection.Left
+        });
+
+        var result = test.ValidateEntireTest();
+        Assert.True(result.IsValid, string.Join("; ", result.Errors));
+        Assert.True(test.IsStimulusReferenced(mockOnly.Id));
     }
 
     [Fact]

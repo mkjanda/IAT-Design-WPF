@@ -109,20 +109,67 @@ public class IATConfigFile : IWebSocketMessage
     /// <summary>
     /// Gets or sets the identifier for the error mark associated with this instance.
     /// </summary>
-    [XmlElement("ErrorMarkID", Form = XmlSchemaForm.Unqualified)]
-    public int ErrorMarkID { get; set; } = 1;
+    [XmlElement("ErrorMark", Form = XmlSchemaForm.Unqualified)]
+    public string ErrorMark
+    {
+        get
+        {
+            return ErrorMarkId.ToString("N");
+        }
+        set
+        {
+            ErrorMarkId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the guid of the error mark
+    /// </summary>
+    [XmlIgnore]
+    public Guid ErrorMarkId { get; set; } = Guid.Empty;
 
     /// <summary>
     /// Gets or sets the identifier for the left key outline.
     /// </summary>
-    [XmlElement("LeftKeyOutlineID", Form = XmlSchemaForm.Unqualified)] 
-    public int LeftKeyOutlineID { get; set; } = 2;
+    [XmlElement("LeftKeyOutline", Form = XmlSchemaForm.Unqualified)] 
+    public String LeftKeyOutline
+    {
+        get
+        {
+            return LeftKeyOutlineId.ToString("N");
+        }
+        set
+        {
+            LeftKeyOutlineId = string.IsNullOrEmpty(value) ?
+                 Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
+
+    public Guid LeftKeyOutlineId { get; set; } = Guid.Empty;
 
     /// <summary>
     /// Gets or sets the identifier for the right key outline.
     /// </summary>
-    [XmlElement("RightKeyOutlineID", Form = XmlSchemaForm.Unqualified)]
-    public int RightKeyOutlineID { get; set; } = 3;
+    [XmlElement("RightKeyOutline", Form = XmlSchemaForm.Unqualified)]
+    public string RightKeyOutline
+    {
+        get
+        {
+            return RightKeyOutlineId.ToString("N");
+        }
+        set
+        {
+            RightKeyOutlineId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
+    
+    
+    
+    public Guid RightKeyOutlineId { get; set; } = Guid.Empty;
+
+
 
     /// <summary>
     /// Gets or sets the collection of surveys associated with this instance.

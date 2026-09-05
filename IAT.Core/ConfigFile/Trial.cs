@@ -83,10 +83,26 @@ public class Trial : Event, IEqualityComparer<Trial>
     [XmlElement("KeyedDir", Form = XmlSchemaForm.Unqualified)]
     public KeyedDirection KeyedDir { get; set; } = KeyedDirection.None;
 
+    /// <summary>
+    /// Gets the XML export form of the stimulus identifier, which is used to uniquely identify the stimulus display in the exported configuration.
+    /// </summary>
+    [XmlElement("Stimulus", Form = XmlSchemaForm.Unqualified)]
+    public string Stimulus
+    {
+        get
+        {
+            return StimulusId.ToString("N");
+        }
+        set
+        {
+            StimulusId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
     /// Gets or sets the identifier of the stimulus display associated with this instance.
     /// </summary>
-    [XmlElement("StimulusDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int StimulusDisplayID { get; set; } = 0;
+    [XmlIgnore]
+    public Guid StimulusId { get; set; } = Guid.Empty;
 }

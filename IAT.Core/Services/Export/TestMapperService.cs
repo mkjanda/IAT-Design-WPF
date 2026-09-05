@@ -81,16 +81,15 @@ namespace IAT.Core.Services.Export
             encoder.Frames.Add(BitmapFrame.Create(bmp));
             encoder.Save(memStream);
             _fileManifestBuilder.AddFile(exportContext.FileManifest, "ErrorMark.png", 1000, ResourceType.ErrorMark, "image/png", memStream.ToArray());
-            exportContext.DisplayItems.Add(new DisplayItem()
+            var errorMarkDI = new DisplayItem()
             {
-                Filename = "ErrorMark.png",
                 Id = 1000,
-                Guid = errorMark.Id,
+                Guid = Guid.NewGuid(),
                 X = (int)exportContext.LayoutRects.ErrorMark.X,
                 Y = (int)exportContext.LayoutRects.ErrorMark.Y,
                 Width = (int)exportContext.LayoutRects.ErrorMark.Width,
                 Height = (int)exportContext.LayoutRects.ErrorMark.Height
-            });
+            };
 
             var visual = new DrawingVisual();
             using (var dc = visual.RenderOpen())
@@ -113,33 +112,34 @@ namespace IAT.Core.Services.Export
             _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutlineLeft.png", 1001, ResourceType.KeyOutline, "image/png", memStream.ToArray());
             _fileManifestBuilder.AddFile(exportContext.FileManifest, "KeyOutlineRight.png", 1002, ResourceType.KeyOutline, "image/png", memStream.ToArray());
             memStream.Dispose();
-            exportContext.DisplayItems.Add(new DisplayItem()
+            var leftOutlineDI = new DisplayItem()
             {
-                Filename = "KeyOutlineLeft.png",
                 Id = 1001,
-                Guid = Guid.Empty,
+                Guid = Guid.NewGuid(),
                 X = (int)exportContext.LayoutRects.LeftKey.X,
                 Y = (int)exportContext.LayoutRects.LeftKey.Y,
                 Width = (int)exportContext.LayoutRects.LeftKey.Width,
                 Height = (int)exportContext.LayoutRects.LeftKey.Height
-            });
-            exportContext.DisplayItems.Add(new DisplayItem()
+            };
+            var rightKeyOutlineDI = new DisplayItem()
             {
-                Filename = "KeyOutlineRight.png",
                 Id = 1002,
-                Guid = Guid.Empty,
+                Guid = Guid.NewGuid(),
                 X = (int)exportContext.LayoutRects.RightKey.X,
                 Y = (int)exportContext.LayoutRects.RightKey.Y,
                 Width = (int)exportContext.LayoutRects.RightKey.Width,
                 Height = (int)exportContext.LayoutRects.RightKey.Height
-            });
+            };
+            exportContext.AddDisplayItem(errorMarkDI);
+            exportContext.AddDisplayItem(leftOutlineDI);
+            exportContext.AddDisplayItem(rightKeyOutlineDI);
 
             var config = new IATConfigFile
             {
                 Name = test.Name,
-                ErrorMarkID = 1000,
-                LeftKeyOutlineID = 1001,
-                RightKeyOutlineID = 1002,
+                ErrorMarkId = errorMarkDI.Guid,
+                LeftKeyOutlineId = leftOutlineDI.Guid,
+                RightKeyOutlineId = rightKeyOutlineDI.Guid,
                 EventList = exportContext.Events,
                 DisplayItems = exportContext.DisplayItems,
                 NumIATItems = test.AllTrials.Count,

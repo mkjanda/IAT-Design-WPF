@@ -99,6 +99,13 @@ public partial class BlockEditViewModel : ObservableObject
     private bool _loadingInstructionEditor;
 
     /// <summary>
+    /// True when the Blocks tab is the visible owner of the shared layout stage.
+    /// Set from <c>BlockEditView</c> IsVisibleChanged. When false, TestModifiedMessage
+    /// must not paint this block's keys over an instruction-screen preview.
+    /// </summary>
+    public bool IsStageActive { get; set; }
+
+    /// <summary>
     /// True when the Instructions Text box may be edited. False while an instruction-screen
     /// row is selected in the sequence grid — that editor is for <see cref="Block.BlockInstructions"/>
     /// only and must not rewrite the selected instruction screen's body.
@@ -125,11 +132,16 @@ public partial class BlockEditViewModel : ObservableObject
 
         // Practice-key style edits live on the Trials tab. Re-paint the Blocks preview
         // so combined keys pick up component styles without a re-select.
+        // This handler must NOT run while another tab owns the shared LayoutViewModel
+        // stage. Instruction screens send TestModifiedMessage on every property push
+        // (outline, keys, text). Blindly applying SelectedBlock keys — which defaults
+        // to Block 1 — overwrote mock/keyed screen keys in the Instructions preview.
+        // Domain IDs stayed correct, so save/load appeared to "fix" it.
         WeakReferenceMessenger.Default.Register<TestModifiedMessage>(this, (_, _) =>
         {
-            if (LayoutViewModel is null)
+            if (LayoutViewModel is null || !IsStageActive)
                 return;
-            LayoutViewModel.ApplyBlockKeys(SelectedBlock);
+            ApplyPreviewForCurrentSequence();
         });
 
         // Select first block if any exist
@@ -720,9 +732,19 @@ public partial class BlockEditViewModel : ObservableObject
     partial void OnSelectedSequenceRowChanged(BlockSequenceRow? value)
     {
         OnPropertyChanged(nameof(IsBlockInstructionsEditable));
+        ApplyPreviewForCurrentSequence();
+    }
 
+    /// <summary>
+    /// Paints the shared stage from the current sequence selection.
+    /// Instruction rows use the screen's own key ids. Trial / empty selection
+    /// uses the selected block's keys. Never fall back to Block 1.
+    /// </summary>
+    public void ApplyPreviewForCurrentSequence()
+    {
         if (LayoutViewModel is null) return;
 
+        var value = SelectedSequenceRow;
         if (value is null)
         {
             SelectedTrial = null;
@@ -740,16 +762,14 @@ public partial class BlockEditViewModel : ObservableObject
             // placeholder. ApplyInstructionPreview fully owns the stage for instruction rows
             // (hides stimulus for Text/Keyed, fills it for Mock Item).
             LayoutViewModel.ApplyInstructionPreview(value.Instruction);
+            return;
         }
-        else
-        {
-            SelectedTrial = value.Trial;
-            LayoutViewModel.ApplyInstructionPreview(null);
-            LayoutViewModel.ApplyTrialPreview(value.Trial);
-            // Restore block keys + block-instructions text/region (instruction preview overrode both).
-            LayoutViewModel.ApplyBlockKeys(SelectedBlock);
-            PushBlockInstructionsToPreview(SelectedBlock?.BlockInstructions);
-        }
+
+        SelectedTrial = value.Trial;
+        LayoutViewModel.ApplyInstructionPreview(null);
+        LayoutViewModel.ApplyTrialPreview(value.Trial);
+        LayoutViewModel.ApplyBlockKeys(SelectedBlock);
+        PushBlockInstructionsToPreview(SelectedBlock?.BlockInstructions);
     }
 
     /// <summary>

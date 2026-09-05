@@ -27,7 +27,7 @@ namespace IAT.Core.Services.Export
         /// </summary>
         /// <param name="stimulus">The stimulus to be processed and exported.</param>
         /// <param name="exportContext">The context information for the export process, including bounding rectangle and ID dictionary.</param>
-        void ProcessStimulus(Stimulus stimulus, ExportContext exportContext);
+        DisplayItem ProcessStimulus(Stimulus stimulus, ExportContext exportContext);
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ namespace IAT.Core.Services.Export
         /// <param name="stimulus">The stimulus to process. Must be a valid instance of a supported stimulus type.</param>
         /// <param name="exportContext">The context information for the export process, including bounding rectangle and ID dictionary.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="stimulus"/> or <paramref name="exportContext"/> is null.</exception>
-        public void ProcessStimulus(Stimulus stimulus, ExportContext exportContext)
+        public DisplayItem ProcessStimulus(Stimulus stimulus, ExportContext exportContext)
         {
             
             if (stimulus == null) throw new ArgumentNullException(nameof(stimulus));
@@ -120,17 +120,17 @@ namespace IAT.Core.Services.Export
                         $"image/{imageType}",
                         original);
                 }
-                exportContext.DisplayItems.Add(new DisplayItem()
+                return new DisplayItem()
                 {
                     Id = exportContext.IdDictionary[stimulus.Id],
-                    Guid = stimulus.Id,
-                    Filename = filename,
+                    Guid = Guid.NewGuid(),
                     X = (int)exportContext.LayoutRects.Stimulus.X,
                     Y = (int)exportContext.LayoutRects.Stimulus.Y,
                     Width = (int)exportContext.LayoutRects.Stimulus.Width,
                     Height = (int)exportContext.LayoutRects.Stimulus.Height
-                }); 
+                };
             }
+            return exportContext.DisplayItems.First(di => di.Id == exportContext.IdDictionary[stimulus.Id]);
         }
     }
 }

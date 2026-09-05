@@ -43,26 +43,83 @@ public sealed class BeginIATBlock : Event
     public int BlockNumber { get; set; }
 
     /// <summary>
+    /// The number of instruction screens for the block. This property specifies how many instruction screens will be displayed to the participant before the stimuli presentations begin.
+    /// </summary>
+    [XmlElement("NumInstructionScreens", Form = XmlSchemaForm.Unqualified)]
+    public int NumInstructionScreens { get; set; } = 0;
+
+    /// <summary>
     /// The number of stimuli in the block
     /// </summary>
     [XmlElement("NumItems", Form = XmlSchemaForm.Unqualified)]
     public int NumItems { get; set; } = 0;
 
     /// <summary>
+    /// The XML export form of the instructions display ID. This property is used to uniquely identify the instructions display in the exported configuration, allowing for proper mapping and retrieval of the instructions during the test execution.
+    /// </summary>
+    [XmlElement("Instructions", Form = XmlSchemaForm.Unqualified)]
+    public string Instructions
+    {
+        get
+        {
+            return InstructionsId.ToString("N");
+        }
+        set
+        {
+            InstructionsId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
+
+    /// <summary>
     /// The Display ID of the instructions area of the block
     /// </summary>
-    [XmlElement("InstructionsDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int InstructionsDisplayID { get; set; } = 0;
+    [XmlIgnore]
+    public Guid InstructionsId { get; set; } = Guid.Empty;
 
     /// <summary>
-    /// The display ID of the left response key
+    /// The XML export form of the left response display ID. This property is used to uniquely identify the left response display in the exported configuration, allowing for proper mapping and retrieval of the left response during the test execution.
     /// </summary>
-    [XmlElement("LeftResponseDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int LeftResponseDisplayID { get; set; } = 0;
+    [XmlElement("LeftResponse", Form = XmlSchemaForm.Unqualified)]
+    public string LeftResponse
+    {
+        get
+        {
+            return LeftResponseId.ToString("N");
+        }
+        set
+        {
+            LeftResponseId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
 
     /// <summary>
-    /// The display ID of the right response key
+    /// The Display ID of the left response area of the block
     /// </summary>
-    [XmlElement("RightResponseDisplayID", Form = XmlSchemaForm.Unqualified)]
-    public int RightResponseDisplayID { get; set; } = 0;
+    [XmlIgnore]
+    public Guid LeftResponseId { get; set; } = Guid.Empty;
+
+    /// <summary>
+    /// The XML export form of the right response display ID. This property is used to uniquely identify the right response display in the exported configuration, allowing for proper mapping and retrieval of the right response during the test execution.
+    /// </summary>
+    [XmlElement("RightResponse", Form = XmlSchemaForm.Unqualified)]
+    public string RightResponse
+    {
+        get
+        {
+            return RightResponseId.ToString("N");
+        }
+        set
+        {
+            RightResponseId = string.IsNullOrEmpty(value) ?
+                Guid.Empty : Guid.ParseExact(value, "N");
+        }
+    }
+
+    /// <summary>
+    /// The Display ID of the right response area of the block
+    /// </summary>
+    [XmlIgnore]
+    public Guid RightResponseId { get; set; } = Guid.Empty;
 }

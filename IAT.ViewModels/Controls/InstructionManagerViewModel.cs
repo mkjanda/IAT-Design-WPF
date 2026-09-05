@@ -763,8 +763,10 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is not MockItemInstructionScreen mock) return;
         mock.ShowErrorMark = value;
         NotifyPreview();
-        RefreshInstructionPreview();
         MarkDirty();
+        // Re-apply after MarkDirty. Blocks used to listen to TestModifiedMessage
+        // and stamp SelectedBlock (Block 1) keys onto the shared stage.
+        RefreshInstructionPreview();
     }
 
     partial void OnOutlineCorrectResponseChanged(bool value)
@@ -772,8 +774,8 @@ public partial class InstructionManagerViewModel : ObservableObject
         if (_suppressPropertyPush || SelectedScreen is not MockItemInstructionScreen mock) return;
         mock.OutlineCorrectResponse = value;
         NotifyPreview();
-        RefreshInstructionPreview();
         MarkDirty();
+        RefreshInstructionPreview();
     }
 
     partial void OnSelectedDirectionChanged(string value)
