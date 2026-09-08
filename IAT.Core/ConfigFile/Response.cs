@@ -14,16 +14,16 @@ namespace IAT.Core.ConfigFile;
 /// system-generated responses. The Response class itself is abstract and cannot be instantiated directly; it provides a common 
 /// interface and shared functionality for all response types in the survey configuration system.
 /// </summary>
-[XmlInclude(typeof(Boolean))]
-[XmlInclude(typeof(BoundedLength))]
+[XmlInclude(typeof(TrueFalse))]
+[XmlInclude(typeof(BoundedText))]
 [XmlInclude(typeof(BoundedNumber))]
 [XmlInclude(typeof(Date))]
 [XmlInclude(typeof(FixedDigit))]
 [XmlInclude(typeof(Likert))]
-[XmlInclude(typeof(MultiBoolean))]
-[XmlInclude(typeof(Multiple))]
+[XmlInclude(typeof(MultiSelect))]
+[XmlInclude(typeof(MultiChoice))]
 [XmlInclude(typeof(RegEx))]
-[XmlInclude(typeof(WeightedMultiple))]
+[XmlInclude(typeof(Instruction))]
 public abstract class Response
 {
     /// <summary>
@@ -32,28 +32,36 @@ public abstract class Response
     [XmlIgnore]
     public abstract ResponseType ResponseType { get; }
 
-    /// <summary>
-    /// Initializes a new instance of the Response class.
-    /// </summary>
-    public Response() { }
+    [XmlElement("Format", Form = XmlSchemaForm.Unqualified)]
+    public SurveyFormat Format { get; set; } = new();
+
+}
+
+/// <summary>Instruction / header-less text row. No participant input.</summary>
+public class Instruction : Response
+{
+    [XmlIgnore]
+    public override ResponseType ResponseType => ResponseType.Instruction;
+
+
 }
 
 /// <summary>
 /// Represents a response that indicates a binary choice, typically between true and false, within a response processing
 /// system.
 /// </summary>
-/// <remarks>Use the Boolean class to model responses where only two possible outcomes are valid, such as yes/no
+/// <remarks>Use the TrueFalse class to model responses where only two possible outcomes are valid, such as yes/no
 /// or true/false decisions. This class provides properties to specify the statements associated with each outcome,
 /// enabling clear handling of conditional logic in response workflows.</remarks>
-public class Boolean : Response
+public class TrueFalse : Response
 {
     /// <summary>
     /// The response type for this class is always ResponseType.Boolean, indicating that the response is a binary choice between two options, 
     /// typically represented as "True" and "False". This property is overridden to return the specific response type associated with this class, 
-    /// ensuring that any instance of Boolean will be correctly identified as a boolean response when processed or serialized.
+    /// ensuring that any instance of TrueFalse will be correctly identified as a boolean response when processed or serialized.
     /// </summary>
-    [XmlAttribute("ResponseType", Form = XmlSchemaForm.Unqualified, Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.Boolean;
+    [XmlIgnore]
+    public override ResponseType ResponseType => ResponseType.TrueFalse; 
 
     /// <summary>
     /// Gets or sets the statement that is executed when the associated condition evaluates to true.
@@ -66,24 +74,18 @@ public class Boolean : Response
     /// </summary>
     [XmlElement(ElementName = "FalseStatement", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
     public string FalseStatement { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Initializes a new instance of the Boolean structure.
-    /// </summary>
-    public Boolean() { }
-
 }
 
 /// <summary>
 /// Represents a response type that is defined by a minimum and maximum length constraint. This class is used to specify responses that must adhere to a certain length range,
 /// </summary>
-public class BoundedLength : Response
+public class BoundedText : Response
 {
     /// <summary>
     /// Gets the response type for the current instance.
     /// </summary>
     [XmlAttribute("ResponseType", Form = XmlSchemaForm.Unqualified, Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.BoundedLength;
+    public override ResponseType ResponseType => ResponseType.BoundedText;
 
     /// <summary>
     /// Gets or sets the minimum allowed length for the value.
@@ -99,11 +101,6 @@ public class BoundedLength : Response
     /// </summary>
     [XmlElement(ElementName = "MaxLength", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
     public int MaxLength { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the BoundedLength class.
-    /// </summary>
-    public BoundedLength() { }
 }
 
 /// <summary>
@@ -131,11 +128,6 @@ public class BoundedNumber : Response
     /// </summary>
     [XmlElement(ElementName = "MaxValue", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
     public decimal MaxValue { get; set; }
-
-    /// <summary>
-    /// Instantiates an object of type bounded Number
-    /// </summary>
-    public BoundedNumber() { }
 }
 
 /// <summary>
@@ -158,11 +150,6 @@ public class FixedDigit : Response
     /// </summary>
     [XmlElement(ElementName = "NumDigs", Form = System.Xml.Schema.XmlSchemaForm.Unqualified, IsNullable = false)]
     public int NumDigs { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the FixedDigit class.
-    /// </summary>
-    public FixedDigit() { }
 }
 
 /// <summary>
@@ -173,24 +160,18 @@ public class Likert : Response
     /// <summary>
     /// Gets the response type for this instance.
     /// </summary>
+    [XmlIgnore]
     [XmlAttribute("ResponseType", Form = XmlSchemaForm.Unqualified, Type = typeof(ResponseType))]
     public override ResponseType ResponseType => ResponseType.Likert;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the item is reverse scored.
-    /// </summary>
-    /// <remarks>Set this property to <see langword="true"/> if higher raw values should be interpreted as
-    /// lower scores, and vice versa. This is commonly used in scoring systems where some items are phrased
-    /// negatively.</remarks>
+    [XmlAttribute("NumChoices", Form = XmlSchemaForm.Unqualified)]
+    public int NumChoices { get; set; }
+
     [XmlAttribute("ReverseScored", Form = XmlSchemaForm.Unqualified)]
     public bool ReverseScored { get; set; }
 
-    /// <summary>
-    /// Gets or sets the collection of available choices.
-    /// </summary>
-    [XmlArray]
-    [XmlArrayItem("Text", Form = XmlSchemaForm.Unqualified)]
-    public String[] Choices { get; set; } = [];
+    [XmlElement("Choice", Form = XmlSchemaForm.Unqualified)]
+    public List<string> Choices { get; set; } = new List<string>();
 
     /// <summary>
     /// Initializes a new instance of the Likert class.
@@ -200,42 +181,36 @@ public class Likert : Response
 }
 
 /// <summary>
-/// Represents a response that allows selection of multiple boolean options from a predefined set of choices.
+/// Represents a response that allows selection of multiple options from a predefined set of choices.
 /// </summary>
 /// <remarks>Use this class to define questions or prompts where the user can select more than one option, with
 /// configurable minimum and maximum selection limits. The available choices are specified as an array of strings. The
 /// selection constraints are enforced by the MinSelections and MaxSelections properties.</remarks>
-public class MultiBoolean : Response
+public class MultiSelect: Response
 {
     /// <summary>
     /// Gets the response type for this operation.
     /// </summary>
     [XmlAttribute("ResponseType", Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.MultiBoolean;
+    public override ResponseType ResponseType => ResponseType.MultiSelect;
+
+    [XmlElement("NumValues", Form = XmlSchemaForm.Unqualified)]
+    public int NumValues { get; set; }
 
     /// <summary>
     /// Gets or sets the minimum number of selections required.
     /// </summary>
-    [XmlAttribute(AttributeName = "MinSelections")]
+    [XmlElement("MinSelections", Form = XmlSchemaForm.Unqualified)]
     public int MinSelections { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of selections allowed.
     /// </summary>
-    [XmlAttribute(AttributeName = "MaxSelections")]
+    [XmlElement("MaxSelections", Form = XmlSchemaForm.Unqualified)]
     public int MaxSelections { get; set; }
 
-    /// <summary>
-    /// Gets or sets the collection of available choices.
-    /// </summary>
-    [XmlArray]
-    [XmlArrayItem(ElementName = "Text", Form = XmlSchemaForm.Unqualified)]
-    public string[] Choices { get; set; } = [];
-
-    /// <summary>
-    /// Initializes a new instance of the MultiBoolean class.
-    /// </summary>
-    public MultiBoolean() { }
+    [XmlElement("Label", Form = XmlSchemaForm.Unqualified)]
+    public List<string> Choices { get; set; } = new List<string>();
 }
 
 /// <summary>
@@ -244,25 +219,19 @@ public class MultiBoolean : Response
 /// <remarks>Use this class to model responses where a user or system can select from a predefined set of text
 /// options. This type is commonly used in scenarios such as multiple-choice questions or selection-based
 /// prompts.</remarks>
-public class Multiple : Response
+public class MultiChoice : Response
 {
     /// <summary>
     /// Gets the response type for this instance.
     /// </summary>
     [XmlAttribute("ResponseType", Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.Multiple;
+    public override ResponseType ResponseType => ResponseType.MultiChoice;
 
-    /// <summary>
-    /// Gets or sets the collection of available choices.
-    /// </summary>
-    [XmlArray]
-    [XmlArrayItem(ElementName = "Text", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public string[] Choices { get; set; } = [];
+    [XmlElement("NumChoices", Form = XmlSchemaForm.Unqualified)]
+    public int NumChoices { get; set; }
 
-    /// <summary>
-    /// Initializes a new instance of the Multiple class.
-    /// </summary>
-    public Multiple() { }
+    [XmlElement("Choice", Form = XmlSchemaForm.Unqualified)]
+    public List<string> Choices { get; set; } = new List<string>();
 }
 
 /// <summary>
@@ -279,68 +248,8 @@ public class RegEx : Response
     [XmlAttribute("ResponseType", Type = typeof(ResponseType))]
     public override ResponseType ResponseType => ResponseType.RegEx;
 
-    /// <summary>
-    /// Gets or sets the regular expression pattern used for validation or matching operations.
-    /// </summary>
-    [XmlElement(ElementName = "RegEx", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
+    [XmlElement("Expression", Form = XmlSchemaForm.Unqualified)]
     public string RegularExpression { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Initializes a new instance of the RegEx class.
-    /// </summary>
-    /// <remarks>Use this constructor to create a RegEx object with default settings. To define a specific
-    /// pattern or options, use an overloaded constructor that accepts parameters.</remarks>
-    public RegEx(){ }
-}
-
-/// <summary>
-/// Represents a selectable response option with an associated weight for use in weighted multiple choice scenarios.
-/// </summary>
-/// <remarks>Use this class to define individual choices where each option has a specific weight that influences
-/// its likelihood of selection or scoring. The weight typically determines the relative importance or probability of
-/// the choice when evaluated in the context of a weighted multiple choice response.</remarks>
-public class WeightedChoice 
-{
-    /// <summary>
-    /// Gets or sets the text content associated with this instance.
-    /// </summary>
-    [XmlElement(ElementName = "Text", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public string Text { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the weight value.
-    /// </summary>
-    [XmlElement(ElementName = "Weight", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public int Weight { get; set; } = 0;
-    
-    /// <summary>
-    /// Initializes a new instance of the WeightedChoice class.
-    /// </summary>
-    public WeightedChoice() { }
-}
-
-/// <summary>
-/// Represents a response that contains multiple weighted choices.
-/// </summary>
-public class WeightedMultiple : Response
-{
-    /// <summary>
-    /// Gets the response type for this instance.
-    /// </summary>
-    [XmlAttribute("ResponseType", Type = typeof(ResponseType))]
-    public override ResponseType ResponseType => ResponseType.WeightedMultiple;
-
-    /// <summary>
-    /// Gets or sets the collection of weighted choices available for selection.
-    /// </summary>
-    [XmlArray]
-    [XmlArrayItem("Choice", Form = XmlSchemaForm.Unqualified, IsNullable = false, Type = typeof(WeightedChoice))]
-    public WeightedChoice[] Choices { get; set; } = [];
-
-    /// <summary>
-    /// Initializes a new instance of the WeightedMultiple class.
-    /// </summary>
-    public WeightedMultiple() { }
 }
 
 /// <summary>
@@ -348,6 +257,32 @@ public class WeightedMultiple : Response
 /// </summary>
 /// <remarks>This class provides a simple structure for storing date information without time or timezone details.
 /// It is commonly used for serialization scenarios where only the date is required.</remarks>
+/// <summary>Date bound used by SurveyPage.xslt (<c>StartDate[@HasValue eq 'True']</c>).</summary>
+public class YearMonthDay
+{
+    [XmlAttribute("HasValue")]
+    public string HasValue { get; set; } = "False";
+
+    [XmlElement("Year")]
+    public string Year { get; set; } = "0";
+
+    [XmlElement("Month")]
+    public string Month { get; set; } = "0";
+
+    [XmlElement("Day")]
+    public string Day { get; set; } = "0";
+
+    public static YearMonthDay None() => new();
+
+    public static YearMonthDay From(DateOnly date) => new()
+    {
+        HasValue = "True",
+        Year = date.Year.ToString(),
+        Month = date.Month.ToString(),
+        Day = date.Day.ToString()
+    };
+}
+
 public class DateEntry
 {
     /// <summary>
@@ -384,70 +319,93 @@ public class Date : Response
     [XmlAttribute("ResponseType", Type = typeof(ResponseType))]
     public override ResponseType ResponseType => ResponseType.Date;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether a start date is specified.
-    /// </summary>
     [XmlAttribute("HasStartDate", Form = XmlSchemaForm.Unqualified)]
-    public bool HasStartDate { get; set; }
+    public bool HasStartDate
+    {
+        get { return field; }
+        set { if (field == value) return; field = value; if (value == false) StartDate = DateOnly.MinValue; }
+    } = false;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether an end date is specified.
-    /// </summary>
     [XmlAttribute("HasEndDate", Form = XmlSchemaForm.Unqualified)]
-    public bool HasEndDate { get; set; }
+    public bool HasEndDate
+    {
+        get { return field; }
+        set { if (field == value) return; field = value; if (value == false) EndDate = DateOnly.MaxValue; }
+    } = false;
 
-    /// <summary>
-    /// Gets or sets the date value associated with this response.
-    /// </summary>
-    [XmlElement("StartDate", Form = XmlSchemaForm.Unqualified, IsNullable = true, Type = typeof(DateEntry))]
-    public DateEntry DateValue { get; set; } = new DateEntry();
+    [XmlIgnore]
+    public DateOnly StartDate 
+    { 
+        get { return field; } 
+        set { field = value; HasStartDate = value == DateOnly.MinValue ? false : true; } 
+    } = DateOnly.MinValue;
 
-    /// <summary>
-    /// Gets or sets the end date for the associated period or event.
-    /// </summary>
-    [XmlElement("EndDate", Form = XmlSchemaForm.Unqualified, IsNullable = true, Type = typeof(DateEntry))]
-    public DateEntry EndDate{ get; set; } = new DateEntry();
+    [XmlIgnore]
+    public DateOnly EndDate
+    {
+        get { return field; }
+        set { field = value; HasEndDate = value == DateOnly.MaxValue ? false : true; }
+    } = DateOnly.MaxValue;
 
-    /// <summary>
-    /// Initializes a new instance of the Date class.
-    /// </summary>
-    public Date() { }
+
+    [XmlElement("StartMonth", Form = XmlSchemaForm.Unqualified)]
+    public int StartMonth
+    {
+        get { return StartDate.Month; }
+        set { 
+            var year = StartDate.Year;
+            StartDate = StartDate.AddMonths(value - StartDate.Month); 
+            StartDate = StartDate.AddYears(year - StartDate.Year);
+        }
+    }
+
+    [XmlElement("StartDay", Form = XmlSchemaForm.Unqualified)]
+    public int StartDay
+    {
+        get { return StartDate.Day; }
+        set
+        {
+            var month = StartDate.Month;
+            StartDate = StartDate.AddDays(value - StartDate.Day);
+            StartDate = StartDate.AddMonths(month - StartDate.Month);
+        }
+    }
+
+    [XmlElement("StartYear", Form = XmlSchemaForm.Unqualified)]
+    public int StartYear
+    {
+        get { return StartDate.Year; }
+        set { StartDate = StartDate.AddYears(value - StartDate.Year); }
+    }
+
+    [XmlElement("EndMonth", Form = XmlSchemaForm.Unqualified)]
+    public int EndMonth
+    {
+        get { return EndDate.Month; }
+        set
+        {
+            var year = EndDate.Year;
+            EndDate = EndDate.AddMonths(value - EndDate.Month);
+            EndDate = EndDate.AddYears(year - EndDate.Year);
+        }
+    }
+
+    [XmlElement("EndDay", Form = XmlSchemaForm.Unqualified)]
+    public int EndDay
+    {
+        get { return EndDate.Day; }
+        set { 
+            var month = EndDate.Month;
+            EndDate = EndDate.AddDays(value - EndDate.Day);
+            EndDate = EndDate.AddMonths(month - EndDate.Month);
+        }
+    }
+
+    [XmlElement("EndYear", Form = XmlSchemaForm.Unqualified)]
+    public int EndYear
+    {
+        get { return EndDate.Year; }
+        set { EndDate = EndDate.AddYears(value - EndDate.Year); }
+    }
 }
 
-/// <summary>
-/// Represents a response item containing survey metadata and a collection of unique response strings for XML
-/// serialization.
-/// </summary>
-/// <remarks>Use this class to encapsulate survey response data, including the survey name, item number, whether
-/// the item is additive, and a list of unique responses. The class is designed for XML serialization scenarios where
-/// each unique response is represented as an XML element. Property values should be set prior to serialization to
-/// ensure correct output.</remarks>
-public class UniqueResponseItem
-{
-    /// <summary>
-    /// Gets or sets the collection of unique response strings to be serialized as an XML array.
-    /// </summary>
-    /// <remarks>Each element in the collection represents a distinct response. The property is serialized
-    /// with the XML element name "UniqueResponses" for each item. Null values are allowed in the collection.</remarks>
-    [XmlArray]
-    [XmlArrayItem("UniqueResponses", Form = XmlSchemaForm.Unqualified, IsNullable = true)]
-    private List<string> UniqueResponses = [];
-
-    /// <summary>
-    /// Gets or sets the name of the survey.
-    /// </summary>
-    [XmlElement("SurveyName", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public string SurveyName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the item number associated with this instance.
-    /// </summary>
-    [XmlElement("ItemNum", Form = XmlSchemaForm.Unqualified, IsNullable = false)]   
-    public int ItemNum { get; set; } = -1;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the operation is additive.
-    /// </summary>
-    [XmlElement("Additive", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public bool Additive { get; set; } = false;
-}

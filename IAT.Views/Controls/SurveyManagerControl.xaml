@@ -6,6 +6,7 @@
              xmlns:domain="clr-namespace:IAT.Core.Domain;assembly=IAT.Core"
              xmlns:vm="clr-namespace:IAT.ViewModels.Controls;assembly=IAT.ViewModels"
              xmlns:conv="clr-namespace:IAT.Views.Converters;assembly=IAT.Views"
+             xmlns:behaviors="clr-namespace:IAT.Views.Behaviors"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1200"
              Background="#1E1E1E">
@@ -96,6 +97,22 @@
 
         <!-- ── Response definition editors (bound via ContentControl to CurrentResponse) ── -->
 
+        <DataTemplate DataType="{x:Type domain:TrueFalseResponse}">
+            <StackPanel>
+                <TextBlock Text="True / False" Foreground="#4EC9B0" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                <TextBlock Text="True statement" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
+                <TextBox Text="{Binding TrueStatement, UpdateSourceTrigger=PropertyChanged}"
+                         behaviors:PlaceholderAttached.Text="True"
+                         Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
+                         Padding="6" Margin="0,0,0,8"/>
+                <TextBlock Text="False statement" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
+                <TextBox Text="{Binding FalseStatement, UpdateSourceTrigger=PropertyChanged}"
+                         behaviors:PlaceholderAttached.Text="False"
+                         Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
+                         Padding="6"/>
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type domain:LikertResponse}">
             <StackPanel>
                 <TextBlock Text="Likert Scale" Foreground="#4EC9B0" FontWeight="SemiBold" Margin="0,0,0,10"/>
@@ -132,6 +149,7 @@
                             DockPanel.Dock="Right" Width="50" Height="28" Margin="6,0,0,0"
                             Background="#007ACC" Foreground="White" BorderThickness="0"/>
                     <TextBox Text="{Binding DataContext.NewChoiceText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                             behaviors:PlaceholderAttached.Text="New choice"
                              Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6" MinHeight="40"
                              VerticalContentAlignment="Center"/>
                 </DockPanel>
@@ -155,6 +173,7 @@
                             DockPanel.Dock="Right" Width="50" Height="28" Margin="6,0,0,0"
                             Background="#007ACC" Foreground="White" BorderThickness="0"/>
                     <TextBox Text="{Binding DataContext.NewChoiceText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                             behaviors:PlaceholderAttached.Text="New choice"
                              Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6" MinHeight="40"
                              VerticalContentAlignment="Center"/>
                 </DockPanel>
@@ -195,6 +214,7 @@
                             DockPanel.Dock="Right" Width="50" Height="28" Margin="6,0,0,0"
                             Background="#007ACC" Foreground="White" BorderThickness="0"/>
                     <TextBox Text="{Binding DataContext.NewChoiceText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                             behaviors:PlaceholderAttached.Text="New choice"
                              Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6" MinHeight="40"
                              VerticalContentAlignment="Center"/>
                 </DockPanel>
@@ -205,10 +225,10 @@
             <StackPanel>
                 <TextBlock Text="Date Response" Foreground="#4EC9B0" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Text="Min date (yyyy-MM-dd, blank = none)" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
-                <TextBox Text="{Binding MinDate, Converter={StaticResource DateOnlyToString}, UpdateSourceTrigger=PropertyChanged}"
+                <TextBox Text="{Binding MinDate, Converter={StaticResource DateOnlyToString}, UpdateSourceTrigger=LostFocus}"
                          Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6" Margin="0,0,0,8"/>
                 <TextBlock Text="Max date (yyyy-MM-dd, blank = none)" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
-                <TextBox Text="{Binding MaxDate, Converter={StaticResource DateOnlyToString}, UpdateSourceTrigger=PropertyChanged}"
+                <TextBox Text="{Binding MaxDate, Converter={StaticResource DateOnlyToString}, UpdateSourceTrigger=LostFocus}"
                          Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6"/>
             </StackPanel>
         </DataTemplate>
@@ -278,6 +298,7 @@
                 <TextBlock Text="Regular Expression" Foreground="#4EC9B0" FontWeight="SemiBold" Margin="0,0,0,10"/>
                 <TextBlock Text="Pattern" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
                 <TextBox Text="{Binding Pattern, UpdateSourceTrigger=PropertyChanged}"
+                         behaviors:PlaceholderAttached.Text=".+"
                          Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555" Padding="6"
                          FontFamily="Consolas" Margin="0,0,0,8"/>
                 <TextBlock Text="Validation message (shown on failure)" Foreground="#AAA" FontSize="11" Margin="0,0,0,2"/>
@@ -359,6 +380,7 @@
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Survey Name" Foreground="#AAA" FontSize="12" Margin="0,0,0,4"/>
                     <TextBox Grid.Row="1" Grid.Column="0"
                              Text="{Binding SurveyName, UpdateSourceTrigger=PropertyChanged}"
+                             behaviors:PlaceholderAttached.Text="{Binding SurveyNamePlaceholder}"
                              Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
                              Padding="8,6" Margin="0,0,12,0"
                              IsEnabled="{Binding SelectedSurvey, Converter={StaticResource NullToBool}, FallbackValue=False}"/>
@@ -432,10 +454,126 @@
                         <TextBlock Text="Text" Foreground="#AAA" FontSize="12" Margin="0,0,0,4"
                                    Visibility="{Binding ShowItemTextEditor, Converter={StaticResource BoolToVisibility}}"/>
                         <TextBox Text="{Binding ItemText, UpdateSourceTrigger=PropertyChanged}"
+                                 behaviors:PlaceholderAttached.Text="{Binding ItemTextPlaceholder}"
                                  TextWrapping="Wrap" AcceptsReturn="True" MinHeight="60"
                                  Background="#2D2D2D" Foreground="#E0E0E0" BorderBrush="#555"
                                  Padding="8" Margin="0,0,0,12"
                                  Visibility="{Binding ShowItemTextEditor, Converter={StaticResource BoolToVisibility}}"/>
+
+                        <!-- Header / caption style — font, fill, banner, separator for the SVG effect -->
+                        <StackPanel Visibility="{Binding ShowHeaderStyleEditor, Converter={StaticResource BoolToVisibility}}"
+                                    Margin="0,0,0,16">
+                            <TextBlock Text="Caption Style" Foreground="#F7C46C" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                            <Border Background="{Binding HeaderBackPreviewBrush}"
+                                    BorderBrush="#444" BorderThickness="1" CornerRadius="4"
+                                    Padding="8,10" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ItemText}"
+                                               FontFamily="{Binding HeaderFontFamily}"
+                                               FontSize="{Binding HeaderFontSize}"
+                                               Foreground="{Binding HeaderFontPreviewBrush}"
+                                               FontWeight="SemiBold"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"/>
+                                    <Border Margin="0,8,0,0" HorizontalAlignment="Stretch"
+                                            Height="{Binding HeaderSeparatorWidth}"
+                                            Background="{Binding HeaderSeparatorPreviewBrush}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="Font" Foreground="#AAA" FontSize="11" Margin="0,0,0,4"/>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="72"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox Grid.Column="0"
+                                          ItemsSource="{Binding AvailableFontFamilies}"
+                                          SelectedItem="{Binding HeaderFontFamily}"
+                                          Style="{StaticResource DarkComboBox}" Height="28"
+                                          ToolTip="Font family written as Caption/FontName"/>
+                                <ComboBox Grid.Column="2"
+                                          ItemsSource="{Binding AvailableFontSizes}"
+                                          SelectedItem="{Binding HeaderFontSize}"
+                                          Style="{StaticResource DarkComboBox}" Height="28"
+                                          ToolTip="Font size written as Caption/FontSize"/>
+                            </Grid>
+
+                            <TextBlock Text="Text color" Foreground="#AAA" FontSize="11" Margin="0,0,0,4"/>
+                            <WrapPanel Margin="0,0,0,8">
+                                <Button Width="22" Height="22" Margin="1" Background="#000000" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Black" ToolTip="Black"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#FFFFFF" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="White" ToolTip="White"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#CD212A" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Flame Scarlet" ToolTip="Flame Scarlet"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#00A1B4" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Bluebird" ToolTip="Bluebird"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#009473" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Emerald" ToolTip="Emerald"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#5F4B8B" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Ultra Violet" ToolTip="Ultra Violet"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#FF3EA5" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Knockout Pink" ToolTip="Knockout Pink"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#EA6759" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderTextPaletteCommand}" CommandParameter="Ember Glow" ToolTip="Ember Glow"/>
+                                <Border Width="22" Height="22" Margin="4,1,1,1" BorderBrush="#888" BorderThickness="1"
+                                        Background="{Binding HeaderFontPreviewBrush}" ToolTip="Current text color"/>
+                            </WrapPanel>
+
+                            <TextBlock Text="Background color" Foreground="#AAA" FontSize="11" Margin="0,0,0,4"/>
+                            <WrapPanel Margin="0,0,0,8">
+                                <Button Width="22" Height="22" Margin="1" Background="#000000" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Black" ToolTip="Black"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#FFFFFF" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="White" ToolTip="White"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#CD212A" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Flame Scarlet" ToolTip="Flame Scarlet"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#00A1B4" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Bluebird" ToolTip="Bluebird"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#009473" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Emerald" ToolTip="Emerald"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#5F4B8B" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Ultra Violet" ToolTip="Ultra Violet"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#FF3EA5" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Knockout Pink" ToolTip="Knockout Pink"/>
+                                <Button Width="22" Height="22" Margin="1" Background="#EA6759" BorderBrush="#555"
+                                        Command="{Binding ApplyHeaderBackPaletteCommand}" CommandParameter="Ember Glow" ToolTip="Ember Glow"/>
+                                <Border Width="22" Height="22" Margin="4,1,1,1" BorderBrush="#888" BorderThickness="1"
+                                        Background="{Binding HeaderBackPreviewBrush}" ToolTip="Current background color"/>
+                            </WrapPanel>
+
+                            <TextBlock Text="Separator color" Foreground="#AAA" FontSize="11" Margin="0,0,0,4"/>
+                            <DockPanel Margin="0,0,0,8">
+                                <ComboBox DockPanel.Dock="Right" Width="56" Height="28" Margin="8,0,0,0"
+                                          ItemsSource="{Binding AvailableSeparatorWidths}"
+                                          SelectedItem="{Binding HeaderSeparatorWidth}"
+                                          Style="{StaticResource DarkComboBox}"
+                                          ToolTip="Separator thickness (Caption/BorderWidth)"/>
+                                <WrapPanel>
+                                    <Button Width="22" Height="22" Margin="1" Background="#000000" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Black" ToolTip="Black"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#FFFFFF" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="White" ToolTip="White"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#CD212A" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Flame Scarlet" ToolTip="Flame Scarlet"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#00A1B4" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Bluebird" ToolTip="Bluebird"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#009473" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Emerald" ToolTip="Emerald"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#5F4B8B" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Ultra Violet" ToolTip="Ultra Violet"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#FF3EA5" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Knockout Pink" ToolTip="Knockout Pink"/>
+                                    <Button Width="22" Height="22" Margin="1" Background="#EA6759" BorderBrush="#555"
+                                            Command="{Binding ApplyHeaderSeparatorPaletteCommand}" CommandParameter="Ember Glow" ToolTip="Ember Glow"/>
+                                    <Border Width="22" Height="22" Margin="4,1,1,1" BorderBrush="#888" BorderThickness="1"
+                                            Background="{Binding HeaderSeparatorPreviewBrush}" ToolTip="Current separator color"/>
+                                </WrapPanel>
+                            </DockPanel>
+                        </StackPanel>
 
                         <!-- Optional override (questions only) -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,16"
@@ -453,13 +591,14 @@
                                   Style="{StaticResource DarkComboBox}"
                                   Margin="0,0,0,12"
                                   Visibility="{Binding CurrentResponse, Converter={StaticResource NullToVisibility}}">
+                            <ComboBoxItem Content="True False"/>
                             <ComboBoxItem Content="Likert"/>
-                            <ComboBoxItem Content="MultipleChoice"/>
-                            <ComboBoxItem Content="MultiSelect"/>
+                            <ComboBoxItem Content="Multi-Choice"/>
+                            <ComboBoxItem Content="Multi-Select"/>
                             <ComboBoxItem Content="Date"/>
-                            <ComboBoxItem Content="FixedDigits"/>
-                            <ComboBoxItem Content="BoundedText"/>
-                            <ComboBoxItem Content="BoundedNumber"/>
+                            <ComboBoxItem Content="Fixed Digits"/>
+                            <ComboBoxItem Content="Bounded Text"/>
+                            <ComboBoxItem Content="Bounded Number"/>
                             <ComboBoxItem Content="Regex"/>
                         </ComboBox>
 

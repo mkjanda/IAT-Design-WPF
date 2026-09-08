@@ -1,96 +1,103 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
-using System.Xml.Schema;
 using System.Windows.Media;
+using System.Xml.Schema;
+using System.Xml.Serialization;
+using IAT.Core.Extensions;
 
 namespace IAT.Core.ConfigFile;
 
 /// <summary>
-/// Represents the visual style settings for a survey caption, including text color, background color, border color,
-/// border width, and font size.
+/// Survey caption / header as consumed by <c>SurveyPage.xslt</c> <c>GenerateCaption</c>.
+/// Channel values are two uppercase hex digits with no prefix.
 /// </summary>
-/// <remarks>Use this class to configure the appearance of caption elements in a survey interface. All properties
-/// must be set to valid color and size values to ensure correct rendering. This type is typically used when customizing
-/// survey UI components for improved readability and visual consistency.</remarks>
 public class SurveyCaption
 {
-    private Color _fontColor = Colors.Black, _backColor = Colors.White, _borderColor = Colors.Black;
+    [XmlElement("Text", Form = XmlSchemaForm.Unqualified)]
+    public string Text { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The color of the caption text. This property is used to specify the color of the caption text in a survey. It is 
-    /// represented as a Color object, which can be defined using RGB values or named colors. The FontColor property allows 
-    /// you to customize the appearance of the caption text to enhance readability and visual appeal in the survey interface.
-    /// </summary>
-    [XmlElement(ElementName = "FontColor", Form = XmlSchemaForm.Unqualified, Type = typeof(string))]
-    public string FontColor
+    [XmlElement("TextWidth", Form = XmlSchemaForm.Unqualified)]
+    public string TextWidth { get; set; } = "0";
+
+    [XmlElement("BorderWidth", Form = XmlSchemaForm.Unqualified)]
+    public string BorderWidth { get; set; } = "8";
+
+    [XmlElement("FontName", Form = XmlSchemaForm.Unqualified)]
+    public string FontName { get; set; } = "Segoe UI";
+
+    [XmlElement("LineHeight", Form = XmlSchemaForm.Unqualified)]
+    public string LineHeight { get; set; } = "24";
+
+    [XmlElement("FontSize", Form = XmlSchemaForm.Unqualified)]
+    public string FontSize { get; set; } = "24";
+
+    [XmlElement("FontColorR", Form = XmlSchemaForm.Unqualified)]
+    public string FontColorR
     {
-        get
-        {
-            return $"#{_fontColor.R.ToString("{X:2}")}{_fontColor.G.ToString("{X:2}")}{_fontColor.B.ToString("{X:2}")}";
-        }
-        set
-        {
-            var r = Convert.ToByte(value.Substring(1, 2), 16);
-            var g = Convert.ToByte(value.Substring(3, 2), 16);
-            var b = Convert.ToByte(value.Substring(5, 2), 16);
-            _fontColor = Color.FromRgb(r, g, b);
-        }
-    }
-    /// <summary>
-    /// Gets or sets the background color.
-    /// </summary>
-    [XmlElement(ElementName = "BackColor", Form = XmlSchemaForm.Unqualified, Type = typeof(string))]
-    public string BackColor
-    {
-        get
-        {
-            return $"#{_backColor.R.ToString("{X:2}")}{_backColor.G.ToString("{X:2}")}{_backColor.B.ToString("{X:2}")}";
-        }
-        set
-        {
-            var r = Convert.ToByte(value.Substring(1, 2), 16);
-            var g = Convert.ToByte(value.Substring(3, 2), 16);
-            var b = Convert.ToByte(value.Substring(5, 2), 16);
-            _backColor = Color.FromRgb(r, g, b);
-        }
+        get { return $"{FontColor.Red()}"; }
+        set { FontColor = Color.FromRgb(Convert.ToByte(value, 16), FontColor.G, FontColor.B); }
     }
 
-    /// <summary>
-    /// Gets or sets the color used to draw the border.
-    /// </summary>
-    [XmlElement(ElementName = "BorderColor", Form = XmlSchemaForm.Unqualified, Type = typeof(string))]
-    public string BorderColor
+    [XmlElement("FontColorG", Form = XmlSchemaForm.Unqualified)]
+    public string FontColorG
     {
-        get
-        {
-            return $"#{_borderColor.R.ToString("{X:2}")}{_borderColor.G.ToString("{X:2}")}{_borderColor.B.ToString("{X:2}")}";
-        }
-        set
-        {
-            var r = Convert.ToByte(value.Substring(1, 2), 16);
-            var g = Convert.ToByte(value.Substring(3, 2), 16);
-            var b = Convert.ToByte(value.Substring(5, 2), 16);
-            _borderColor = Color.FromRgb(r, g, b);
-        }
+        get { return $"{FontColor.Green()}"; }
+        set { FontColor = Color.FromRgb(FontColor.R, Convert.ToByte(value, 16), FontColor.B); }
     }
 
-    /// <summary>
-    /// Gets or sets the width of the border, in pixels.
-    /// </summary>
-    [XmlElement(ElementName = "BorderWidth", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public int BorderWidth { get; set; }
+    [XmlElement("FontColorB", Form = XmlSchemaForm.Unqualified)]
+    public string FontColorB
+    {
+        get { return $"{FontColor.Blue()}"; }
+        set { FontColor = Color.FromRgb(FontColor.R, FontColor.G, Convert.ToByte(value, 16)); }
+    }
 
-    /// <summary>
-    /// Gets or sets the font size to be used for text rendering.
-    /// </summary>
-    [XmlElement(ElementName = "FontSize", Form = XmlSchemaForm.Unqualified, IsNullable = false)]
-    public int FontSize { get; set; }
+    [XmlIgnore]
+    public Color FontColor { get; set; }
 
-    /// <summary>
-    /// Initializes a new instance of the SurveyCaption class.
-    /// </summary>
-    public SurveyCaption() { }
+    [XmlElement("BackColorR", Form = XmlSchemaForm.Unqualified)]
+    public string BackColorR
+    {
+        get { return $"{BackColor.Red()}"; }
+        set { BackColor = Color.FromRgb(Convert.ToByte(value, 16), BackColor.G, BackColor.B); }
+    }
 
+    [XmlElement("BackColorG", Form = XmlSchemaForm.Unqualified)]
+    public string BackColorG
+    {
+        get { return $"{BackColor.Green()}"; }
+        set { BackColor = Color.FromRgb(BackColor.R, Convert.ToByte(value, 16), BackColor.B); }
+    }
+
+    [XmlElement("BackColorB", Form = XmlSchemaForm.Unqualified)]
+    public string BackColorB
+    {
+        get { return $"{BackColor.Blue()}"; }
+        set { BackColor = Color.FromRgb(BackColor.R, BackColor.G, Convert.ToByte(value, 16)); }
+    }
+
+    [XmlIgnore]
+    public Color BackColor { get; set; }
+
+    [XmlElement("BorderColorR", Form = XmlSchemaForm.Unqualified)]
+    public string BorderColorR
+    {
+        get { return $"{BorderColor.Red()}"; }
+        set { BorderColor = Color.FromRgb(Convert.ToByte(value, 16), BorderColor.G, BorderColor.B); }
+    }
+
+    [XmlElement("BorderColorG", Form = XmlSchemaForm.Unqualified)]
+    public string BorderColorG
+    {
+        get { return $"{BorderColor.Green()}"; }
+        set { BorderColor = Color.FromRgb(BorderColor.R, Convert.ToByte(value, 16), BorderColor.B); }
+    }
+
+    [XmlElement("BorderColorB", Form = XmlSchemaForm.Unqualified)]
+    public string BorderColorB
+    {
+        get { return $"{BorderColor.Blue()}"; }
+        set { BorderColor = Color.FromRgb(BorderColor.R, BorderColor.G, Convert.ToByte(value, 16)); }
+    }
+
+    [XmlIgnore]
+    public Color BorderColor { get; set; }
 }

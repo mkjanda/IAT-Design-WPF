@@ -193,6 +193,7 @@ namespace IAT.Core.Services.Export
             if (blockEvent.BlockNumber == 4) blockEvent.AlternatedWith = 7;
             if (blockEvent.BlockNumber == 6) blockEvent.AlternatedWith = 3;
             if (blockEvent.BlockNumber == 7) blockEvent.AlternatedWith = 4;
+            exportContext.Events.Add(blockEvent);
             foreach (var instructionsId in block.InstructionsIds)
             {
                 switch (exportContext.Test.GetInstructionScreenById(instructionsId))

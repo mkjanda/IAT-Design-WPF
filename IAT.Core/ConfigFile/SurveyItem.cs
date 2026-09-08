@@ -1,33 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
+using System.ComponentModel.DataAnnotations;
 using System.Xml.Schema;
+using System.Xml.Serialization;
 
 namespace IAT.Core.ConfigFile;
 
 /// <summary>
-/// Represents a single item in a survey, including its display text, response, and whether it is optional.
+/// One survey row. The typed child name (Boolean, Likert, …) is what SurveyPage.xslt
+/// dispatches on. <see cref="ResponseMarker"/> exists only so the Instruction-class
+/// test (<c>Response/@Type</c>) has a node to read.
 /// </summary>
-/// <remarks>Use this class to define individual questions or prompts within a survey. Each SurveyItem contains
-/// the text to display to the user, an associated response, and a flag indicating if a response is required.</remarks>
 public class SurveyItem
 {
-    /// <summary>
-    /// Gets or sets a value indicating whether the survey item is optional. If true, the respondent is not required to provide a response to this item.
-    /// </summary>
-    [XmlAttribute(AttributeName = "Optional", Form = XmlSchemaForm.Unqualified)]
+    [XmlAttribute("Optional")]
     public bool Optional { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the text to display for this survey item.
-    /// </summary>
-    [XmlElement(ElementName = "Text", Form = XmlSchemaForm.Unqualified)]
-    public required string Text { get; set; }
 
-    /// <summary>
-    /// Gets or sets the response data associated with the current operation.
-    /// </summary>
-    [XmlElement(ElementName = "Response", Form = XmlSchemaForm.Unqualified, Type = typeof(Response))]
-    public required Response Response { get; set; }
+    [XmlAttribute("ItemNum")]
+    public int ItemNum { get; set; }
+
+    [XmlAttribute("QuestionNum")]
+    public int QuestionNum { get; set; }
+
+    [XmlElement("Format", Form = XmlSchemaForm.Unqualified)]
+    public SurveyFormat Format { get; set; } = new();
+
+    [XmlElement("Text", Form = XmlSchemaForm.Unqualified)]
+    public string Text { get; set; } = string.Empty;
+    
+    [XmlElement("TrueFalse", typeof(TrueFalse), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("Likert", typeof(Likert), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("Date", typeof(Date), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("MultiChoice", typeof(MultiChoice), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("MultiSelect", typeof(MultiSelect), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("BoundedText", typeof(BoundedText), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("BoundedNumber", typeof(BoundedNumber), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("FixedDigit", typeof(FixedDigit), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("RegEx", typeof(RegEx), Form = XmlSchemaForm.Unqualified)]
+    [XmlElement("Instruction", typeof(Instruction), Form = XmlSchemaForm.Unqualified)]
+    public Response? Response { get; set; }
+
 }

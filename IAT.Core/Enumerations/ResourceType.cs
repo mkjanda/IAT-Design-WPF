@@ -28,7 +28,10 @@ namespace IAT.Core.Enumerations
         KeyOutline,
 
         [XmlEnum("ResponseKey")]
-        ResponseKey
+        ResponseKey,
+
+        [XmlEnum("SurveyImage")]
+        SurveyImage
 
     }
 }

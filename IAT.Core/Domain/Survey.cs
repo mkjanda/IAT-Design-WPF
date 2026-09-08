@@ -27,11 +27,24 @@ public partial class Survey : ObservableObject
     [ObservableProperty]
     private bool _allQuestionsOptional;
 
-    [ObservableProperty]
-    private SurveyType _surveyType = SurveyType.Before;
-
     /// <summary>Ordered list of headers, instructions, images and questions.</summary>
     public ObservableCollection<SurveyItem> Items { get; } = new();
+
+    /// <summary>
+    /// JSON-friendly alias for <see cref="Items"/>. Get-only observable collections do not
+    /// round-trip through System.Text.Json on their own.`
+    /// </summary>
+    public List<SurveyItem> AllItems
+    {
+        get => Items.ToList();
+        set
+        {
+            if (Items.Count > 0 || value is null) return;
+            Items.Clear();
+            foreach (var item in value)
+                Items.Add(item);
+        }
+    }
 }
 
 /// <summary>
@@ -56,6 +69,13 @@ public partial class SurveyHeader : SurveyItem
 {
     [ObservableProperty]
     private string _text = string.Empty;
+
+    /// <summary>
+    /// Caption style consumed by the SVG header effect (font, colors, separator).
+    /// Always present so package load of older tests still gets the factory defaults.
+    /// </summary>
+    [ObservableProperty]
+    private SurveyHeaderStyle _style = new();
 }
 
 public partial class SurveyInstruction : SurveyItem

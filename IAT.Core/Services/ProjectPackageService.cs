@@ -35,7 +35,10 @@ public class ProjectPackageService : IProjectPackageService
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
-        Converters = { new KeyedDirectionJsonConverter() }
+        Converters =
+        {
+            new KeyedDirectionJsonConverter()
+        }
     };
 
     private readonly Dictionary<Guid, byte[]> _imageCache = new();
@@ -71,6 +74,44 @@ public class ProjectPackageService : IProjectPackageService
             else if (stim is TextStimulus textStim)
             {
                 await _imagePackageService.ImportTextStimulusAsync(textStim, package, ct).ConfigureAwait(false);
+            }
+        }
+
+        await EmbedSurveyImagesAsync(test, package, ct).ConfigureAwait(false);
+    }
+
+    private async Task EmbedSurveyImagesAsync(IatTest test, Package package, CancellationToken ct)
+    {
+        foreach (var survey in test.Surveys)
+        {
+            foreach (var imageItem in survey.Items.OfType<SurveyImage>())
+            {
+                if (imageItem.ImageId == Guid.Empty)
+                    continue;
+
+                var bytes = GetImageBytes(imageItem.ImageId);
+                if (bytes.Length == 0)
+                    continue;
+
+                var ext = GetImageType(imageItem.ImageId);
+                if (string.IsNullOrWhiteSpace(ext))
+                    ext = "png";
+                if (!ext.StartsWith('.'))
+                    ext = "." + ext;
+
+                var uri = PackUriHelper.CreatePartUri(new Uri($"images/{imageItem.ImageId}{ext}", UriKind.Relative));
+                if (package.PartExists(uri))
+                    continue;
+
+                var contentType = ext.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                    ? "image/png"
+                    : ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+                        ? "image/jpeg"
+                        : "application/octet-stream";
+
+                var part = package.CreatePart(uri, contentType);
+                await using var stream = part.GetStream();
+                await stream.WriteAsync(bytes, ct).ConfigureAwait(false);
             }
         }
     }
@@ -163,25 +204,17 @@ public class ProjectPackageService : IProjectPackageService
         // Populate image cache while the package is still open so subsequent Save works offline.
         foreach (var stim in test.Stimuli.OfType<ImageStimulus>())
         {
-            foreach (var ext in new[] { ".png", ".jpg", ".jpeg", ".bmp", ".gif" })
+            if (await TryCacheImagePartAsync(package, stim.Id, stim.FileName, ct).ConfigureAwait(false) is { } cached)
             {
-                var uri = PackUriHelper.CreatePartUri(new Uri($"images/{stim.Id}{ext}", UriKind.Relative));
-                if (!package.PartExists(uri)) continue;
-
-                await using var partStream = package.GetPart(uri).GetStream();
-                using var ms = new MemoryStream();
-                await partStream.CopyToAsync(ms, ct).ConfigureAwait(false);
-                var bytes = ms.ToArray();
-                _imageCache[stim.Id] = bytes;
-                _imageTypes[stim.Id] = ext.TrimStart('.');
-                _originalNames[stim.Id] = string.IsNullOrWhiteSpace(stim.FileName)
-                    ? $"image{ext}"
-                    : Path.GetFileName(stim.FileName);
-                stim.PackageUri = uri;
-                // Never keep a machine-local full path in the domain after load.
+                stim.PackageUri = cached;
                 stim.FileName = Path.GetFileName(stim.FileName);
-                break;
             }
+        }
+
+        foreach (var survey in test.Surveys)
+        {
+            foreach (var imageItem in survey.Items.OfType<SurveyImage>())
+                await TryCacheImagePartAsync(package, imageItem.ImageId, null, ct).ConfigureAwait(false);
         }
 
         test.RebuildCaches();
@@ -192,6 +225,31 @@ public class ProjectPackageService : IProjectPackageService
             block.IatTest = test;
 
         return test;
+    }
+
+    private async Task<Uri?> TryCacheImagePartAsync(Package package, Guid imageId, string? fileName, CancellationToken ct)
+    {
+        if (imageId == Guid.Empty)
+            return null;
+
+        foreach (var ext in new[] { ".png", ".jpg", ".jpeg", ".bmp", ".gif" })
+        {
+            var uri = PackUriHelper.CreatePartUri(new Uri($"images/{imageId}{ext}", UriKind.Relative));
+            if (!package.PartExists(uri))
+                continue;
+
+            await using var partStream = package.GetPart(uri).GetStream();
+            using var ms = new MemoryStream();
+            await partStream.CopyToAsync(ms, ct).ConfigureAwait(false);
+            _imageCache[imageId] = ms.ToArray();
+            _imageTypes[imageId] = ext.TrimStart('.');
+            _originalNames[imageId] = string.IsNullOrWhiteSpace(fileName)
+                ? $"image{ext}"
+                : Path.GetFileName(fileName);
+            return uri;
+        }
+
+        return null;
     }
 
     /// <inheritdoc />

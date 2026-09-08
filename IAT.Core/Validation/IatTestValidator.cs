@@ -40,9 +40,9 @@ public class IatTestValidator : AbstractValidator<IatTest>
         RuleForEach(x => x.AllBlocks)
             .SetValidator(blockValidator);
 
-        // Cross-cutting rule: every stimulus must be referenced by a trial or a mock-item screen.
+        // Cross-cutting rule: every stimulus must be referenced by a trial, mock-item screen, or survey image.
         RuleFor(x => x)
             .Must(test => test.AllStimuli.All(s => test.IsStimulusReferenced(s.Id)))
-            .WithMessage("Every stimulus must be used in at least one trial or mock-item screen");
+            .WithMessage("Every stimulus must be used in at least one trial, mock-item screen, or survey image");
     }
 }

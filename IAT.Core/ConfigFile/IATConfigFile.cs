@@ -18,17 +18,6 @@ namespace IAT.Core.ConfigFile;
 public class IATConfigFile : IWebSocketMessage  
 {
     /// <summary>
-    /// Gets or sets the number of surveys to be conducted before the main survey sequence begins.
-    /// </summary>
-    [XmlAttribute("NumBeforeSurveys")]
-    public int NumBeforeSurveys { get; set; } = 0;
-
-    /// <summary>
-    /// Gets or sets the number of surveys to be conducted after the initial phase.
-    /// </summary>
-    [XmlAttribute("NumAfterSurveys")]
-    public int NumAfterSurveys { get; set; } = 0;
-    /// <summary>
     /// Gets or sets the width of the slide, in pixels.
     /// </summary>
     [XmlIgnore]
@@ -50,7 +39,7 @@ public class IATConfigFile : IWebSocketMessage
     /// Gets or sets the name of the IAT (Item Analysis Tool) associated with this instance.
     /// </summary>
     [XmlElement("IATName", Form = XmlSchemaForm.Unqualified)]
-    public string Name { get; set; } = string.Empty;
+    public string IATName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the domain name of the server to which the application connects.
@@ -174,8 +163,7 @@ public class IATConfigFile : IWebSocketMessage
     /// <summary>
     /// Gets or sets the collection of surveys associated with this instance.
     /// </summary>
-    [XmlArray("Surveys")]
-    [XmlArrayItem("Survey", Form = XmlSchemaForm.Unqualified, Type = typeof(Survey))]
+    [XmlElement("Survey", Form = XmlSchemaForm.Unqualified, Type = typeof(Survey))]
     public List<Survey> Surveys { get; set; } = new List<Survey>();
 
     /// <summary>

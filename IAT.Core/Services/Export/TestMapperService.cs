@@ -136,14 +136,15 @@ namespace IAT.Core.Services.Export
 
             var config = new IATConfigFile
             {
-                Name = test.Name,
+                IATName = test.Name,
                 ErrorMarkId = errorMarkDI.Guid,
                 LeftKeyOutlineId = leftOutlineDI.Guid,
                 RightKeyOutlineId = rightKeyOutlineDI.Guid,
                 EventList = exportContext.Events,
                 DisplayItems = exportContext.DisplayItems,
                 NumIATItems = test.AllTrials.Count,
-                RedirectOnComplete = "https://iatsoftware.net"
+                RedirectOnComplete = "https://iatsoftware.net",
+                Surveys = exportContext.Surveys
             };
             config.Layout.InteriorHeight = (int)exportContext.LayoutRects.Interior.Height;
             config.Layout.InteriorWidth = (int)exportContext.LayoutRects.Interior.Width;

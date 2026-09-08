@@ -40,6 +40,9 @@ namespace IAT.Core.Services.Export
         /// </summary>
         public Dictionary<Guid, int> IdDictionary { get; } = new Dictionary<Guid, int>();
 
+        /// <summary>Mapped questionnaires, in administration order (before surveys first).</summary>
+        public List<ConfigFile.Survey> Surveys { get; } = new();
+
 
         /// <summary>
         /// Gets or initializes the IAT test.

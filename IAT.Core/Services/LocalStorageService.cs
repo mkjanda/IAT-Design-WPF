@@ -271,6 +271,10 @@ namespace IAT.Core.Services
             {
                 return null;
             }
+            catch (FormatException)
+            {
+                return null; 
+            }
         }
 
         /// <summary>
@@ -288,7 +292,7 @@ namespace IAT.Core.Services
             memStream.Write(nonce); memStream.Write(ciphertext); memStream.Write(tag);
             var secretString = "secret:";
             foreach (byte b in memStream.ToArray())
-                secretString += b.ToString("{X2}-");
+                secretString += b.ToString("X2") + "-";
             secretString = secretString.TrimEnd('-');
             if (ActivationDocument.Root?.Element("Tests") == null)
                 ActivationDocument.Root?.Add(new XElement("Tests", new XElement(iatName, new XAttribute("Password", secretString                                        ))));

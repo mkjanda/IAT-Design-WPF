@@ -6,6 +6,7 @@ using IAT.Core.Serializable;
 using IAT.Core.Models;
 using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
+using IAT.Core.ConfigFile;
 
 namespace IAT.Core.Handlers
 {
@@ -23,7 +24,11 @@ namespace IAT.Core.Handlers
             _transactionState.DeploymentId = command.transaction.DeploymentId;
             _transactionState.ConfigFile.ProductKey = _transactionState.ProductKey;
             _transactionState.ConfigFile.ClientID = _transactionState.ClientId;
-            _transactionState.ConfigFile.Name = _transactionState.ConfigFile.Name;
+            _transactionState.ConfigFile.IATName = _transactionState.IATName;
+            foreach (Survey s in _transactionState.ConfigFile.Surveys) { 
+                s.ClientId = _transactionState.ClientId;
+                s.IATName = _transactionState.IATName;
+            }
             await _webSocketService.SendMessage(_transactionState.ConfigFile);
             return TransactionResult.Unset;
         }

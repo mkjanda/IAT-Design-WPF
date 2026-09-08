@@ -144,8 +144,25 @@ public partial class IatTest : ObservableObject
     public ObservableCollection<Survey> Surveys { get; } = new();
 
     /// <summary>
+    /// JSON-friendly alias for <see cref="Surveys"/> (same pattern as <see cref="AllKeys"/>).
+    /// System.Text.Json does not reliably populate a get-only <see cref="ObservableCollection{T}"/>.
+    /// </summary>
+    public List<Survey> AllSurveys
+    {
+        get => Surveys.ToList();
+        set
+        {
+            if (Surveys.Count > 0 || value is null) return;
+            Surveys.Clear();
+            foreach (var s in value)
+                Surveys.Add(s);
+        }
+    }
+
+    /// <summary>
     /// Live collection of surveys. Prefer <see cref="AddSurvey"/> / <see cref="RemoveSurvey"/> for mutation.
     /// </summary>
+    [JsonIgnore]
     public ObservableCollection<Survey> SurveysCollection => Surveys;
 
     /// <summary>
@@ -453,7 +470,7 @@ public partial class IatTest : ObservableObject
     /// Validates the entire test configuration, including all trials, stimuli, and instruction screens.
     /// </summary>
     /// <remarks>This method performs a comprehensive validation by checking that every trial is
-    /// valid, each stimulus is used in a trial or mock-item screen and is itself valid, and that at least one instruction
+    /// valid, each stimulus is used in a trial, mock-item screen, or survey image and is itself valid, and that at least one instruction
     /// screen is present and valid. Validation stops at the first failure encountered and returns the corresponding
     /// error.</remarks>
     /// <returns>A ValidationResult indicating whether the test configuration is valid. Returns ValidationResult.Success if
@@ -468,9 +485,9 @@ public partial class IatTest : ObservableObject
             result.Combine(trial.Validate(stimulus));
         }
 
-        // 2. Every stimulus must appear on a trial or a mock-item screen. Orphans only.
+        // 2. Every stimulus must appear on a trial, mock-item screen, or survey image. Orphans only.
         if (Stimuli.Any(s => !IsStimulusReferenced(s.Id)))
-            result.AddError("Every stimulus must be used in at least one trial or mock-item screen");
+            result.AddError("Every stimulus must be used in at least one trial, mock-item screen, or survey image");
         foreach (var stimulus in Stimuli)
             result.Combine(stimulus.Validate());
 
@@ -493,8 +510,9 @@ public partial class IatTest : ObservableObject
     public Stimulus? GetStimulusById(Guid id) => _stimulusCache.TryGetValue(id, out var stimulus) ? stimulus : null;
 
     /// <summary>
-    /// True when <paramref name="stimulusId"/> is referenced by a trial or by a
-    /// <see cref="MockItemInstructionScreen"/>. A mock-item stimulus is used; it is not an orphan.
+    /// True when <paramref name="stimulusId"/> is referenced by a trial, a
+    /// <see cref="MockItemInstructionScreen"/>, or a <see cref="SurveyImage"/>.
+    /// A stimulus used only on a questionnaire is not an orphan.
     /// </summary>
     public bool IsStimulusReferenced(Guid stimulusId)
     {
@@ -502,8 +520,13 @@ public partial class IatTest : ObservableObject
             return false;
         if (Trials.Any(t => t.StimulusId == stimulusId))
             return true;
-        return InstructionScreens.OfType<MockItemInstructionScreen>()
-            .Any(screen => screen.StimulusId == stimulusId);
+        if (InstructionScreens.OfType<MockItemInstructionScreen>()
+            .Any(screen => screen.StimulusId == stimulusId))
+            return true;
+        return Surveys
+            .SelectMany(survey => survey.Items)
+            .OfType<SurveyImage>()
+            .Any(image => image.ImageId == stimulusId);
     }
 
     /// <summary>
@@ -680,7 +703,7 @@ public partial class IatTest : ObservableObject
         foreach (var screen in source.AllInstructionScreens)
             AddInstructionScreen(screen);
 
-        foreach (var survey in source.Surveys)
+        foreach (var survey in source.AllSurveys.Count > 0 ? source.AllSurveys : source.Surveys.ToList())
             AddSurvey(survey);
     }
 

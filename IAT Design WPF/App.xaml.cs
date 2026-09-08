@@ -81,6 +81,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<IStimulusExportProcessor, StimulusExportProcessor>();
             services.AddSingleton<ITextExportProcessor, TextExportProcessor>();
             services.AddSingleton<IItemSlideExportProcessor, ItemSlideExportProcessor>();
+            services.AddSingleton<ISurveyExportProcessor, SurveyExportProcessor>();
             services.AddSingleton<ITestMapperService, TestMapperService>();
             services.AddSingleton<ITestExportService, TestExportService>();
             services.AddSingleton<IProjectPackageService, ProjectPackageService>();

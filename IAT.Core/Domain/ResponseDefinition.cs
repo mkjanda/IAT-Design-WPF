@@ -8,6 +8,7 @@ namespace IAT.Core.Domain;
 /// Abstract base for all survey response definitions. Discriminated by JSON type for polymorphic serialization.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "ResponseType")]
+[JsonDerivedType(typeof(TrueFalseResponse), "TrueFalse")]
 [JsonDerivedType(typeof(LikertResponse), "Likert")]
 [JsonDerivedType(typeof(MultipleChoiceResponse), "MultipleChoice")]
 [JsonDerivedType(typeof(MultiSelectResponse), "MultiSelect")]
@@ -21,16 +22,52 @@ public abstract partial class ResponseDefinition : ObservableObject
 }
 
 /// <summary>
+/// Binary true/false (or yes/no) response with author-supplied labels for each side.
+/// </summary>
+public partial class TrueFalseResponse : ResponseDefinition
+{
+    [ObservableProperty] private string _trueStatement = "True";
+    [ObservableProperty] private string _falseStatement = "False";
+}
+
+/// <summary>
 /// Likert-scale response (numeric range with optional labels and reverse scoring).
 /// </summary>
 public partial class LikertResponse : ResponseDefinition
 {
     [ObservableProperty] private int _min = 1;
-    [ObservableProperty] private int _max = 5;
+    [ObservableProperty] private int _max = 7;
     [ObservableProperty] private bool _reverseScored;
+
+    /// <summary>
+    /// Factory labels for a new 7-point agree/disagree scale. Index 0 maps to <see cref="Min"/>.
+    /// Not applied on construction so package load can restore an empty or custom label list.
+    /// </summary>
+    public static readonly string[] DefaultLabels =
+    [
+        "I strongly disagree",
+        "I disagree",
+        "I somewhat disagree",
+        "I neither agree nor disagree",
+        "I somewhat agree",
+        "I agree",
+        "I strongly agree"
+    ];
 
     /// <summary>Optional labels for each scale point (index 0 = Min). May be empty.</summary>
     public ObservableCollection<string> Labels { get; } = new();
+
+    public List<string> AllLabels
+    {
+        get => Labels.ToList();
+        set
+        {
+            if (Labels.Count > 0 || value is null) return;
+            Labels.Clear();
+            foreach (var label in value)
+                Labels.Add(label);
+        }
+    }
 }
 
 /// <summary>
@@ -42,6 +79,18 @@ public partial class MultipleChoiceResponse : ResponseDefinition
     /// Gets the collection of choices for the multiple choice response. Each choice is represented as a string.
     /// </summary>
     public ObservableCollection<string> Choices { get; } = new();
+
+    public List<string> AllChoices
+    {
+        get => Choices.ToList();
+        set
+        {
+            if (Choices.Count > 0 || value is null) return;
+            Choices.Clear();
+            foreach (var choice in value)
+                Choices.Add(choice);
+        }
+    }
 }
 
 /// <summary>
@@ -53,6 +102,18 @@ public partial class MultiSelectResponse : ResponseDefinition
     /// Gets the collection of choices for the multi-select response. Each choice is represented as a string.
     /// </summary>
     public ObservableCollection<string> Choices { get; } = new();
+
+    public List<string> AllChoices
+    {
+        get => Choices.ToList();
+        set
+        {
+            if (Choices.Count > 0 || value is null) return;
+            Choices.Clear();
+            foreach (var choice in value)
+                Choices.Add(choice);
+        }
+    }
     [ObservableProperty] private int? _minSelections;
     [ObservableProperty] private int? _maxSelections;
 }

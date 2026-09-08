@@ -32,6 +32,7 @@ namespace IAT.Core.Services.Export
         private readonly IValidator<IatTest> _validator;
         private readonly ILayoutCalculatorService _layoutCalculator;
         private readonly IItemSlideExportProcessor _itemSlideProcessor;
+        private readonly ISurveyExportProcessor _surveyProcessor;
             
         /// <summary>
         /// Constructs a new instance of the TestExportService with the necessary dependencies for processing and validating IAT tests for export.
@@ -44,7 +45,7 @@ namespace IAT.Core.Services.Export
         /// <param name="itemSlideProcessor"></param>   
         public TestExportService(IStimulusExportProcessor stimulusProcessor, IBlockExportProcessor blockProcessor, 
             ITestMapperService mapper, IValidator<IatTest> validator, ILayoutCalculatorService layoutCalculator,
-            IItemSlideExportProcessor itemSlideProcessor)
+            IItemSlideExportProcessor itemSlideProcessor, ISurveyExportProcessor surveyProcessor)
         {
             _stimulusProcessor = stimulusProcessor;
             _blockProcessor = blockProcessor;
@@ -52,6 +53,7 @@ namespace IAT.Core.Services.Export
             _validator = validator;
             _layoutCalculator = layoutCalculator;
             _itemSlideProcessor = itemSlideProcessor;
+            _surveyProcessor = surveyProcessor;
         }
 
         /// <summary>
@@ -85,6 +87,7 @@ namespace IAT.Core.Services.Export
                 _blockProcessor.ProcessBlock(block, exportContext);
             }
             _itemSlideProcessor.ProcessItemSlides(exportContext);
+            _surveyProcessor.ProcessSurveys(test, exportContext);
 
             var configFile = _mapper.BuildConfigFile(test, exportContext);
 

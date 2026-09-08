@@ -1,3 +1,4 @@
+using com.sun.tools.javac.jvm;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IAT.Core.Domain;
@@ -5,6 +6,7 @@ using IAT.Core.Services;
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace IAT.ViewModels.Controls;
@@ -41,10 +43,28 @@ public partial class SurveyManagerViewModel : ObservableObject
     [ObservableProperty]
     private bool allQuestionsOptional;
 
+    // Creation / placeholder copy. Keep in lock-step with SurveyManagerControl
+    // PlaceholderAttached values so focus-clear / blur-restore match what Add* writes.
+    public const string DefaultHeaderText = "New Header";
+    public const string DefaultInstructionText = "New instruction text…";
+    public const string DefaultQuestionText = "New question";
+    public const string DefaultTrueStatement = "True";
+    public const string DefaultFalseStatement = "False";
+    public const string DefaultChoiceText = "New choice";
+    public const string DefaultRegexPattern = @".+";
+
     // ── Item-level editable properties ─────────────────────────────────────
 
     [ObservableProperty]
     private string itemText = string.Empty;          // Header / Instruction / Question text
+
+    /// <summary>Placeholder restored into the item-text box when the author leaves it blank.</summary>
+    [ObservableProperty]
+    private string itemTextPlaceholder = DefaultQuestionText;
+
+    /// <summary>Placeholder restored into the survey-name box when the author leaves it blank.</summary>
+    [ObservableProperty]
+    private string surveyNamePlaceholder = "Survey 1";
 
     [ObservableProperty]
     private bool? itemIsOptional;                   // only meaningful for SurveyQuestion
@@ -70,6 +90,38 @@ public partial class SurveyManagerViewModel : ObservableObject
     /// <summary>True when the selected item has editable text (header / instruction / question).</summary>
     public bool ShowItemTextEditor =>
         SelectedItem is SurveyHeader or SurveyInstruction or SurveyQuestion;
+
+    /// <summary>True when the caption style editor should be shown (header only).</summary>
+    public bool ShowHeaderStyleEditor => SelectedItem is SurveyHeader;
+
+    // ── Header / caption style (SVG effect: font, fill, banner, separator) ──
+
+    [ObservableProperty] private string headerFontFamily = SurveyHeaderStyle.DefaultFontFamily;
+    [ObservableProperty] private double headerFontSize = SurveyHeaderStyle.DefaultFontSize;
+    [ObservableProperty] private Color headerFontColor = Colors.Black;
+    [ObservableProperty] private Color headerBackColor = Colors.White;
+    [ObservableProperty] private Color headerSeparatorColor = Colors.Black;
+    [ObservableProperty] private int headerSeparatorWidth = SurveyHeaderStyle.DefaultSeparatorWidth;
+
+    public SolidColorBrush HeaderFontPreviewBrush => new(HeaderFontColor);
+    public SolidColorBrush HeaderBackPreviewBrush => new(HeaderBackColor);
+    public SolidColorBrush HeaderSeparatorPreviewBrush => new(HeaderSeparatorColor);
+
+    public ObservableCollection<string> AvailableFontFamilies { get; } =
+    [
+        "Segoe UI", "Arial", "Calibri", "Verdana", "Trebuchet MS", "Tahoma",
+        "Georgia", "Times New Roman", "Cambria", "Garamond", "Palatino Linotype",
+        "Consolas", "Courier New", "Segoe Script", "Impact"
+    ];
+
+    public ObservableCollection<double> AvailableFontSizes { get; } =
+        [12, 16, 18, 20, 24, 28, 32, 36, 48, 54, 66, 72];
+
+    public ObservableCollection<int> AvailableSeparatorWidths { get; } =
+        [2, 4, 6, 8, 10, 12, 16, 20];
+
+    private bool _suppressHeaderStylePush;
+    private SurveyHeaderStyle _lastHeaderStyle = new();
 
     public SurveyManagerViewModel(IatTest currentTest, IProjectPackageService packageService)
     {
@@ -100,12 +152,14 @@ public partial class SurveyManagerViewModel : ObservableObject
         if (value is null)
         {
             SurveyName = string.Empty;
+            SurveyNamePlaceholder = "Survey 1";
             TimeoutSeconds = 0;
             AllQuestionsOptional = false;
         }
         else
         {
             SurveyName = value.Name;
+            SurveyNamePlaceholder = DefaultNameFor(value);
             TimeoutSeconds = value.TimeoutSeconds;
             AllQuestionsOptional = value.AllQuestionsOptional;
         }
@@ -155,6 +209,7 @@ public partial class SurveyManagerViewModel : ObservableObject
 
         if (value is null)
         {
+            ItemTextPlaceholder = DefaultQuestionText;
             ItemText = string.Empty;
             ItemIsOptional = null;
             CurrentResponse = null;
@@ -165,18 +220,21 @@ public partial class SurveyManagerViewModel : ObservableObject
             switch (value)
             {
                 case SurveyHeader h:
+                    ItemTextPlaceholder = DefaultHeaderText;
                     ItemText = h.Text;
                     ItemIsOptional = null;
                     CurrentResponse = null;
                     break;
 
                 case SurveyInstruction i:
+                    ItemTextPlaceholder = DefaultInstructionText;
                     ItemText = i.Text;
                     ItemIsOptional = null;
                     CurrentResponse = null;
                     break;
 
                 case SurveyImage img:
+                    ItemTextPlaceholder = DefaultQuestionText;
                     ItemText = string.Empty;
                     ItemIsOptional = null;
                     CurrentResponse = null;
@@ -184,16 +242,20 @@ public partial class SurveyManagerViewModel : ObservableObject
                     break;
 
                 case SurveyQuestion q:
+                    ItemTextPlaceholder = DefaultQuestionText;
                     ItemText = q.Text;
                     ItemIsOptional = q.IsOptional;
                     CurrentResponse = q.Response;
-                    SelectedResponseType = q.Response?.GetType().Name.Replace("Response", "") ?? "Likert";
+                    SelectedResponseType = ResponseTypeDisplayName(q.Response);
                     break;
             }
         }
 
+        LoadHeaderStyleFromSelection();
+
         OnPropertyChanged(nameof(IsImageItemSelected));
         OnPropertyChanged(nameof(ShowItemTextEditor));
+        OnPropertyChanged(nameof(ShowHeaderStyleEditor));
         NotifyItemCommands();
     }
 
@@ -257,6 +319,134 @@ public partial class SurveyManagerViewModel : ObservableObject
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Header / caption style
+    // ─────────────────────────────────────────────────────────────────────
+
+    private void LoadHeaderStyleFromSelection()
+    {
+        _suppressHeaderStylePush = true;
+        try
+        {
+            if (SelectedItem is not SurveyHeader header)
+                return;
+
+            header.Style ??= new SurveyHeaderStyle();
+            if (string.IsNullOrWhiteSpace(header.Style.FontFamily))
+                header.Style.FontFamily = SurveyHeaderStyle.DefaultFontFamily;
+            if (header.Style.FontSize <= 0)
+                header.Style.FontSize = SurveyHeaderStyle.DefaultFontSize;
+            if (header.Style.SeparatorWidth <= 0)
+                header.Style.SeparatorWidth = SurveyHeaderStyle.DefaultSeparatorWidth;
+
+            HeaderFontFamily = header.Style.FontFamily;
+            HeaderFontSize = header.Style.FontSize;
+            HeaderFontColor = header.Style.FontColor;
+            HeaderBackColor = header.Style.BackColor;
+            HeaderSeparatorColor = header.Style.SeparatorColor;
+            HeaderSeparatorWidth = header.Style.SeparatorWidth;
+            NotifyHeaderPreviewBrushes();
+        }
+        finally
+        {
+            _suppressHeaderStylePush = false;
+        }
+    }
+
+    private void PersistHeaderStyle()
+    {
+        if (_suppressHeaderStylePush || SelectedItem is not SurveyHeader header)
+            return;
+
+        header.Style ??= new SurveyHeaderStyle();
+        header.Style.FontFamily = string.IsNullOrWhiteSpace(HeaderFontFamily)
+            ? SurveyHeaderStyle.DefaultFontFamily
+            : HeaderFontFamily;
+        header.Style.FontSize = HeaderFontSize > 0 ? HeaderFontSize : SurveyHeaderStyle.DefaultFontSize;
+        header.Style.FontColor = HeaderFontColor;
+        header.Style.BackColor = HeaderBackColor;
+        header.Style.SeparatorColor = HeaderSeparatorColor;
+        header.Style.SeparatorWidth = HeaderSeparatorWidth > 0
+            ? HeaderSeparatorWidth
+            : SurveyHeaderStyle.DefaultSeparatorWidth;
+
+        _lastHeaderStyle = header.Style.Clone();
+    }
+
+    private void NotifyHeaderPreviewBrushes()
+    {
+        OnPropertyChanged(nameof(HeaderFontPreviewBrush));
+        OnPropertyChanged(nameof(HeaderBackPreviewBrush));
+        OnPropertyChanged(nameof(HeaderSeparatorPreviewBrush));
+    }
+
+    partial void OnHeaderFontFamilyChanged(string value) => PersistHeaderStyle();
+    partial void OnHeaderFontSizeChanged(double value) => PersistHeaderStyle();
+    partial void OnHeaderSeparatorWidthChanged(int value) => PersistHeaderStyle();
+
+    partial void OnHeaderFontColorChanged(Color value)
+    {
+        OnPropertyChanged(nameof(HeaderFontPreviewBrush));
+        PersistHeaderStyle();
+    }
+
+    partial void OnHeaderBackColorChanged(Color value)
+    {
+        OnPropertyChanged(nameof(HeaderBackPreviewBrush));
+        PersistHeaderStyle();
+    }
+
+    partial void OnHeaderSeparatorColorChanged(Color value)
+    {
+        OnPropertyChanged(nameof(HeaderSeparatorPreviewBrush));
+        PersistHeaderStyle();
+    }
+
+    private static Color ResolvePalette(string? paletteType) =>
+        (paletteType ?? string.Empty).ToLowerInvariant() switch
+        {
+            "black" => Colors.Black,
+            "white" => Colors.White,
+            "flame scarlet" => Color.FromRgb(205, 33, 42),
+            "firefly" => Color.FromRgb(209, 206, 32),
+            "silver sconce" => Color.FromRgb(161, 159, 165),
+            "ultra violet" => Color.FromRgb(95, 75, 139),
+            "knockout pink" => Color.FromRgb(255, 62, 165),
+            "emerald" => Color.FromRgb(0, 148, 115),
+            "sunset gold" => Color.FromRgb(247, 196, 148),
+            "radiant orchid" => Color.FromRgb(174, 93, 153),
+            "raspberry" => Color.FromRgb(255, 46, 94),
+            "acid lime" => Color.FromRgb(187, 223, 50),
+            "bluebird" => Color.FromRgb(0, 161, 180),
+            "star sapphire" => Color.FromRgb(69, 104, 154),
+            "angel blue" => Color.FromRgb(131, 198, 207),
+            "ember glow" => Color.FromRgb(234, 103, 89),
+            "pale gold" => Color.FromRgb(189, 152, 101),
+            "blackened pearl" => Color.FromRgb(77, 75, 80),
+            _ => Colors.Black
+        };
+
+    [RelayCommand]
+    private void ApplyHeaderTextPalette(string? paletteType)
+    {
+        if (SelectedItem is not SurveyHeader) return;
+        HeaderFontColor = ResolvePalette(paletteType);
+    }
+
+    [RelayCommand]
+    private void ApplyHeaderBackPalette(string? paletteType)
+    {
+        if (SelectedItem is not SurveyHeader) return;
+        HeaderBackColor = ResolvePalette(paletteType);
+    }
+
+    [RelayCommand]
+    private void ApplyHeaderSeparatorPalette(string? paletteType)
+    {
+        if (SelectedItem is not SurveyHeader) return;
+        HeaderSeparatorColor = ResolvePalette(paletteType);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Commands – Surveys
     // ─────────────────────────────────────────────────────────────────────
 
@@ -265,7 +455,7 @@ public partial class SurveyManagerViewModel : ObservableObject
     {
         var survey = new Survey
         {
-            Name = $"Survey {Surveys.Count + 1}",
+            Name = DefaultNameForIndex(Surveys.Count),
             TimeoutSeconds = 0,
             AllQuestionsOptional = false
         };
@@ -283,6 +473,15 @@ public partial class SurveyManagerViewModel : ObservableObject
 
     private bool CanDeleteSurvey() => SelectedSurvey is not null;
 
+    private string DefaultNameFor(Survey survey)
+    {
+        var idx = Surveys.IndexOf(survey);
+        return DefaultNameForIndex(idx >= 0 ? idx : Surveys.Count);
+    }
+
+    private static string DefaultNameForIndex(int zeroBasedIndex) =>
+        $"Survey {Math.Max(0, zeroBasedIndex) + 1}";
+
     // ─────────────────────────────────────────────────────────────────────
     // Commands – Items
     // ─────────────────────────────────────────────────────────────────────
@@ -296,7 +495,11 @@ public partial class SurveyManagerViewModel : ObservableObject
         if (SelectedSurvey is null) return;
         if (SelectedSurvey.Items.OfType<SurveyHeader>().Any()) return;
 
-        var item = new SurveyHeader { Text = "New Header" };
+        var item = new SurveyHeader
+        {
+            Text = DefaultHeaderText,
+            Style = _lastHeaderStyle.Clone()
+        };
         SelectedSurvey.Items.Insert(0, item);
         SelectedItem = item;
         NotifyItemCommands();
@@ -306,7 +509,7 @@ public partial class SurveyManagerViewModel : ObservableObject
     private void AddInstruction()
     {
         if (SelectedSurvey is null) return;
-        var item = new SurveyInstruction { Text = "New instruction text…" };
+        var item = new SurveyInstruction { Text = DefaultInstructionText };
         SelectedSurvey.Items.Add(item);
         SelectedItem = item;
     }
@@ -317,7 +520,7 @@ public partial class SurveyManagerViewModel : ObservableObject
         if (SelectedSurvey is null) return;
         var item = new SurveyQuestion
         {
-            Text = "New question",
+            Text = DefaultQuestionText,
             Response = CreateResponse("Likert")
         };
         SelectedSurvey.Items.Add(item);
@@ -418,9 +621,9 @@ public partial class SurveyManagerViewModel : ObservableObject
         // Do not move anything above the header
         if (idx == 1 && SelectedSurvey.Items[0] is SurveyHeader) return;
 
-        SelectedSurvey.Items.RemoveAt(idx);
-        SelectedSurvey.Items.Insert(idx - 1, SelectedItem);
-        SelectedItem = SelectedSurvey.Items[idx - 1];
+        var item = SelectedItem;
+        SelectedSurvey.Items.Move(idx, idx - 1);
+        SelectedItem = item;
     }
 
     [RelayCommand(CanExecute = nameof(CanMoveItem))]
@@ -431,9 +634,9 @@ public partial class SurveyManagerViewModel : ObservableObject
 
         var idx = SelectedSurvey.Items.IndexOf(SelectedItem);
         if (idx < 0 || idx >= SelectedSurvey.Items.Count - 1) return;
-        SelectedSurvey.Items.RemoveAt(idx);
-        SelectedSurvey.Items.Insert(idx + 1, SelectedItem);
-        SelectedItem = SelectedSurvey.Items[idx + 1];
+        var item = SelectedItem;
+        SelectedSurvey.Items.Move(idx, idx + 1);
+        SelectedItem = item;
     }
 
     private bool CanModifyItems() => SelectedSurvey is not null;
@@ -477,22 +680,39 @@ public partial class SurveyManagerViewModel : ObservableObject
         SelectedChoice = null;
     }
 
+    private static string ResponseTypeDisplayName(ResponseDefinition? response) => response switch
+    {
+        TrueFalseResponse => "True False",
+        LikertResponse => "Likert",
+        MultipleChoiceResponse => "Multi-Choice",
+        MultiSelectResponse => "Multi-Select",
+        DateResponse => "Date",
+        FixedDigitsResponse => "Fixed Digits",
+        BoundedTextResponse => "Bounded Text",
+        BoundedNumberResponse => "Bounded Number",
+        RegexResponse => "Regex",
+        _ => "Likert"
+    };
+
     private static ResponseDefinition CreateResponse(string typeName) => typeName switch
     {
+        "True False" or "TrueFalse" => new TrueFalseResponse(),
         "Likert" => CreateLikert(),
-        "MultipleChoice" => CreateMultipleChoice(),
-        "MultiSelect" => CreateMultiSelect(),
+        "Multi-Choice" or "MultiChoice" or "MultipleChoice" => CreateMultipleChoice(),
+        "Multi-Select" or "MultiSelect" => CreateMultiSelect(),
         "Date" => new DateResponse(),
-        "FixedDigits" => new FixedDigitsResponse { DigitCount = 4 },
-        "BoundedText" => new BoundedTextResponse { MinLength = 0, MaxLength = 200 },
-        "BoundedNumber" => new BoundedNumberResponse(),
-        "Regex" => new RegexResponse { Pattern = @".+" },
+        "Fixed Digits" or "FixedDigits" => new FixedDigitsResponse { DigitCount = 4 },
+        "Bounded Text" or "BoundedText" => new BoundedTextResponse { MinLength = 0, MaxLength = 200 },
+        "Bounded Number" or "BoundedNumber" => new BoundedNumberResponse(),
+        "Regex" => new RegexResponse { Pattern = DefaultRegexPattern },
         _ => CreateLikert()
     };
 
     private static LikertResponse CreateLikert()
     {
-        var r = new LikertResponse { Min = 1, Max = 5 };
+        var r = new LikertResponse { Min = 1, Max = LikertResponse.DefaultLabels.Length };
+        foreach (var label in LikertResponse.DefaultLabels)
+            r.Labels.Add(label);
         return r;
     }
 
@@ -517,7 +737,8 @@ public partial class SurveyManagerViewModel : ObservableObject
     private void AddChoice()
     {
         var text = (NewChoiceText ?? string.Empty).Trim();
-        if (text.Length == 0) return;
+        if (text.Length == 0 || string.Equals(text, DefaultChoiceText, StringComparison.Ordinal))
+            return;
 
         switch (CurrentResponse)
         {
