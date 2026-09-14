@@ -3,7 +3,7 @@ using IAT.Core.Models;
 using IAT.Core.Serializable;
 using IAT.Core.Enumerations;
 using System.Xml.Linq;
-using net.sf.saxon.serialize;
+using IAT.Core.ResultData;
 
 namespace IAT.Core.Services.Network
 {
@@ -13,8 +13,11 @@ namespace IAT.Core.Services.Network
         /// Runs the result-retrieval transaction. On failure returns an empty document —
         /// always inspect <see cref="TransactionState.Result"/>.
         /// </summary>
-        Task<TestResults> GetResults(string productKey, string iatName, string password, 
-            CancellationToken cancellationToken);
+        /// <param name="productKey">The product key associated with the IAT.</param>
+        /// <param name="iatName">The name of the IAT.</param>
+        /// <param name="password">The password for authentication.</param>
+        /// <returns>A <see cref="TestResults"/> object containing the retrieved results.</returns>
+        Task<TestResults> GetResults(string productKey, string iatName, string password);
     }
 
     /// <summary>
@@ -38,9 +41,8 @@ namespace IAT.Core.Services.Network
             _transactionState = transactionState ?? throw new ArgumentNullException(nameof(transactionState));
         }
 
-        /// <inheritdoc />
-        public async Task<TestResults> GetResults(string productKey, string iatName, string password,
-            CancellationToken cancellationToken)
+       /// <inheritdoc />
+        public async Task<TestResults> GetResults(string productKey, string iatName, string password)
         {
             if (string.IsNullOrWhiteSpace(productKey))
                 throw new ArgumentException("Product key is required.", nameof(productKey));
@@ -64,7 +66,7 @@ namespace IAT.Core.Services.Network
                 ProductKey = productKey,
                 IATName = iatName,
             });
-            await _transactionState.Completion.WaitAsync(cancellationToken);
+            await _transactionState.Completion.WaitAsync(CancellationToken.None);
             await _webSocketService.SendMessage(new TransactionRequest()
             {
                 Type = TransactionType.ClearSessionState,

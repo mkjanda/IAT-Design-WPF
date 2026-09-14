@@ -25,7 +25,14 @@ namespace IAT.Core.Services.Export
         /// <param name="text">The formatted text to export. Cannot be null.</param>
         /// <param name="textRect">The rectangle that defines the layout area for the exported text.</param>
         /// <param name="exportContext">The context that provides configuration and data for export operations. Cannot be null.</param>
-        public DisplayItem ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext);
+        /// <param name="clipToContent">
+        /// When true, the PNG and DisplayItem are cropped to the measured ink,
+        /// horizontally centered in <paramref name="textRect"/>, and top-aligned
+        /// to <paramref name="textRect"/>.Y. Instruction-screen bodies use this
+        /// so the uploaded image is the paragraph, not the empty layout slot,
+        /// and the first line sits on the slot top rather than the vertical center.
+        /// </param>
+        public DisplayItem ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext, bool clipToContent = false);
     }
 
     /// <summary>
@@ -62,13 +69,13 @@ namespace IAT.Core.Services.Export
         /// <param name="text">The formatted text to export as an image. Cannot be null.</param>
         /// <param name="textRect">The rectangle specifying the location and size of the text within the display. Cannot be null.</param>
         /// <param name="exportContext">The context that provides configuration and data for export operations. Cannot be null.</param>
-        public DisplayItem ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext)
+        public DisplayItem ProcessText(IFormattedText text, Rect textRect, ExportContext exportContext, bool clipToContent = false)
         {
             var encoder = new PngBitmapEncoder()
             {
                 Interlace = PngInterlaceOption.On
             };
-            string filename = string.Empty;
+            var placed = textRect;
             if (!exportContext.IdDictionary.ContainsKey(text.Id))
             {
                 exportContext.IdDictionary[text.Id] = exportContext.IdDictionary.Count + 1;
@@ -76,14 +83,24 @@ namespace IAT.Core.Services.Export
                 // so ResolveDisplayLines can paint a smaller "or" than the two
                 // terms. RenderTextToBitmap uses a single FontSize for the whole
                 // stack and is what shipped the oversized conjunction.
-                var textBmp = text is Domain.Key key
-                    ? _imageGenerationService.RenderKeyToBitmap(exportContext.Test, key.Id, textRect)
-                    : _imageGenerationService.RenderTextToBitmap(text, textRect);
+                BitmapSource textBmp;
+                if (text is Domain.Key key)
+                {
+                    textBmp = _imageGenerationService.RenderKeyToBitmap(exportContext.Test, key.Id, textRect);
+                }
+                else if (clipToContent)
+                {
+                    textBmp = _imageGenerationService.RenderTextToContentBitmap(text, textRect, out placed);
+                }
+                else
+                {
+                    textBmp = _imageGenerationService.RenderTextToBitmap(text, textRect);
+                }
                 encoder.Frames.Clear();
                 encoder.Frames.Add(BitmapFrame.Create(textBmp));
                 using var memStream = new MemoryStream();
                 encoder.Save(memStream);
-                filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
+                var filename = $"stimulus{exportContext.IdDictionary[text.Id]}.png";
                 _fileManifestBuilder.AddFile(
                     exportContext.FileManifest,
                     filename,
@@ -92,14 +109,20 @@ namespace IAT.Core.Services.Export
                     "image/png",
                     memStream.ToArray());
             }
+            else if (clipToContent && text is not Domain.Key)
+            {
+                // PNG already generated. Re-measure so this placement still
+                // gets a content-sized DisplayItem instead of the full slot.
+                _ = _imageGenerationService.RenderTextToContentBitmap(text, textRect, out placed);
+            }
             return new DisplayItem()
             {
                 Id = exportContext.IdDictionary[text.Id],
                 Guid = Guid.NewGuid(),
-                X = (int)textRect.X,
-                Y = (int)textRect.Y,
-                Width = (int)textRect.Width,
-                Height = (int)textRect.Height
+                X = (int)Math.Round(placed.X),
+                Y = (int)Math.Round(placed.Y),
+                Width = Math.Max(1, (int)Math.Round(placed.Width)),
+                Height = Math.Max(1, (int)Math.Round(placed.Height))
             };
         }
     }

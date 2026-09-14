@@ -4,6 +4,7 @@ using IAT.Core.Enumerations;
 using IAT.Core.Serializable;
 using System.ComponentModel;
 using IAT.Core.Services;
+using IAT.Core.ResultData;
 
 namespace IAT.Core.Models
 {
@@ -111,7 +112,7 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the authentication token used for securing transactions.
         /// </summary>
-        public string AuthToken { get; set; } = string.Empty;
+        public long AuthToken { get; set; } = -1;
 
         /// <summary>
         /// Gets or sets the name of the IAT (Implicit Association Test) associated with this instance.
@@ -163,7 +164,7 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the RSA key information used for encryption operations.
         /// </summary>
-        public EncryptedRSAKey RSA { get; set; } = new();
+        public RsaParams Decryptor { get; set; } = new RsaParams();
 
         /// <summary>
         /// Gets or sets the result of the transaction operation.
@@ -248,14 +249,14 @@ namespace IAT.Core.Models
             Operation = OperationType.Unset;
             ProductKey = string.Empty;
             Password = string.Empty;
-            AuthToken = string.Empty;
+            AuthToken = -1;
             IATName = string.Empty;
             UserName = string.Empty;
             Email = string.Empty;
             TestResultsDocument = new XDocument();
             SlideManifest = new Manifest();
             FileManifest = new Manifest();
-            RSA = new EncryptedRSAKey();
+            Decryptor = new RsaParams();
             Result = TransactionResult.Unset;
             ActivationKey = string.Empty;
             // Intentionally keep ServerReport — see remarks.

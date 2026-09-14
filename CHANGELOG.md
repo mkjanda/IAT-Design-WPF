@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Instruction-screen body DisplayItems top-align to their layout slot.
+  `RenderTextToContentBitmap` used `FitContainDownOnly`, which centered the
+  ink-tight PNG in Text / Keyed / Mock instruction rects. Administration then
+  painted the first line halfway down a tall slot. Placement is now
+  `FitContainDownOnlyTop`: X stays centered, Y equals the slot top. Keys,
+  stimuli, block instructions, and continue prompts are unchanged.
 - Response key and text-stimulus PNGs no longer crop. Rasterize to ink bounds
   (`BuildGeometry`), contain-fit into the layout rect. Combined keys export via
   `RenderKeyToBitmap`. Do not draw `TextAlignment.Center` without `MaxTextWidth`

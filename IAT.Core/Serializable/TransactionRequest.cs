@@ -77,7 +77,7 @@ namespace IAT.Core.Serializable
         /// accommodate scenarios where an authentication token may not be provided.
         /// </summary>
         [XmlElement("AuthToken", Form = XmlSchemaForm.Unqualified)]
-        public string AuthToken { get; set; } = string.Empty;
+        public long AuthToken { get; set; } = -1;
 
         /// <summary>
         /// Gets or sets the encrypted test string associated with this transaction. This property is nullable to 

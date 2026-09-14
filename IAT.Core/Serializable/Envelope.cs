@@ -4,6 +4,7 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 using IAT.Core.ConfigFile;
+using IAT.Core.Results;
 
 namespace IAT.Core.Serializable
 {

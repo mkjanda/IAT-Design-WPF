@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using IAT.Core.Services.Network;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 
 namespace IAT.Core.Handlers
 {
@@ -73,14 +74,21 @@ namespace IAT.Core.Handlers
                     Email = _transactionState.Email,
                     ProductKey = _transactionState.ProductKey
                 };
-            } else if (_transactionState.Operation == OperationType.RetrieveResults ||
-                    _transactionState.Operation == OperationType.DeleteResults ||
+            } else if (_transactionState.Operation == OperationType.DeleteResults ||
                     _transactionState.Operation == OperationType.DeleteTest ||
                     _transactionState.Operation == OperationType.RetrieveItemSlides)
             {
                 o = new TransactionRequest()
                 {
-                    Type = TransactionType.RequestRSAKey,
+                    Type = TransactionType.RequestCrypt,
+                    IATName = _transactionState.IATName,
+                    ProductKey = _transactionState.ProductKey
+                };
+            } else if (_transactionState.Operation == OperationType.RetrieveResults)
+            {
+                o = new TransactionRequest()
+                {
+                    Type = TransactionType.RequestResults,
                     IATName = _transactionState.IATName,
                     ProductKey = _transactionState.ProductKey
                 };

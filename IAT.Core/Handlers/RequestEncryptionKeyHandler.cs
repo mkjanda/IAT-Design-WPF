@@ -6,6 +6,8 @@ using MediatR;
 using IAT.Core.Models;
 using IAT.Core.Services.Network;
 using IAT.Core.Serializable;
+using IAT.Core.ResultData;
+
 
 namespace IAT.Core.Handlers
 {
@@ -22,7 +24,7 @@ namespace IAT.Core.Handlers
 
         public async Task<TransactionResult> Handle(RequestEncryptionKeyCommand command, CancellationToken cancellationToken)
         {
-            var key = new EncryptedRSAKey();
+            var key = new RsaParams();
             key.Generate(_state.IATName, _state.Password, true);
             key.ProductKey = _state.ProductKey;
             await _webSocket.SendMessage(key);

@@ -67,6 +67,17 @@ public interface IImageGenerationService
     /// </summary>
     BitmapSource RenderKeyToBitmap(IatTest test, Guid keyId, Rect boundingRect);
 
+    /// <summary>
+    /// Renders <paramref name="text"/> to an ink-tight PNG. <paramref name="contentRect"/>
+    /// is where that PNG belongs on the page: the measured ink, horizontally
+    /// centered in <paramref name="boundingRect"/> and top-aligned to
+    /// <paramref name="boundingRect"/>.Y, shrunk if it overflows, never upscaled.
+    /// Instruction-screen bodies use this so the uploaded DisplayItem is the
+    /// paragraph, not the empty layout slot, and so the first line sits on the
+    /// slot's top edge instead of floating in the vertical center.
+    /// </summary>
+    BitmapSource RenderTextToContentBitmap(IFormattedText text, Rect boundingRect, out Rect contentRect);
+
 }
 
 /// <summary>
@@ -343,6 +354,56 @@ public class ImageGenerationService : IImageGenerationService
         return RenderFormattedTextToBitmap(formattedText, boundingRect);
     }
 
+    /// <inheritdoc />
+    public BitmapSource RenderTextToContentBitmap(IFormattedText text, Rect boundingRect, out Rect contentRect)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var style = text.Style ?? new TextStyle();
+        var foreground = new SolidColorBrush(style.FontColor);
+        var typeface = new Typeface(
+            new FontFamily(string.IsNullOrWhiteSpace(style.FontFamily) ? "Segoe UI" : style.FontFamily),
+            FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+
+        var display = text.Text ?? string.Empty;
+        var formattedText = new System.Windows.Media.FormattedText(
+            string.IsNullOrEmpty(display) ? " " : display,
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            style.FontSize > 0 ? style.FontSize : 24.0,
+            foreground,
+            1.0)
+        {
+            TextAlignment = TextAlignment.Left,
+            Trimming = TextTrimming.None,
+            MaxTextWidth = Math.Max(1.0, boundingRect.Width)
+        };
+        formattedText.TextAlignment = TextAlignment.Center;
+
+        const double dpi = 96.0;
+        const double pad = 2.0;
+        var ink = MeasureInk(formattedText);
+        var origin = new Point(pad - ink.X, pad - ink.Y);
+        var glyphW = Math.Max(1, (int)Math.Ceiling(ink.Width + pad * 2.0));
+        var glyphH = Math.Max(1, (int)Math.Ceiling(ink.Height + pad * 2.0));
+
+        var glyphBmp = new RenderTargetBitmap(glyphW, glyphH, dpi, dpi, PixelFormats.Pbgra32);
+        var glyphVisual = new DrawingVisual();
+        using (var dc = glyphVisual.RenderOpen())
+            dc.DrawText(formattedText, origin);
+        glyphBmp.Render(glyphVisual);
+        glyphBmp.Freeze();
+
+        // Instruction-screen bodies start at the slot top. Horizontal center
+        // stays — the paragraph is still TextAlignment.Center. Do not use the
+        // generic FitContainDownOnly here: that path is for keys / stimuli /
+        // continue prompts, which remain vertically centered in their slots.
+        contentRect = FitContainDownOnlyTop(
+            new Size(glyphBmp.PixelWidth, glyphBmp.PixelHeight),
+            boundingRect);
+        return glyphBmp;
+    }
+
     /// <summary>
     /// Creates a BitmapSource from the specified read-only byte memory containing image data.
     /// </summary>
@@ -478,9 +539,19 @@ public class ImageGenerationService : IImageGenerationService
     /// Same rule as WPF <c>Stretch="Uniform" StretchDirection="DownOnly"</c>.
     /// </summary>
     public static Rect FitContainDownOnly(Size sourcePixels, Rect dest)
-        => FitContain(sourcePixels, dest, allowUpscale: false);
+        => FitContain(sourcePixels, dest, allowUpscale: false, alignTop: false);
 
-    private static Rect FitContain(Size sourcePixels, Rect dest, bool allowUpscale)
+    /// <summary>
+    /// Same shrink-only contain-fit as <see cref="FitContainDownOnly"/>, but the
+    /// result's top edge equals <paramref name="dest"/>.Y. Horizontal center is
+    /// unchanged. Instruction-screen bodies use this so DisplayItem.Y is the
+    /// layout-slot top, matching the Blocks / Instructions preview
+    /// (<c>VerticalAlignment="Top"</c> on the body Viewbox).
+    /// </summary>
+    public static Rect FitContainDownOnlyTop(Size sourcePixels, Rect dest)
+        => FitContain(sourcePixels, dest, allowUpscale: false, alignTop: true);
+
+    private static Rect FitContain(Size sourcePixels, Rect dest, bool allowUpscale, bool alignTop = false)
     {
         if (sourcePixels.Width <= 0 || sourcePixels.Height <= 0 || dest.Width <= 0 || dest.Height <= 0)
             return dest;
@@ -492,9 +563,13 @@ public class ImageGenerationService : IImageGenerationService
         var width = sourcePixels.Width * scale;
         var height = sourcePixels.Height * scale;
 
+        var y = alignTop
+            ? dest.Y
+            : dest.Y + (dest.Height - height) / 2.0;
+
         return new Rect(
             dest.X + (dest.Width - width) / 2.0,
-            dest.Y + (dest.Height - height) / 2.0,
+            y,
             width,
             height);
     }

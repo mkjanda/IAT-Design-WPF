@@ -8,6 +8,8 @@ using IAT.Core.Serializable;
 using IAT.Core.Domain;
 using IAT.Core.Models;
 using System.IO;
+using IAT.Core.Results;
+using IAT.Core.ResultData;
 
 namespace IAT.Core.Services
 {
@@ -27,7 +29,7 @@ namespace IAT.Core.Services
             { typeof(Block).Name, typeof(Block) }, { typeof(Handshake).Name, typeof(Handshake) },
             { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
             { "SurveyResults", typeof(SurveyResponse) }, { typeof(ServerReport).Name, typeof(ServerReport )},
-            { typeof(IatTest).Name, typeof(IatTest)  }, { typeof(EncryptedRSAKey).Name, typeof(EncryptedRSAKey) },
+            { typeof(IatTest).Name, typeof(IatTest)  }, { typeof(RsaParams).Name, typeof(RsaParams) },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
             { typeof(Manifest).Name, typeof(Manifest) }
         };

@@ -1,6 +1,7 @@
 using IAT.Core.Enumerations;
 using IAT.Core.Handlers;
 using IAT.Core.Models;
+using IAT.Core.ResultData;
 using IAT.Core.Serializable;
 using MediatR;
 using System.IO;
@@ -507,7 +508,7 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             TransactionRequest tr
                 => throw new InvalidOperationException($"No handler registered for transaction type '{tr.Type}'."),
             Handshake hs => new HandshakeCommand(hs),
-            EncryptedRSAKey key => new RSAKeyCommand(key),
+            RsaParams key => new DecryptorCommand(key),
             Manifest manifest => new ManifestCommand(manifest),
             ServerReport serverReport => new ServerReportCommand(serverReport),
 

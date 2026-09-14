@@ -5,6 +5,7 @@ using MediatR;
 using IAT.Core.Enumerations;
 using IAT.Core.Services.Network;
 using IAT.Core.Models;
+using IAT.Core.ResultData; 
 using IAT.Core.Serializable;
 using System.Net.Http;
 using System.IO;
@@ -19,6 +20,7 @@ namespace IAT.Core.Handlers
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
         private readonly IStringResourceService _strings;
+        private readonly IDecryptor _decryptor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthTokenHandler"/> class.
@@ -26,11 +28,13 @@ namespace IAT.Core.Handlers
         /// <param name="webSocketService">The web socket service.</param>
         /// <param name="transactionState">The transaction state.</param>
         /// <param name="stringResourceService">The string resource service.</param>
-        public AuthTokenHandler(IWebSocketService webSocketService, TransactionState transactionState, IStringResourceService stringResourceService)
+        /// <param name="decryptor">The decryptor service.</param>
+        public AuthTokenHandler(IWebSocketService webSocketService, TransactionState transactionState, IStringResourceService stringResourceService, IDecryptor decryptor)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
             _strings = stringResourceService;
+            _decryptor = decryptor;
         }
 
         /// <summary>
@@ -56,13 +60,24 @@ namespace IAT.Core.Handlers
                     await httpResponse.Content.CopyToAsync(memStream);
                     memStream.Seek(0L, SeekOrigin.Begin);
                     var serializer = new XmlSerializer(typeof(TestResults));
-                    _transactionState.TestResults = (TestResults)serializer.Deserialize(memStream);
+                    _transactionState.TestResults = serializer.Deserialize(memStream) as TestResults ?? 
+                        throw new InvalidOperationException("Null value received at test results.");
+                    _transactionState.SetResult(TransactionResult.Success);
+                    var rsa = _decryptor.GetRSA(_transactionState.Password);
+                    foreach (var encryptedResultSet in _transactionState.TestResults.EncryptedResultSets)
+                    {
+                        var resultSet = _decryptor.DecryptResultSet(encryptedResultSet, rsa);
+                        if (resultSet is not null)
+                            _transactionState.TestResults.ResultSets.Add(resultSet);
+                    }
+                    return TransactionResult.Success;
+/*
                     await _webSocketService.SendMessage(new TransactionRequest()
                     {
                         Type = TransactionType.RequestItemSlideManifest,
-                        IATName = _transactionState.IATName
-                    });
-                    break;
+                        IATName = _transactionState.IATName,
+                        ProductKey = _transactionState.ProductKey
+                    });*/
 
                 case OperationType.DeleteTest:
                     await _webSocketService.SendMessage(new TransactionRequest()

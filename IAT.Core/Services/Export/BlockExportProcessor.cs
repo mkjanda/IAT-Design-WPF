@@ -64,7 +64,7 @@ namespace IAT.Core.Services.Export
         /// <param name="exportContext">The export context containing layout rectangles, display items, and events collection.</param>
         private void ProcessTextInstructionScreen(Domain.TextInstructionScreen screen, ExportContext exportContext)
         {
-            var diInstructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.TextInstructions, exportContext);
+            var diInstructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.TextInstructions, exportContext, clipToContent: true);
             var diContinueInstructions = _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
             exportContext.AddDisplayItem(diInstructions);
             exportContext.AddDisplayItem(diContinueInstructions);
@@ -84,7 +84,7 @@ namespace IAT.Core.Services.Export
         /// <param name="exportContext">The export context containing layout rectangles, display items, and events collection.</param>
         private void ProcessKeyedInstructionsScreen(Domain.KeyedInstructionScreen screen, ExportContext exportContext)
         {
-            var instructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.KeyedInstructions, exportContext);
+            var instructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.KeyedInstructions, exportContext, clipToContent: true);
             var continueInstructions = _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
             exportContext.AddDisplayItem(instructions);
             exportContext.AddDisplayItem(continueInstructions);
@@ -119,7 +119,7 @@ namespace IAT.Core.Services.Export
         /// <exception cref="ArgumentNullException">Thrown when the stimulus for the specified ID cannot be found.</exception>
         private void ProcessMockItemInstructionScreen(Domain.MockItemInstructionScreen screen, ExportContext exportContext)
         {
-            var instructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.MockItemInstructions, exportContext);
+            var instructions = _textExportProcessor.ProcessText(screen, exportContext.LayoutRects.MockItemInstructions, exportContext, clipToContent: true);
             var continueInstructions = _textExportProcessor.ProcessText(screen.ContinueInstructions, exportContext.LayoutRects.ContinueInstructions, exportContext);
             var leftKey = _textExportProcessor.ProcessText(
                 exportContext.Test.GetKeyById(screen.LeftResponseId)

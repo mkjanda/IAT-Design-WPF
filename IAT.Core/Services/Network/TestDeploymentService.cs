@@ -57,7 +57,7 @@ namespace IAT.Core.Services.Network
             ArgumentNullException.ThrowIfNull(exportResult);
 
             // Do not Clear() — that would wipe ConfigFile / manifests. Reset completion only.
-            _state.ResetCompletion();
+            _state.Clear();
             _state.Result = TransactionResult.Unset;
             _state.Operation = OperationType.TestDeployment;
             _state.ConfigFile = exportResult.ConfigFile;

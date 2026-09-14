@@ -181,7 +181,7 @@ public sealed class Layout {
     public string PageBackColorR
     {
         get => string.Format("{0:X2}", PageBackColor.R);
-        set => PageBackColor = Color.FromRgb(Convert.ToByte(value, 32), PageBackColor.G, PageBackColor.B);
+        set => PageBackColor = Color.FromRgb(Convert.ToByte(value, 16), PageBackColor.G, PageBackColor.B);
     }
 
     /// <summary>

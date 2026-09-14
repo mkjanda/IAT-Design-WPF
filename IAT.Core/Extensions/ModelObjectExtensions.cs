@@ -1,7 +1,9 @@
 ﻿using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
+using IAT.Core.Results;
 using IAT.Core.Serializable;
+using IAT.Core.ResultData;
 using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
@@ -63,17 +65,6 @@ namespace IAT.Core.Extensions
         public static string ToString(this Serializable.Version version)
         {
             return $"{version.Release}.{version.Major}.{version.Minor}.{version.Trivial}";
-        }
-
-        /// <summary>
-        /// Sets the RSA key for the specified ResultSet instance using the provided EncryptedRSAKey. The method
-        /// initializes the static RSA field of the ResultSet class with the parameters from the provided key.
-        /// </summary>
-        /// <param name="resultSet">The ResultSet instance for which to set the RSA key.</param>
-        /// <param name="key">The EncryptedRSAKey containing the RSA parameters.</param>
-        public static void SetRSAKey(this ResultPacket resultSet, EncryptedRSAKey key)
-        {
-            ResultPacket.rsa = RSA.Create(key.GetRSAParameters());
         }
 
         /// <summary>

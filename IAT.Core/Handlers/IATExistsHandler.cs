@@ -56,7 +56,7 @@ namespace IAT.Core.Handlers
                         _transactionState.Operation == OperationType.DeleteTest) {
                 await _webSocketService.SendMessage(new TransactionRequest()
                 {
-                    Type = TransactionType.RequestRSAKey,
+                    Type = TransactionType.RequestCrypt,
                     IATName = _transactionState.IATName,
                     ClientId = _transactionState.ClientId
                 });

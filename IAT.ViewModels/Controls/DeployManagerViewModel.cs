@@ -470,7 +470,7 @@ public partial class DeployManagerViewModel : ObservableObject
         try
         {
             _webSocket.Start();
-            var doc = await _resultService.GetResults(productKey, target.Name, password, CancellationToken.None);
+            var doc = await _resultService.GetResults(productKey, target.Name, password);
 
             if (!_isActive) return;
 
