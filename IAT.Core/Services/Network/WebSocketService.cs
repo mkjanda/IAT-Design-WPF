@@ -161,8 +161,8 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             { TransactionType.RequestFileManifest, r => new RequestManifestCommand(r) },
             { TransactionType.RequestFiles, r => new RequestUploadCommand(r) },
             { TransactionType.RequestItemSlides, r => new RequestUploadCommand(r) },
-            { TransactionType.RequestEncryptionKey, r => new RequestEncryptionKeyCommand(r) },
-            { TransactionType.RequestConfigFile, r => new RequestConfigFileCommand(r) }
+            { TransactionType.RequestConfigFile, r => new RequestConfigFileCommand(r) },
+            { TransactionType.RequestEncryptionKey, r =>  new RequestEncryptionKeyCommand(r) }
         };
     }
 
@@ -508,10 +508,9 @@ public sealed class WebSocketService : IWebSocketService, IAsyncDisposable
             TransactionRequest tr
                 => throw new InvalidOperationException($"No handler registered for transaction type '{tr.Type}'."),
             Handshake hs => new HandshakeCommand(hs),
-            RsaParams key => new DecryptorCommand(key),
+            RSACryptoParams key => new RSACryptoCommand(key),
             Manifest manifest => new ManifestCommand(manifest),
             ServerReport serverReport => new ServerReportCommand(serverReport),
-
             _ => null
         };
 

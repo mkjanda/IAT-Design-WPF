@@ -14,20 +14,20 @@ namespace IAT.Core.Handlers
     /// stores the key on success, and signals <see cref="TransactionResult.InvalidPassword"/> on failure
     /// without leaving half-decrypted key material in <see cref="TransactionState"/>.
     /// </summary>
-    public class DecryptorHandler : IRequestHandler<DecryptorCommand, TransactionResult>
+    public class RSACryptoHandler : IRequestHandler<RSACryptoCommand, TransactionResult>
     {
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
         private readonly ILocalStorageService _localStorage;
-        private readonly Decryptor _decryptor;
+        private readonly ICryptoService _crypt;
 
-        public DecryptorHandler(IWebSocketService webSocketService, TransactionState transactionState, ILocalStorageService localStorage,
-            Decryptor decryptor)
+        public RSACryptoHandler(IWebSocketService webSocketService, TransactionState transactionState, ILocalStorageService localStorage,
+            ICryptoService crypt)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
             _localStorage = localStorage;
-            _decryptor = decryptor;
+            _crypt = crypt;
         }
 
         /// <summary>
@@ -35,19 +35,17 @@ namespace IAT.Core.Handlers
         /// On failure: clears RSA state, completes the transaction with InvalidPassword, and does not
         /// send PasswordValid (so the pipeline stops cleanly with no further handlers touching a null key).
         /// </summary>
-        public async Task<TransactionResult> Handle(DecryptorCommand request, CancellationToken cancellationToken)
+        public async Task<TransactionResult> Handle(RSACryptoCommand request, CancellationToken cancellationToken)
         {
-            _transactionState.Decryptor = request.decryptor;
+            _transactionState.RsaParams = request.RsaParams;
 
             var password = _transactionState.Password ?? string.Empty;
             if (_transactionState.Operation == OperationType.DeleteTest ||
                 _transactionState.Operation == OperationType.DeleteResults)
             {
-                if (!_decryptor.TestPassword(password))
+                if (!_crypt.TestPassword(password))
                 {
-                    // TestPassword already resets decrypted state on failure; drop the key from state
-                    // so no later consumer can call GetRSAParameters on a bad instance.
-                    _transactionState.Decryptor = new RsaParams();
+                    _transactionState.RsaParams = new RSACryptoParams();
                     _transactionState.SetResult(TransactionResult.InvalidPassword);
                     // Do not close the socket here — Deploy tab owns connection lifetime and will
                     // reconnect on the next action via Start(). Closing would race with the UI await.

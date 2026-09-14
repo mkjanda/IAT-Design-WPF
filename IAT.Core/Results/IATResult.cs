@@ -78,8 +78,8 @@ namespace IAT.Core.Results
         /// <summary>
         /// Gets or sets the RSA key used for encrypting the result set.
         /// </summary>
-        [XmlElement("RSAKey", Form = XmlSchemaForm.Unqualified, Type = typeof(RsaParams))]
-        public RsaParams RSAKey { get; set; } = new RsaParams();
+        [XmlElement("RSAKey", Form = XmlSchemaForm.Unqualified, Type = typeof(RSACryptoParams))]
+        public RSACryptoParams RSAKey { get; set; } = new RSACryptoParams();
 
         [XmlAttribute("DataVersion", Form = XmlSchemaForm.Unqualified)]
         public string DataVersion { get; set; } = string.Empty;

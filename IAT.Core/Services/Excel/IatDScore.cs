@@ -15,8 +15,11 @@ public static class IatDScore
     public const double FastTrialExclusionRate = 0.10;
     public const long ErrorPenaltyMs = 600;
 
-    public static IatDScoreResult Compute(IATResult iat)
+    public static IatDScoreResult Compute(IATResult? iat)
     {
+        if (iat is null)
+            return IatDScoreResult.Excluded("No IAT result payload.", 0, 0, 0, 0);
+
         var raw = iat.Fragments ?? [];
         var afterCap = raw.Where(f => f.ResponseTime <= MaxLatencyMs).ToList();
         var droppedSlow = raw.Count - afterCap.Count;

@@ -21,13 +21,15 @@ namespace IAT.Core.ResultData;
 /// Represents a command to process an encrypted RSA key as part of a request that returns a transaction result.
 /// </summary>
 /// <param name="Key">The encrypted RSA key to be processed. Cannot be null.</param>
-public record DecryptorCommand(RsaParams decryptor) : IRequest<TransactionResult>;
+public record RSACryptoCommand(RSACryptoParams RsaParams) : IRequest<TransactionResult>;
 
 /// <summary>
 /// Contains the encrypted RSA key information, including the modulus (n), exponent (e), private exponent (d), prime factors (p and q), and other related parameters.
 /// </summary>
-public class RsaParams : IWebSocketMessage
+[XmlRoot("Crypt")]
+public class RSACryptoParams : IWebSocketMessage
 {
+    [XmlElement("ProductKey", Form = XmlSchemaForm.Unqualified)]
     public string ProductKey { get; set; } = string.Empty;
 
 

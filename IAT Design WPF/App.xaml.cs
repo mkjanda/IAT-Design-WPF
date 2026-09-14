@@ -2,7 +2,6 @@ using FluentValidation;
 using IAT.Core.Domain;
 using IAT.Core.Handlers;
 using IAT.Core.Models;
-using IAT.Core.ResultData;
 using IAT.Core.Services;
 using IAT.Core.Services.Export;
 using IAT.Core.Services.Network;
@@ -87,7 +86,7 @@ namespace IAT_Design_WPF
             services.AddSingleton<IProjectPackageService, ProjectPackageService>();
             services.AddSingleton<IFileManifestBuilder, FileManifestBuilder>();
             services.AddSingleton<IImageGenerationService, ImageGenerationService>();
-            services.AddSingleton<IDecryptor, Decryptor>(); 
+            services.AddSingleton<ICryptoService, CryptoService>(); 
             services.AddSingleton<IKeyService, KeyService>();
             services.AddSingleton<IValidator<IatTest>, IatTestValidator>();
             services.AddSingleton<IValidator<Block>, BlockValidator>();

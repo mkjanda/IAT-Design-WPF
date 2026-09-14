@@ -31,6 +31,8 @@ namespace IAT.Core.Services.Network
         /// the outcome of the verification request.</returns>
         Task<TransactionResult> VerifyEmail(string productKey, string email, CancellationToken cancellationToken);
 
+        Task<TransactionResult> SubmitEmail(string productKey, string email, CancellationToken cancellationToken);
+
         /// <summary>
         /// The activation key for the software
         /// </summary>
@@ -86,8 +88,8 @@ namespace IAT.Core.Services.Network
             _transactionState.Email = email;
             _transactionState.ProductKey = productKey;
 
-            await _webSocketService.SendMessage(new TransactionRequest() 
-            { 
+            await _webSocketService.SendMessage(new TransactionRequest()
+            {
                 Type = TransactionType.RequestEMailVerification,
                 ProductKey = productKey,
                 Email = email
@@ -95,10 +97,29 @@ namespace IAT.Core.Services.Network
             await _transactionState.Completion.WaitAsync(cancellationToken);
             return _transactionState.Result;
         }
-        
+
         /// <summary>
         /// Gets the activation key for the software.
         /// </summary>
         public string ActivationKey => _transactionState.ActivationKey;
-    }   
+
+        public async Task<TransactionResult> SubmitEmail(string productKey, string email, CancellationToken cancellationToken)
+        {
+
+            _webSocketService.TransactionCommands[TransactionType.TransactionSuccess] =
+                request => new EMailVerifiedCommand(request);
+            _transactionState.Clear();
+            _transactionState.Operation = OperationType.ResendEmail;
+            _transactionState.Email = email;
+            _transactionState.ProductKey = productKey;
+            await _webSocketService.SendMessage(new TransactionRequest()
+            {
+                Type = TransactionType.RequestNewVerificationEMail,
+                ProductKey = productKey,
+                Email = email
+            });
+            await _transactionState.Completion.WaitAsync(cancellationToken);
+            return _transactionState.Result;
+        }
+    }
 }

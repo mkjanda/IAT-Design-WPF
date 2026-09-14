@@ -80,7 +80,7 @@ namespace IAT.Core.Handlers
             {
                 o = new TransactionRequest()
                 {
-                    Type = TransactionType.RequestCrypt,
+                    Type = TransactionType.RequestEncryptionKey,
                     IATName = _transactionState.IATName,
                     ProductKey = _transactionState.ProductKey
                 };

@@ -20,7 +20,7 @@ namespace IAT.Core.Handlers
         private readonly IWebSocketService _webSocketService;
         private readonly TransactionState _transactionState;
         private readonly IStringResourceService _strings;
-        private readonly IDecryptor _decryptor;
+        private readonly ICryptoService _decryptor;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthTokenHandler"/> class.
@@ -29,7 +29,7 @@ namespace IAT.Core.Handlers
         /// <param name="transactionState">The transaction state.</param>
         /// <param name="stringResourceService">The string resource service.</param>
         /// <param name="decryptor">The decryptor service.</param>
-        public AuthTokenHandler(IWebSocketService webSocketService, TransactionState transactionState, IStringResourceService stringResourceService, IDecryptor decryptor)
+        public AuthTokenHandler(IWebSocketService webSocketService, TransactionState transactionState, IStringResourceService stringResourceService, ICryptoService decryptor)
         {
             _webSocketService = webSocketService;
             _transactionState = transactionState;
@@ -62,14 +62,37 @@ namespace IAT.Core.Handlers
                     var serializer = new XmlSerializer(typeof(TestResults));
                     _transactionState.TestResults = serializer.Deserialize(memStream) as TestResults ?? 
                         throw new InvalidOperationException("Null value received at test results.");
-                    _transactionState.SetResult(TransactionResult.Success);
-                    var rsa = _decryptor.GetRSA(_transactionState.Password);
-                    foreach (var encryptedResultSet in _transactionState.TestResults.EncryptedResultSets)
+                    // Envelope descriptor may omit EncRsaParams; the socket already delivered the key.
+                    if (_transactionState.TestResults.Descriptor is null)
+                        _transactionState.TestResults.Descriptor = new ResultSetDescriptor();
+                    if (_transactionState.TestResults.Descriptor.RsaParams is null ||
+                        string.IsNullOrWhiteSpace(_transactionState.TestResults.Descriptor.RsaParams.EncRSAParams))
                     {
-                        var resultSet = _decryptor.DecryptResultSet(encryptedResultSet, rsa);
-                        if (resultSet is not null)
-                            _transactionState.TestResults.ResultSets.Add(resultSet);
+                        _transactionState.TestResults.Descriptor.RsaParams = _transactionState.RsaParams;
                     }
+
+                    try
+                    {
+                       var rsa = _decryptor.GetRSA(_transactionState.Password);
+                        foreach (var encryptedResultSet in _transactionState.TestResults.EncryptedResultSets)
+                        {
+                            try
+                            {
+                                var resultSet = _decryptor.DecryptResultSet(encryptedResultSet, rsa);
+                                if (resultSet is not null)
+                                    _transactionState.TestResults.ResultSets.Add(resultSet);
+                            }
+                            catch
+                            {
+                                // One bad row must not discard the envelope or the other rows.
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Password / key mismatch: leave EncryptedResultSets in place for the UI.
+                    }
+                    _transactionState.SetResult(TransactionResult.Success);
                     return TransactionResult.Success;
 /*
                     await _webSocketService.SendMessage(new TransactionRequest()
@@ -82,15 +105,19 @@ namespace IAT.Core.Handlers
                 case OperationType.DeleteTest:
                     await _webSocketService.SendMessage(new TransactionRequest()
                     {
+                        ProductKey = _transactionState.ProductKey,
                         Type = TransactionType.DeleteIAT,
-                        IATName = _transactionState.IATName
+                        IATName = _transactionState.IATName,
+                        AuthToken = _transactionState.AuthToken
                     });
                     break;
                 case OperationType.DeleteResults:
                     await _webSocketService.SendMessage(new TransactionRequest()
                     {
+                        ProductKey = _transactionState.ProductKey,
                         Type = TransactionType.DeleteIATData,
-                        IATName = _transactionState.IATName
+                        IATName = _transactionState.IATName,
+                        AuthToken = _transactionState.AuthToken
                     });
                     break;
                 default:

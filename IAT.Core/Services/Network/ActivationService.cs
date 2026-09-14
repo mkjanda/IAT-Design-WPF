@@ -10,6 +10,10 @@ namespace IAT.Core.Services.Network
     /// </summary>
     public interface IActivationService
     {
+
+        Task<TransactionResult> GetProductKey();
+
+
         /// <summary>
         /// Activates a product.
         /// </summary>
@@ -68,6 +72,11 @@ namespace IAT.Core.Services.Network
                 ProductKey = productKey
             });
             return _transactionState.Result;
+        }
+
+        public Task<TransactionResult> GetProductKey()
+        {
+            throw new NotImplementedException();
         }
     }
 }

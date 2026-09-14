@@ -6,7 +6,7 @@ using MediatR;
 using IAT.Core.Models;
 using IAT.Core.Services.Network;
 using IAT.Core.Serializable;
-using IAT.Core.ResultData;
+using IAT.Core.Services;
 
 
 namespace IAT.Core.Handlers
@@ -15,19 +15,21 @@ namespace IAT.Core.Handlers
     {
         private readonly IWebSocketService _webSocket;
         private readonly TransactionState _state;
+        private readonly ICryptoService _decryptor;
 
-        public RequestEncryptionKeyHandler(IWebSocketService webSocket, TransactionState state)
+        public RequestEncryptionKeyHandler(IWebSocketService webSocket, TransactionState state, ICryptoService decryptor)
         {
             _webSocket = webSocket;
             _state = state;
+            _decryptor = decryptor;
         }
 
         public async Task<TransactionResult> Handle(RequestEncryptionKeyCommand command, CancellationToken cancellationToken)
         {
-            var key = new RsaParams();
-            key.Generate(_state.IATName, _state.Password, true);
-            key.ProductKey = _state.ProductKey;
-            await _webSocket.SendMessage(key);
+            _decryptor.Generate(_state.Password, true);
+            var p = _decryptor.CurrentParams;
+            p.ProductKey = _state.ProductKey;
+            await _webSocket.SendMessage(p);
             return TransactionResult.Unset;
         }
     }

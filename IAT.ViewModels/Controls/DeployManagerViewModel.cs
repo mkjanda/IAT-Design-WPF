@@ -1,15 +1,19 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using IAT.Core.ConfigFile;
 using IAT.Core.Domain;
 using IAT.Core.Enumerations;
 using IAT.Core.Models;
+using IAT.Core.ResultData;
 using IAT.Core.Serializable;
 using IAT.Core.Services;
+using IAT.Core.Services.Excel;
 using IAT.Core.Services.Export;
 using IAT.Core.Services.Network;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
+using System.IO;
 
 namespace IAT.ViewModels.Controls;
 
@@ -39,6 +43,13 @@ public partial class DeployManagerViewModel : ObservableObject
     private bool _isActive;
     private int _activationGate; // 0 = idle, 1 = activation in progress
 
+    /// <summary>
+    /// Retrieved envelopes keyed by IAT name. <see cref="ApplyServerReport"/> rebuilds
+    /// the list items; without this cache a Refresh would drop the preview payload.
+    /// </summary>
+    private readonly Dictionary<string, TestResults> _retrievedByName =
+        new(StringComparer.OrdinalIgnoreCase);
+
     // ── Account / connection status (bound to top bar) ─────────────────────
     [ObservableProperty] private string accountName = "—";
     [ObservableProperty] private string storageRemaining = "—";
@@ -61,6 +72,7 @@ public partial class DeployManagerViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
     [NotifyCanExecuteChangedFor(nameof(RefreshCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeployCurrentTestCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ExportResultsCommand))]
     private bool isBusy;
 
     // ── Deployed tests list ────────────────────────────────────────────────
@@ -71,6 +83,7 @@ public partial class DeployManagerViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(ClearResultsCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteTestCommand))]
     [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ExportResultsCommand))]
     private DeployedTestItem? selectedDeployedTest;
 
     [ObservableProperty] private string searchText = string.Empty;
@@ -95,10 +108,13 @@ public partial class DeployManagerViewModel : ObservableObject
 
     // ── Results preview (right pane) ───────────────────────────────────────
     [ObservableProperty] private string selectedTestTitle = "No test selected";
+    [ObservableProperty] private string resultsStatusText = string.Empty;
     [ObservableProperty] private double meanDScore;
     [ObservableProperty] private int sampleSize;
     [ObservableProperty] private double averageRtMs;
-    [ObservableProperty] private bool hasResults;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ExportResultsCommand))]
+    private bool hasResults;
 
     /// <summary>One tab per survey in the selected test's results + a Summary tab.</summary>
     public ObservableCollection<SurveyResultTab> SurveyTabs { get; } = new();
@@ -218,7 +234,11 @@ public partial class DeployManagerViewModel : ObservableObject
         if (value is null)
         {
             SelectedTestTitle = "No test selected";
+            ResultsStatusText = string.Empty;
             HasResults = false;
+            MeanDScore = 0;
+            SampleSize = 0;
+            AverageRtMs = 0;
             SurveyTabs.Clear();
             SelectedIatPassword = string.Empty;
             HasStoredPassword = false;
@@ -243,25 +263,313 @@ public partial class DeployManagerViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
-        // Client-side filter reserved for a CollectionView; list is rebuilt from ServerReport.
+        ApplyRowFilter(value);
+    }
+
+    private TestResults? ResolvePreviewSource(DeployedTestItem item)
+    {
+        if (item.RetrievedResults?.ResultSets is { Count: > 0 }
+            || item.RetrievedResults?.EncryptedResultSets is { Count: > 0 })
+            return item.RetrievedResults;
+
+        if (_retrievedByName.TryGetValue(item.Name, out var cached)
+            && cached is not null
+            && ((cached.ResultSets?.Count ?? 0) > 0 || (cached.EncryptedResultSets?.Count ?? 0) > 0))
+            return cached;
+
+        var parked = _transactionState.TestResults;
+        if (parked is not null
+            && string.Equals(_transactionState.IATName, item.Name, StringComparison.OrdinalIgnoreCase)
+            && ((parked.ResultSets?.Count ?? 0) > 0 || (parked.EncryptedResultSets?.Count ?? 0) > 0))
+            return parked;
+
+        return item.RetrievedResults ?? cached;
     }
 
     private void LoadPreviewFor(DeployedTestItem item)
     {
         SelectedTestTitle = $"{item.Name}  ·  {item.ResultCount} results";
-        MeanDScore = 0;
-        SampleSize = item.ResultCount;
-        AverageRtMs = 0;
-        HasResults = item.ResultCount > 0;
 
+        var envelope = ResolvePreviewSource(item);
+        if (envelope is not null
+            && ((envelope.ResultSets?.Count ?? 0) > 0 || (envelope.EncryptedResultSets?.Count ?? 0) > 0))
+        {
+            BindRetrievedResults(envelope, item);
+            return;
+        }
+
+        MeanDScore = 0;
+        SampleSize = 0;
+        AverageRtMs = 0;
+        HasResults = false;
+        ResultsStatusText = item.ResultCount > 0
+            ? "Results exist on the server. Retrieve to fill this preview."
+            : "No administrations retrieved for this test.";
+
+        SurveyTabs.Clear();
+        SurveyTabs.Add(new SurveyResultTab { Header = "Summary", IsSummary = true });
+        SelectedSurveyTab = SurveyTabs[0];
+        ExportResultsCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// Maps <see cref="TransactionState.TestResults"/> into the right-hand preview.
+    /// Call after a successful retrieve. Holds a reference on the list item so
+    /// changing selection does not drop the last download.
+    /// </summary>
+    private void BindRetrievedResults(TestResults results, DeployedTestItem item)
+    {
+        item.RetrievedResults = results;
+        _retrievedByName[item.Name] = results;
+
+        var plaintext = results.ResultSets ?? [];
+        var cipherRows = results.EncryptedResultSets ?? [];
+        var reported = results.Descriptor?.NumResults > 0
+            ? results.Descriptor.NumResults
+            : Math.Max(plaintext.Count, cipherRows.Count);
+
+        if (item.ResultCount <= 0 && reported > 0)
+            item.ResultCount = reported;
+
+        SelectedTestTitle = $"{item.Name}  ·  {item.ResultCount} results";
+        SampleSize = plaintext.Count > 0 ? plaintext.Count : reported;
+
+        var scores = plaintext
+            .Select(rs => IatDScore.Compute(rs.IATResult))
+            .ToList();
+        var included = scores.Where(s => s.Included && s.D is not null).ToList();
+        MeanDScore = included.Count > 0 ? included.Average(s => s.D!.Value) : 0;
+
+        var latencies = plaintext
+            .SelectMany(rs => rs.IATResult?.Fragments ?? [])
+            .Where(f => f.ResponseTime > 0 && f.ResponseTime <= IatDScore.MaxLatencyMs)
+            .Select(f => (double)f.ResponseTime)
+            .ToList();
+        AverageRtMs = latencies.Count > 0 ? latencies.Average() : 0;
+
+        HasResults = true;
+
+        if (plaintext.Count == 0 && cipherRows.Count > 0)
+        {
+            ResultsStatusText =
+                $"Downloaded {cipherRows.Count} encrypted administration(s). Plaintext did not unwrap — check the IAT password.";
+        }
+        else if (plaintext.Count == 0)
+        {
+            ResultsStatusText = "Retrieve finished with an empty result envelope.";
+        }
+        else
+        {
+            ResultsStatusText =
+                $"{plaintext.Count} administration(s) unwrapped. {included.Count} included in mean D (Greenwald 2003).";
+        }
+
+        RebuildSurveyTabs(results);
+        StampSummaryTab(included, plaintext.Count);
+        ApplyRowFilter(SearchText);
+        ExportResultsCommand.NotifyCanExecuteChanged();
+    }
+
+    private void StampSummaryTab(List<IatDScoreResult> included, int administrations)
+    {
+        var summary = SurveyTabs.FirstOrDefault(t => t.IsSummary) ?? SurveyTabs.FirstOrDefault();
+        if (summary is null)
+            return;
+
+        summary.MeanDScore = MeanDScore;
+        summary.SampleSize = SampleSize;
+        summary.AverageRtMs = AverageRtMs;
+        summary.IncludedCount = included.Count;
+        summary.AdministrationCount = administrations;
+        summary.Histogram.Clear();
+        foreach (var bar in BuildHistogram(included))
+            summary.Histogram.Add(bar);
+    }
+
+    private static List<HistogramBar> BuildHistogram(IReadOnlyList<IatDScoreResult> included)
+    {
+        var values = included
+            .Where(s => s.D is not null)
+            .Select(s => s.D!.Value)
+            .ToList();
+
+        var labels = new[] { "≤−1.2", "−1.2", "−0.6", "0", "+0.6", "+1.2", "≥+1.2" };
+        var edges = new[] { double.NegativeInfinity, -1.2, -0.6, -0.15, 0.15, 0.6, 1.2, double.PositiveInfinity };
+        var counts = new int[labels.Length];
+        foreach (var d in values)
+        {
+            for (var i = 0; i < labels.Length; i++)
+            {
+                if (d >= edges[i] && d < edges[i + 1])
+                {
+                    counts[i]++;
+                    break;
+                }
+            }
+        }
+
+        var max = Math.Max(1, counts.Max());
+        var bars = new List<HistogramBar>(labels.Length);
+        for (var i = 0; i < labels.Length; i++)
+        {
+            bars.Add(new HistogramBar
+            {
+                Label = labels[i],
+                Count = counts[i],
+                BarHeight = 8 + (88.0 * counts[i] / max)
+            });
+        }
+        return bars;
+    }
+
+    private void ApplyRowFilter(string? query)
+    {
+        var needle = query?.Trim() ?? string.Empty;
+        foreach (var tab in SurveyTabs.Where(t => !t.IsSummary))
+        {
+            tab.Rows.Clear();
+            IEnumerable<ResponseRow> source = tab.AllRows;
+            if (!string.IsNullOrEmpty(needle))
+            {
+                source = tab.AllRows.Where(row =>
+                    row.ParticipantId.Contains(needle, StringComparison.OrdinalIgnoreCase)
+                    || row.Values.Any(v => v.Contains(needle, StringComparison.OrdinalIgnoreCase)));
+            }
+            foreach (var row in source)
+                tab.Rows.Add(row);
+        }
+    }
+
+    private void RebuildSurveyTabs(TestResults results)
+    {
         SurveyTabs.Clear();
         SurveyTabs.Add(new SurveyResultTab
         {
             Header = "Summary",
             IsSummary = true
         });
+
+        var surveys = results.Descriptor?.ConfigFile?.Surveys ?? [];
+        var administrations = results.ResultSets ?? [];
+
+        var names = new List<string>();
+        foreach (var survey in surveys)
+        {
+            var name = string.IsNullOrWhiteSpace(survey.SurveyName) ? string.Empty : survey.SurveyName.Trim();
+            if (!string.IsNullOrEmpty(name) && !names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                names.Add(name);
+        }
+        foreach (var set in administrations)
+        {
+            foreach (var sr in set.SurveyResults ?? [])
+            {
+                var name = string.IsNullOrWhiteSpace(sr.SurveyName) ? string.Empty : sr.SurveyName.Trim();
+                if (!string.IsNullOrEmpty(name) && !names.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    names.Add(name);
+            }
+        }
+
+        if (names.Count == 0 && administrations.Any(a => (a.SurveyResults?.Count ?? 0) > 0))
+        {
+            var max = administrations.Max(a => a.SurveyResults?.Count ?? 0);
+            for (var i = 0; i < max; i++)
+                names.Add($"Survey {i + 1}");
+        }
+
+        for (var s = 0; s < names.Count; s++)
+        {
+            var name = names[s];
+            var tab = new SurveyResultTab { Header = name, IsSummary = false };
+            var config = surveys.FirstOrDefault(sv =>
+                string.Equals(sv.SurveyName?.Trim(), name, StringComparison.OrdinalIgnoreCase));
+            var questions = config?.Contents.OfType<Core.ConfigFile.SurveyItem>()
+                .Where(item => item.Response is not Instruction)
+                .ToList() ?? [];
+
+            if (questions.Count > 0)
+            {
+                foreach (var q in questions)
+                {
+                    var text = string.IsNullOrWhiteSpace(q.Text) ? $"Item {q.ItemNum}" : q.Text.Trim();
+                    tab.QuestionHeaders.Add(new QuestionHeader
+                    {
+                        ShortText = Truncate(text, 24),
+                        FullText = text,
+                        ResponseType = ResponseTypeLabel(q.Response)
+                    });
+                }
+            }
+            else
+            {
+                var width = administrations
+                    .Select(a => FindSurvey(a, name, s)?.Answers.Count ?? 0)
+                    .DefaultIfEmpty(0)
+                    .Max();
+                for (var i = 0; i < width; i++)
+                {
+                    tab.QuestionHeaders.Add(new QuestionHeader
+                    {
+                        ShortText = $"Q{i + 1}",
+                        FullText = $"{name} item {i + 1}",
+                        ResponseType = "Answer"
+                    });
+                }
+            }
+
+            var columnCount = tab.QuestionHeaders.Count;
+            for (var i = 0; i < administrations.Count; i++)
+            {
+                var surveyResult = FindSurvey(administrations[i], name, s);
+                var answers = surveyResult?.Answers ?? [];
+                var values = new List<string>(columnCount);
+                for (var c = 0; c < columnCount; c++)
+                    values.Add(c < answers.Count ? answers[c] ?? string.Empty : string.Empty);
+
+                var row = new ResponseRow
+                {
+                    ParticipantId = (i + 1).ToString(CultureInfo.InvariantCulture),
+                    Values = values
+                };
+                tab.AllRows.Add(row);
+                tab.Rows.Add(row);
+            }
+
+            SurveyTabs.Add(tab);
+        }
+
         SelectedSurveyTab = SurveyTabs[0];
     }
+
+    private static SurveyResult? FindSurvey(ResultSet set, string name, int index)
+    {
+        var list = set.SurveyResults ?? [];
+        var named = list.FirstOrDefault(s =>
+            string.Equals(s.SurveyName?.Trim(), name, StringComparison.OrdinalIgnoreCase));
+        if (named is not null)
+            return named;
+        return index >= 0 && index < list.Count ? list[index] : null;
+    }
+
+    private static string Truncate(string text, int max)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= max)
+            return text;
+        return text[..(max - 1)] + "…";
+    }
+
+    private static string ResponseTypeLabel(Response? response) => response switch
+    {
+        TrueFalse => "True/False",
+        Likert => "Likert",
+        Date => "Date",
+        MultiChoice => "Choice",
+        MultiSelect => "Multi-select",
+        BoundedText => "Text",
+        BoundedNumber => "Number",
+        FixedDigit => "Digits",
+        RegEx => "RegEx",
+        _ => "Answer"
+    };
 
     // ── Commands ───────────────────────────────────────────────────────────
 
@@ -387,6 +695,13 @@ public partial class DeployManagerViewModel : ObservableObject
                 Uploaded = ParseLastRetrieval(uploadedRaw),
                 Url = iat.URL?.Trim() ?? string.Empty
             };
+            if (_retrievedByName.TryGetValue(iat.Name, out var cached))
+            {
+                item.RetrievedResults = cached;
+                var unwrapped = cached.ResultSets?.Count ?? 0;
+                if (unwrapped > 0)
+                    item.Status = "Ready";
+            }
             DeployedTests.Add(item);
         }
 
@@ -470,7 +785,7 @@ public partial class DeployManagerViewModel : ObservableObject
         try
         {
             _webSocket.Start();
-            var doc = await _resultService.GetResults(productKey, target.Name, password);
+            var retrieved = await _resultService.GetResults(productKey, target.Name, password);
 
             if (!_isActive) return;
 
@@ -488,17 +803,31 @@ public partial class DeployManagerViewModel : ObservableObject
                 return;
             }
 
-            // Keep a copy on transaction state for any downstream consumers.
-//            if (doc is not null && doc.Root is not null)
-  //              _transactionState.TestResultsDocument = doc;
+            // Prefer the object hanging on TransactionState — that is where the
+            // handler parks the envelope + any unwrapped ResultSets.
+            var payload = _transactionState.TestResults ?? retrieved;
+            target.RetrievedResults = payload;
+            var unwrapped = payload.ResultSets?.Count ?? 0;
+            var cipher = payload.EncryptedResultSets?.Count ?? 0;
+            if (unwrapped > 0)
+                target.ResultCount = unwrapped;
+            else if (cipher > 0 && target.ResultCount <= 0)
+                target.ResultCount = cipher;
 
-            target.Status = target.ResultCount > 0 ? "Ready" : "No results";
+            target.Status = unwrapped > 0
+                ? "Ready"
+                : cipher > 0 ? "Encrypted" : "No results";
+
             if (ReferenceEquals(SelectedDeployedTest, target))
-                LoadPreviewFor(target);
+                BindRetrievedResults(payload, target);
 
-            await _dialogService.ShowNotificationAsync(
-                $"Retrieved results for “{target.Name}”.",
-                "Results");
+            var previewNote = unwrapped > 0
+                ? $"Retrieved {unwrapped} administration(s) for “{target.Name}”. Preview is on the right."
+                : cipher > 0
+                    ? $"Downloaded {cipher} encrypted administration(s) for “{target.Name}”, but none unwrapped. Check the password."
+                    : $"Retrieve finished for “{target.Name}” with no administrations.";
+
+            await _dialogService.ShowNotificationAsync(previewNote, "Results");
         }
         catch (Exception ex)
         {
@@ -518,6 +847,107 @@ public partial class DeployManagerViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    private bool CanExportResults()
+        => !IsBusy && SelectedDeployedTest is not null;
+
+    /// <summary>
+    /// Last envelope that can feed the workbook: the selected test's retrieve,
+    /// then whatever <see cref="TransactionState.TestResults"/> is still holding.
+    /// </summary>
+    private TestResults? ResolveExportSource(DeployedTestItem? target)
+    {
+        if (target?.RetrievedResults?.ResultSets is { Count: > 0 })
+            return target.RetrievedResults;
+
+        var parked = _transactionState.TestResults;
+        if (parked?.ResultSets is { Count: > 0 })
+            return parked;
+
+        return target?.RetrievedResults ?? parked;
+    }
+
+    /// <summary>
+    /// Writes the last unwrapped administrations through
+    /// <see cref="IatResultsExcelExporter"/>. Ciphertext-only envelopes are refused.
+    /// Always executable when a deployed test is selected so a dead CanExecute
+    /// cannot swallow the click — the dialog explains what is missing.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanExportResults))]
+    private async Task ExportResultsAsync()
+    {
+        var target = SelectedDeployedTest;
+        if (target is null)
+        {
+            await _dialogService.ShowNotificationAsync(
+                "Select a deployed test first.",
+                "Export Results");
+            return;
+        }
+
+        var results = ResolveExportSource(target);
+        if (results is not null && target.RetrievedResults is null)
+            target.RetrievedResults = results;
+
+        var sets = results?.ResultSets;
+        var cipher = results?.EncryptedResultSets?.Count ?? 0;
+
+        if (results is null || sets is not { Count: > 0 })
+        {
+            var reason = cipher > 0
+                ? $"Downloaded {cipher} encrypted administration(s) for “{target.Name}”, but none unwrapped. Check the IAT password, then Retrieve again."
+                : $"No unwrapped administrations for “{target.Name}”. Retrieve results first — export writes plaintext, not the ciphertext envelope.";
+            ResultsStatusText = reason;
+            await _dialogService.ShowNotificationAsync(reason, "Export Results");
+            return;
+        }
+
+        var stamp = DateTime.Now.ToString("yyyyMMdd-HHmm", CultureInfo.InvariantCulture);
+        var defaultName = $"{SanitizeFileName(target.Name)}-results-{stamp}.xlsx";
+        var path = await _dialogService.ShowSaveFileDialogAsync(
+            "Excel Workbook (*.xlsx)|*.xlsx",
+            defaultName,
+            "Export Results");
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        try
+        {
+            var rows = sets
+                .Select((set, index) => new AdministrationExport
+                {
+                    ResultId = index + 1,
+                    AdminTime = null,
+                    Token = null,
+                    Results = set
+                })
+                .ToList();
+
+            await Task.Run(() => new IatResultsExcelExporter().Write(rows, path));
+            ResultsStatusText = $"Wrote {rows.Count} administration(s) to {Path.GetFileName(path)}.";
+            await _dialogService.ShowNotificationAsync(
+                $"Saved {rows.Count} administration(s) to “{path}”.",
+                "Export Results");
+        }
+        catch (Exception ex)
+        {
+            var root = ex is AggregateException agg
+                ? agg.Flatten().InnerExceptions.FirstOrDefault() ?? ex
+                : ex.InnerException ?? ex;
+            await _dialogService.ShowNotificationAsync(
+                $"Could not write the workbook: {root.Message}",
+                "Export Results");
+        }
+    }
+
+    private static string SanitizeFileName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "IAT-Results";
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(name.Trim().Select(ch => invalid.Contains(ch) ? '-' : ch).ToArray());
+        return string.IsNullOrWhiteSpace(cleaned) ? "IAT-Results" : cleaned;
     }
 
     [RelayCommand(CanExecute = nameof(CanActOnSelected))]
@@ -567,8 +997,11 @@ public partial class DeployManagerViewModel : ObservableObject
 
             target.ResultCount = 0;
             target.Status = "No results";
+            target.RetrievedResults = null;
+            _retrievedByName.Remove(target.Name);
             if (ReferenceEquals(SelectedDeployedTest, target))
                 LoadPreviewFor(target);
+            ExportResultsCommand.NotifyCanExecuteChanged();
 
             succeeded = true;
         }
@@ -636,6 +1069,7 @@ public partial class DeployManagerViewModel : ObservableObject
                 return;
             }
 
+            _retrievedByName.Remove(targetName);
             var doomed = DeployedTests.FirstOrDefault(t => t.Name == targetName);
             if (doomed is not null)
                 DeployedTests.Remove(doomed);
@@ -804,6 +1238,12 @@ public partial class DeployedTestItem : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(OpenUrlCommand))]
     private string url = string.Empty;
 
+    /// <summary>
+    /// Last retrieved envelope for this deployed IAT. Not bound directly —
+    /// <see cref="DeployManagerViewModel"/> projects it into the preview pane.
+    /// </summary>
+    public TestResults? RetrievedResults { get; set; }
+
     public string SizeDisplay => SizeBytes >= 1_000_000
         ? $"{SizeBytes / 1_000_000.0:0.0} MB"
         : SizeBytes >= 1_000
@@ -848,8 +1288,22 @@ public partial class SurveyResultTab : ObservableObject
 {
     [ObservableProperty] private string header = string.Empty;
     [ObservableProperty] private bool isSummary;
+    [ObservableProperty] private double meanDScore;
+    [ObservableProperty] private int sampleSize;
+    [ObservableProperty] private double averageRtMs;
+    [ObservableProperty] private int includedCount;
+    [ObservableProperty] private int administrationCount;
     public ObservableCollection<QuestionHeader> QuestionHeaders { get; } = new();
+    public ObservableCollection<ResponseRow> AllRows { get; } = new();
     public ObservableCollection<ResponseRow> Rows { get; } = new();
+    public ObservableCollection<HistogramBar> Histogram { get; } = new();
+}
+
+public sealed class HistogramBar
+{
+    public string Label { get; init; } = string.Empty;
+    public int Count { get; init; }
+    public double BarHeight { get; init; }
 }
 
 public class QuestionHeader

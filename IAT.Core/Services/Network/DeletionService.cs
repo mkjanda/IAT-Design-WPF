@@ -77,8 +77,9 @@ public sealed class DeletionService : IDeletionService
 
         await _webSocketService.SendMessage(new TransactionRequest()
         {
+            Type = TransactionType.RequestConnection,
             ProductKey = _transactionState.ProductKey,
-            IATName = _transactionState.IATName,
+            IATName = _transactionState.IATName
         });
         await _transactionState.Completion.WaitAsync(cancellationToken);
         await _webSocketService.SendMessage(new TransactionRequest()
@@ -113,7 +114,7 @@ public sealed class DeletionService : IDeletionService
         await _webSocketService.SendMessage(new TransactionRequest() { 
             Type = TransactionType.RequestConnection,
             ProductKey = _transactionState.ProductKey,
-            IATName = _transactionState.IATName,
+            IATName = _transactionState.IATName
         });
         await _transactionState.Completion.WaitAsync(cancellationToken);
         await _webSocketService.SendMessage(new TransactionRequest()

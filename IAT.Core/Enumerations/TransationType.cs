@@ -323,12 +323,6 @@ namespace IAT.Core.Enumerations
         RequestConfigFile,
 
         /// <summary>
-        /// Represents a request to retrieve the encrypted RSA keypair associated with a test.
-        /// </summary>
-        [Description("A request for the encrypted RSA keypair associated with a test.")]
-        RequestCrypt,
-
-        /// <summary>
         /// Represents a transaction that contains an authentication token for secure communication or verification purposes.
         /// </summary>
         [Description("A transaction that contain an authentication token.")]

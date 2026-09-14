@@ -8,15 +8,14 @@ using System.Numerics;
 using IAT.Core.ResultData;
 using IAT.Core.Models;
 using System.Xml.Serialization;
-using sun.security.util;
-using System.Windows.Media.Converters;
+using com.sun.xml.@internal.fastinfoset.util;
 
-namespace IAT.Core.ResultData
+namespace IAT.Core.Services
 {
     /// <summary>
     /// Defines an interface for decrypting encrypted text using a specified key and returning a ResultSet object.
     /// </summary>
-    public interface IDecryptor
+    public interface ICryptoService
     {
         /// <summary>
         /// Decrypts the provided encrypted text using the specified key and returns a ResultSet object.
@@ -28,6 +27,8 @@ namespace IAT.Core.ResultData
         RSA GetRSA(string password);
         void Generate(string password, bool storePassword = false);
         bool TestPassword(string password);
+        RSACryptoParams CurrentParams { get; }
+
 
     }
 
@@ -35,19 +36,39 @@ namespace IAT.Core.ResultData
     /// <summary>
     /// Provides functionality to decrypt RSA keys and encrypted result sets using a password-based key derivation function (Argon2id) and AES-GCM encryption.
     /// </summary>
-    public class Decryptor : IDecryptor
+    public class CryptoService : ICryptoService
     {
         private readonly TransactionState _state;
-        private readonly RsaParams _params;
+
+        /// <summary>
+        /// Live RSA envelope. Must be read on each call — this service is a singleton
+        /// and capturing <see cref="TestResults.Descriptor"/> at construction freezes
+        /// an empty key from startup.
+        /// Prefers the downloaded descriptor, then the key delivered on the socket.
+        /// </summary>
+        public RSACryptoParams CurrentParams
+        {
+            get
+            {
+                var fromDescriptor = _state.TestResults?.Descriptor?.RsaParams;
+                if (fromDescriptor is not null &&
+                    (!string.IsNullOrWhiteSpace(fromDescriptor.EncRSAParams) ||
+                     !string.IsNullOrWhiteSpace(fromDescriptor.Modulus)))
+                {
+                    return fromDescriptor;
+                }
+
+                return _state.RsaParams ?? new RSACryptoParams();
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the Decryptor class with the specified TransactionState.
         /// </summary>
         /// <param name="state"></param>
-        public Decryptor(TransactionState state)
+        public CryptoService(TransactionState state)
         {
             _state = state;
-            _params = state.TestResults.Descriptor.RsaParams;
         }
 
 
@@ -63,7 +84,7 @@ namespace IAT.Core.ResultData
             return argon.GetBytes(keyBytes);
         }
 
-        private byte[] EncryptKey(string password, byte[] plaintext)
+        private void EncryptKey(string password, byte[] plaintext)
         {
             byte[] salt = RandomNumberGenerator.GetBytes(16);   // store with ciphertext
             byte[] key = DeriveAesKey(password, salt);
@@ -74,25 +95,19 @@ namespace IAT.Core.ResultData
             var aesGcm = new AesGcm(key, 16);
 
             aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
-            var memStream = new MemoryStream();
-            memStream.Write(salt);
-            memStream.Write(nonce);
-            memStream.Write(ciphertext);
-            memStream.Write(tag);
-
-            _params.Salt = Convert.ToBase64String(salt);
-            _params.Nonce = Convert.ToBase64String(nonce);
-            _params.Tag = Convert.ToBase64String(tag);
-            _params.EncRSAParams = Convert.ToBase64String(ciphertext);
-            return memStream.ToArray();
+            CurrentParams.Salt = Convert.ToBase64String(salt);
+            CurrentParams.Nonce = Convert.ToBase64String(nonce);
+            CurrentParams.Tag = Convert.ToBase64String(tag);
+            CurrentParams.EncRSAParams = Convert.ToBase64String(ciphertext);
         }
 
         private RSAParameters DecryptKey(byte[] aesKey)
         {
-            byte[] salt = Convert.FromBase64String(_params.Salt);
-            byte[] ciphertext = Convert.FromBase64String(_params.EncRSAParams);
-            byte[] nonce = Convert.FromBase64String(_params.Nonce);
-            byte[] tag = Convert.FromBase64String(_params.Tag);
+            var ps = CurrentParams;
+            byte[] salt = Convert.FromBase64String(ps.Salt);
+            byte[] ciphertext = Convert.FromBase64String(ps.EncRSAParams);
+            byte[] nonce = Convert.FromBase64String(ps.Nonce);
+            byte[] tag = Convert.FromBase64String(ps.Tag);
             byte[] plainText = new byte[ciphertext.Length];
             byte[] cipherbytes = aesKey;
             var aes = new AesGcm(cipherbytes, 16);
@@ -140,8 +155,8 @@ namespace IAT.Core.ResultData
         /// <param name="storePassword">A boolean indicating whether to store the password in local storage.</param>
         public void Generate(string password, bool storePassword = false)
         {
-            RSACryptoServiceProvider rsaCrypt = new RSACryptoServiceProvider();
-            RSAParameters rsaParams = rsaCrypt.ExportParameters(true);
+            var rsa = RSA.Create(2048);
+            RSAParameters rsaParams = rsa.ExportParameters(true);
             byte[] n = rsaParams.Modulus ?? throw new InvalidOperationException("Null RSA Parameter");
             byte[] e = rsaParams.Exponent ?? throw new InvalidOperationException("Null RSA Parameter");
             byte[] d = rsaParams.D ?? throw new InvalidOperationException("Null RSA Parameter");
@@ -150,8 +165,8 @@ namespace IAT.Core.ResultData
             byte[] dp = rsaParams.DP ?? throw new InvalidOperationException("Null RSA Parameter");
             byte[] dq = rsaParams.DQ ?? throw new InvalidOperationException("Null RSA Parameter");
             byte[] inverseQ = rsaParams.InverseQ ?? throw new InvalidOperationException("Null RSA Parameter");
-            _params.Modulus = Convert.ToBase64String(n);
-            _params.Exponent = Convert.ToBase64String(e);
+            CurrentParams.Modulus = Convert.ToBase64String(n);
+            CurrentParams.Exponent = Convert.ToBase64String(e);
             MemoryStream memStream = new MemoryStream();
             BinaryWriter bWriter = new BinaryWriter(memStream);
             bWriter.Write(n?.Length ?? 0);
@@ -171,7 +186,7 @@ namespace IAT.Core.ResultData
             bWriter.Write(inverseQ?.Length ?? 0);
             bWriter.Write(inverseQ ?? Array.Empty<byte>());
             bWriter.Flush();
-            _params.EncRSAParams = Convert.ToBase64String(EncryptKey(password, memStream.ToArray()));
+            EncryptKey(password, memStream.ToArray());
         }
 
 
@@ -184,19 +199,20 @@ namespace IAT.Core.ResultData
         {
             try
             {
-                BigInteger modulus = new BigInteger(Convert.FromBase64String(_params.Modulus));
-                BigInteger exponent = new BigInteger(Convert.FromBase64String(_params.Exponent));
-                byte[] encRsaBytes = Convert.FromBase64String(_params.EncRSAParams);
-                var Rsa = RSA.Create(DecryptKey(DeriveAesKey(password, Convert.FromBase64String(_params.Salt))));
-                var dataStream = new MemoryStream();
-                dataStream.Write(new byte[1] { 0 });
+                BigInteger modulus = new BigInteger(Convert.FromBase64String(CurrentParams.Modulus));
+                BigInteger exponent = new BigInteger(Convert.FromBase64String(CurrentParams.Exponent));
+                byte[] encRsaBytes = Convert.FromBase64String(CurrentParams.EncRSAParams);
+                var decryptor = RSA.Create(DecryptKey(DeriveAesKey(password, Convert.FromBase64String(CurrentParams.Salt))));
+                RSAParameters rsaParameters = new RSAParameters()
+                {
+                    Modulus = Convert.FromBase64String(CurrentParams.Modulus),
+                    Exponent = Convert.FromBase64String(CurrentParams.Exponent),
+                };
+                var encryptor = RSA.Create(rsaParameters);
                 byte[] testData = System.Text.Encoding.UTF8.GetBytes("ZippyTheWorldTortoise");
-                dataStream.Write(testData, 0, testData.Length);
-                BigInteger data = new BigInteger(dataStream.ToArray());
-                BigInteger encryptedData = BigInteger.ModPow(data, exponent, modulus);
-                var encryptedBytes = data.ToByteArray();
-                Rsa.Decrypt(encryptedBytes, RSAEncryptionPadding.Pkcs1);
-                return Convert.ToBase64String(encryptedBytes) == Convert.ToBase64String(testData);
+                byte[] processedBytes = encryptor.Encrypt(testData, RSAEncryptionPadding.Pkcs1);
+                processedBytes = decryptor.Decrypt(processedBytes, RSAEncryptionPadding.Pkcs1);
+                return Convert.ToBase64String(processedBytes) == Convert.ToBase64String(testData);
             }
             catch
             {
@@ -213,7 +229,7 @@ namespace IAT.Core.ResultData
         /// <returns>An RSA object initialized with the decrypted key parameters.</returns>
         public RSA GetRSA(string password)
         {
-            byte[] salt = Convert.FromBase64String(_params.Salt);
+            byte[] salt = Convert.FromBase64String(CurrentParams.Salt);
             var aesBytes = DeriveAesKey(password, salt);
             var aes = new AesGcm(aesBytes, 16);
             return RSA.Create(DecryptKey(aesBytes));

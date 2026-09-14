@@ -1,15 +1,16 @@
-﻿using net.sf.saxon.ma.map;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Xml.Serialization;
-using System.Xml;
-using IAT.Core.Serializable;
-using IAT.Core.Domain;
+﻿using IAT.Core.Domain;
 using IAT.Core.Models;
-using System.IO;
-using IAT.Core.Results;
 using IAT.Core.ResultData;
+using IAT.Core.Results;
+using IAT.Core.Serializable;
+using net.sf.saxon.ma.map;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace IAT.Core.Services
 {
@@ -29,10 +30,20 @@ namespace IAT.Core.Services
             { typeof(Block).Name, typeof(Block) }, { typeof(Handshake).Name, typeof(Handshake) },
             { "IATResultSet", typeof(IATResponse) }, { "IATResultSetElement", typeof(TrialResponse) },
             { "SurveyResults", typeof(SurveyResponse) }, { typeof(ServerReport).Name, typeof(ServerReport )},
-            { typeof(IatTest).Name, typeof(IatTest)  }, { typeof(RsaParams).Name, typeof(RsaParams) },
+            { typeof(IatTest).Name, typeof(IatTest)  }, { typeof(RSACryptoParams).Name, typeof(RSACryptoParams) },
             { typeof(TransactionRequest).Name, typeof(TransactionRequest) },
-            { typeof(Manifest).Name, typeof(Manifest) }
+            { typeof(Manifest).Name, typeof(Manifest) }, { "Crypt", typeof(RSACryptoParams) }
         };
+
+        private static readonly ConcurrentDictionary<(Type, string), XmlSerializer> _serializers = new();
+
+        private static XmlSerializer GetSerializer(Type type, string rootName) =>
+            _serializers.GetOrAdd((type, rootName), key =>
+                new XmlSerializer(key.Item1, new XmlRootAttribute(key.Item2)
+                {
+                    Namespace = string.Empty
+                }));
+
 
         /// <summary>
         /// Deserializes an XML string into an object of an unknown type.
@@ -75,7 +86,7 @@ namespace IAT.Core.Services
             var RootName = xmlReader.LocalName;
             if (!_elementToType.TryGetValue(RootName, out var targetType))
                 throw new InvalidOperationException($"No mapping found for XML element '{RootName}'. Unable to determine type for deserialization.");
-            var serializer = new XmlSerializer(targetType);
+            var serializer = GetSerializer(targetType, RootName);
             return serializer.Deserialize(xmlReader) ?? throw new InvalidOperationException($"Deserialization of XML element '{RootName}' resulted in a null object.");
         }
     }

@@ -164,7 +164,7 @@ namespace IAT.Core.Models
         /// <summary>
         /// Gets or sets the RSA key information used for encryption operations.
         /// </summary>
-        public RsaParams Decryptor { get; set; } = new RsaParams();
+        public RSACryptoParams RsaParams { get; set; } = new RSACryptoParams();
 
         /// <summary>
         /// Gets or sets the result of the transaction operation.
@@ -256,7 +256,7 @@ namespace IAT.Core.Models
             TestResultsDocument = new XDocument();
             SlideManifest = new Manifest();
             FileManifest = new Manifest();
-            Decryptor = new RsaParams();
+            RsaParams = new RSACryptoParams();
             Result = TransactionResult.Unset;
             ActivationKey = string.Empty;
             // Intentionally keep ServerReport — see remarks.

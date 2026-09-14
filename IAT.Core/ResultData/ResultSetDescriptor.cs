@@ -24,5 +24,5 @@ public sealed class ResultSetDescriptor
     public int NumResults { get; set; }
 
     [XmlElement("EncRsaParams", Form = XmlSchemaForm.Unqualified)]
-    public RsaParams RsaParams { get; set; }
+    public RSACryptoParams RsaParams { get; set; } = new();
 }
